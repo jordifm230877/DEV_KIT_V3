@@ -40,7 +40,10 @@ You write behaviour tests. The current directory is your own copy of the project
 Describe the behaviour this ticket asks for as Gherkin scenarios in .feature files. Put them
 where this project keeps them: its AGENTS.md says where; if it does not, under features/.
 Write one scenario for each thing the ticket asks for, in plain words that someone who does
-not program can check. Write only .feature files: no code and no step definitions.
+not program can check. Scenarios are kept and must stay true while later tickets change the
+product: describe what a user of the product sees, never this change itself ("nothing else
+changed", "the checks pass", "no dependency was added").
+Write only .feature files: no code and no step definitions.
 Do not commit and do not change anything outside this directory.
 
 When you have finished, end your reply with exactly one of these lines:

@@ -151,3 +151,14 @@ def test_the_test_writer_is_told_to_use_the_projects_own_folder(project: Project
 
     brief = (project.root.parent / "tools" / "brief.txt").read_text()
     assert "where this project keeps them" in brief and "AGENTS.md" in brief
+
+
+def test_the_test_writer_is_told_that_scenarios_must_stay_true(project: Project) -> None:
+    tester = "pathlib.Path(sys.argv[0]).with_name('brief.txt').write_text(prompt)\n" + TESTER
+    project.configure(coder=HELLO, tester=tester)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    brief = (project.root.parent / "tools" / "brief.txt").read_text()
+    assert "stay true" in brief and "later tickets" in brief

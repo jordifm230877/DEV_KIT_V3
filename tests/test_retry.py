@@ -63,3 +63,46 @@ def test_only_a_stopped_ticket_can_be_retried(project: Project) -> None:
     project.dk("add", "Greet", "--spec", "Say hello.")
 
     assert "#1 is not stopped" in project.refused("retry", "1")
+
+
+def test_a_ticket_sent_on_again_sees_what_the_user_committed_meanwhile(project: Project) -> None:
+    needs_hint = (
+        "if pathlib.Path('hint.txt').exists():\n"
+        "    pathlib.Path('greeting.txt').write_text('hola\\n'); print('RESULT: done')\n"
+        "else:\n"
+        "    print('RESULT: blocked: there is no hint')"
+    )
+    project.configure(coder=needs_hint)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+    assert "there is no hint" in project.dk("status")
+
+    (project.root / "hint.txt").write_text("in Catalan\n")
+    project.git("add", "hint.txt")
+    project.git("commit", "-qm", "add the hint")
+    project.dk("retry", "1")
+    project.dk("run")
+
+    assert project.merged("greeting.txt") == "hola\n"
+
+
+def test_a_coder_is_told_when_the_users_changes_collide_with_its_earlier_work(
+    project: Project,
+) -> None:
+    coder = (
+        "text = 'resolved' if '<<<<<<<' in prompt else 'mine'\n"
+        "pathlib.Path('greeting.txt').write_text(text + '\\n'); print('RESULT: done')"
+    )
+    check = "sys.exit(pathlib.Path('greeting.txt').read_text() != 'resolved\\n')"
+    project.configure(coder=coder, check=check, max_attempts=1)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+    assert "#1 stopped" in project.dk("status")
+
+    (project.root / "greeting.txt").write_text("theirs\n")
+    project.git("add", "greeting.txt")
+    project.git("commit", "-qm", "the user's own greeting")
+    project.dk("retry", "1")
+    project.dk("run")
+
+    assert project.merged("greeting.txt") == "resolved\n"

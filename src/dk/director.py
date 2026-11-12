@@ -171,6 +171,13 @@ class Director:
             name=agent.name,
         )
 
+    def _fresh(self, ticket: Ticket, note: str) -> str:
+        """Bring into the copy what the project gained since it was made. Returns the note
+        for whoever works next, with the files to resolve if the two collide."""
+        self.workspace.prepare(ticket.id)
+        _, clashes = self.workspace.update(ticket.id)
+        return f"{note}\n{briefs.clash(clashes)}".strip() if clashes else note
+
     def _produce(self, agent: Agent, brief: str, ticket: Ticket) -> Outcome:
         reply = self._ask(agent, True, brief, ticket)
         if reply.kind in ("blocked", "question"):
@@ -182,7 +189,8 @@ class Director:
         return Passed()
 
     def _specify(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
-        brief = briefs.tester(ticket.id, ticket.title, ticket.spec, position.note)
+        note = self._fresh(ticket, position.note)
+        brief = briefs.tester(ticket.id, ticket.title, ticket.spec, note)
         outcome = self._produce(agent, brief, ticket)
         if not isinstance(outcome, Passed):
             return outcome
@@ -194,7 +202,8 @@ class Director:
 
     def _code(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         tests = ticket.protected
-        brief = briefs.coder(ticket.id, ticket.title, ticket.spec, position.note, sorted(tests))
+        note = self._fresh(ticket, position.note)
+        brief = briefs.coder(ticket.id, ticket.title, ticket.spec, note, sorted(tests))
         outcome = self._produce(agent, brief, ticket)
         changed = self.workspace.tampered(ticket.id, tests) if tests else []
         if isinstance(outcome, Passed) and changed:

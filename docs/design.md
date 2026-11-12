@@ -111,6 +111,12 @@ Each step ends with something usable.
   four tickets in order and three stopped at once, each waiting for work it could not see.
 - The test-writer puts scenarios where the project's `AGENTS.md` says, and under `features/`
   only when it says nothing: a fixed folder clashed with a Rust project's `tests/features/`.
+- Before a test-writer or coder starts, the ticket's copy takes in what the project gained
+  since; a collision goes to the coder as files to resolve. Twice a ticket was sent on after
+  the user had committed the fix, and its copy, made earlier, could not see it.
+- The test-writer is told that scenarios must stay true while later tickets change the
+  product. Scenarios such as "no dependency was added", approved for one ticket, blocked
+  the next one, which had to add a dependency.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 
