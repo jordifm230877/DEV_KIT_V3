@@ -11,8 +11,9 @@ See [the design](docs/design.md) and [the glossary](docs/glossary.md).
 ## Status
 
 Working so far (see the [build order](docs/design.md#build-order)): a ticket goes from
-written to merged through a coder, the project's checks, a verifier and QA, one ticket at a
-time. Tried with a real model through Pi on small throwaway projects.
+written to merged through a coder, the project's checks, a verifier and QA. With several
+coders, tickets advance side by side; merges happen one at a time, each checked together
+with what was merged before it. Tried with a real model through Pi on small throwaway projects.
 
 ## Use
 

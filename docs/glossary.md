@@ -17,3 +17,4 @@
 - **Checks** — the project's own commands that must succeed; run by the program, never trusted from an agent.
 - **Behaviour test** — a Gherkin scenario written before the code and approved by the user.
 - **Director** — the piece that decides what happens next to each ticket.
+- **Clash** — a ticket's work collides with work merged while it was in progress; the coder gets the files to resolve.

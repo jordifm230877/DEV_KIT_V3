@@ -70,3 +70,12 @@ def reviewer(role: str, ticket: int, title: str, spec: str, base: str) -> str:
     return _REVIEWER.format(
         who=who, ticket=_ticket(ticket, title, spec), base=base, task=task, always=_ALWAYS
     )
+
+
+def clash(files: list[str]) -> str:
+    """The note for a coder whose work collides with what was merged in the meantime."""
+    return (
+        "The project changed while this ticket was being worked on, and these files now "
+        f"contain conflict markers (<<<<<<<): {', '.join(files)}. "
+        "Edit them so that both changes work, and remove the markers."
+    )

@@ -1,6 +1,7 @@
 """The ticket list: what was asked, where each ticket is and what happened to it.
 
-It stores and answers; it decides nothing. One SQLite file, one writer (the director).
+It stores and answers; it decides nothing. One SQLite file, written only by the director
+(from several threads, one statement at a time).
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ class Ticket:
 
 class Tickets:
     def __init__(self, path: Path) -> None:
-        self._db = sqlite3.connect(path, autocommit=True)
+        self._db = sqlite3.connect(path, autocommit=True, check_same_thread=False)
         self._db.executescript(_SCHEMA)
 
     def add(self, title: str, spec: str, step: str) -> int:

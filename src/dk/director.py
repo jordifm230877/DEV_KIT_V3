@@ -6,9 +6,12 @@ ticket according to the process. It never talks to a model or touches Git itself
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable
-from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
 from pathlib import Path
+from queue import Queue
 
 from dk import agents, briefs, checks
 from dk.config import Agent, Config, ConfigError
@@ -25,47 +28,64 @@ class Director:
     logs: Path
     say: Callable[[str], None]
 
+    _free: dict[str, Queue[Agent]] = field(default_factory=dict)
+    _merging: threading.Lock = field(default_factory=threading.Lock)
+
     def run(self) -> None:
-        """Take every unfinished ticket, in order, as far as it can go."""
-        for ticket in self.tickets.all():
-            position = Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
-            while not position.final:
-                step = next(step for step in PROCESS if step.name == position.step)
-                outcome = self._perform(step, ticket, position)
-                position = advance(PROCESS, position, outcome, self.config.max_attempts)
-                self.tickets.move(ticket.id, *vars(position).values())
-                if not isinstance(outcome, Passed):
-                    self.tickets.record(ticket.id, f"{step.name}: {outcome.reason}")
-                self.say(f"#{ticket.id} {step.name} {type(outcome).__name__.lower()}")
+        """Take every unfinished ticket as far as it can go, as many at once as there are
+        coders. Each agent does one job at a time; merges happen one at a time."""
+        for agent in self.config.agents:
+            self._free.setdefault(agent.role, Queue()).put(agent)
+        coders = len(self.config.with_role("coder"))
+        with ThreadPoolExecutor(max(coders, 1)) as together:
+            list(together.map(self._drive, self.tickets.all()))
+
+    def _drive(self, ticket: Ticket) -> None:
+        position = Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+        while not position.final:
+            step = next(step for step in PROCESS if step.name == position.step)
+            outcome = self._perform(step, ticket, position)
+            position = advance(PROCESS, position, outcome, self.config.max_attempts)
+            self.tickets.move(ticket.id, *vars(position).values())
+            if not isinstance(outcome, Passed):
+                self.tickets.record(ticket.id, f"{step.name}: {outcome.reason}")
+            self.say(f"#{ticket.id} {step.name} {type(outcome).__name__.lower()}")
 
     def _perform(self, step: Step, ticket: Ticket, position: Position) -> Outcome:
         logs = self.logs / f"ticket-{ticket.id}" / f"attempt-{position.attempts + 1}"
         if step.kind == "checks":
             return self._check(ticket, logs)
         if step.kind == "merge":
-            trouble = self.workspace.merge(ticket.id, ticket.title)
-            return Stopped(trouble) if trouble else Passed()
-        agent = self._agent(step, ticket)
-        if agent is None:
+            with self._merging:
+                return self._merge(ticket, logs)
+        if step.role not in self._free:
+            if step.required:
+                raise ConfigError(f"no agent has the role '{step.role}'")
+            self.tickets.record(ticket.id, f"{step.name} skipped: no {step.role}")
             return Passed()
-        if step.kind == "work":
-            return self._work(agent, ticket, position, logs)
-        return self._review(agent, ticket, logs)
+        agent = self._free[step.role].get()
+        try:
+            if step.kind == "work":
+                return self._work(agent, ticket, position, logs)
+            return self._review(agent, ticket, logs)
+        finally:
+            self._free[step.role].put(agent)
 
     def _check(self, ticket: Ticket, logs: Path) -> Outcome:
         copy = self.workspace.prepare(ticket.id)
         failure = checks.run(self.config.checks, copy, logs, self.config.check_minutes * 60)
         return Failed(failure) if failure else Passed()
 
-    def _agent(self, step: Step, ticket: Ticket) -> Agent | None:
-        """Who does this step; nobody means the step is skipped, and the history says so."""
-        available = self.config.with_role(step.role)
-        if available:
-            return available[0]
-        if step.required:
-            raise ConfigError(f"no agent has the role '{step.role}'")
-        self.tickets.record(ticket.id, f"{step.name} skipped: no {step.role}")
-        return None
+    def _merge(self, ticket: Ticket, logs: Path) -> Outcome:
+        """Bring in what was merged meanwhile, check the two together, then merge."""
+        updated, clashes = self.workspace.update(ticket.id)
+        if clashes:
+            return Failed(briefs.clash(clashes))
+        together = self._check(ticket, logs / "together") if updated else Passed()
+        if not isinstance(together, Passed):
+            return together
+        trouble = self.workspace.merge(ticket.id, ticket.title)
+        return Stopped(trouble) if trouble else Passed()
 
     def _ask(
         self, agent: Agent, writes: bool, brief: str, ticket: Ticket, logs: Path
