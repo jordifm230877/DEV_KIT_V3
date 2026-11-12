@@ -91,6 +91,10 @@ class Tickets:
             *(step, attempts, note, stopped, ticket),
         )
 
+    def amend(self, ticket: int, text: str) -> None:
+        """Add to what the ticket asks for; every agent that works on it from now on sees it."""
+        self._run("UPDATE ticket SET spec = spec || ? WHERE id = ?", f"\n\n{text}", ticket)
+
     def protect(self, ticket: int, files: dict[str, str]) -> None:
         self._run("UPDATE ticket SET protected = ? WHERE id = ?", json.dumps(files), ticket)
 

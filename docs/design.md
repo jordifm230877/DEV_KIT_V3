@@ -117,6 +117,12 @@ Each step ends with something usable.
 - The test-writer is told that scenarios must stay true while later tickets change the
   product. Scenarios such as "no dependency was added", approved for one ticket, blocked
   the next one, which had to add a dependency.
+- What the user says with `dk retry --note` or `dk reject --note` is added to the ticket
+  itself, so the test-writer, the coder and both reviewers all read it. Before, only the
+  next agent saw it, and a reviewer could reject work for following the user's answer.
+- `dk reject` also works on a ticket stopped after approval: approved behaviour tests that
+  turn out wrong go back to the test-writer and are approved again. A coder had stopped on
+  an approved scenario that could not be met, and there was no way to change it.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

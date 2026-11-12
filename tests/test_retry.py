@@ -106,3 +106,26 @@ def test_a_coder_is_told_when_the_users_changes_collide_with_its_earlier_work(
     project.dk("run")
 
     assert project.merged("greeting.txt") == "resolved\n"
+
+
+def test_what_the_user_answers_becomes_part_of_the_ticket_for_everyone(project: Project) -> None:
+    asks = (
+        "if 'Catalan' in prompt:\n"
+        "    pathlib.Path('greeting.txt').write_text('hola\\n'); print('RESULT: done')\n"
+        "else:\n"
+        "    print('RESULT: question: which language?')"
+    )
+    verifier = (
+        "pathlib.Path(sys.argv[0]).with_name('verifier.txt').write_text(prompt)\n"
+        "print('RESULT: approved')"
+    )
+    project.configure(coder=asks, verifier=verifier)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+
+    project.dk("retry", "1", "--note", "in Catalan")
+    project.dk("run")
+
+    told = (project.root.parent / "tools" / "verifier.txt").read_text()
+    assert "Say hello." in told and "The user added later: in Catalan" in told
+    assert "The user added later: in Catalan" in project.dk("show", "1")

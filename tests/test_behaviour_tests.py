@@ -139,7 +139,43 @@ def test_only_a_ticket_waiting_for_the_user_can_be_approved_or_rejected(project:
     project.dk("run")
 
     assert "#1 is not waiting for your approval" in project.refused("approve", "1")
-    assert "#1 is not waiting for your approval" in project.refused("reject", "1", "--note", "no")
+    assert "#1 has no behaviour tests to send back" in project.refused(
+        "reject", "1", "--note", "no"
+    )
+
+
+def test_approved_behaviour_tests_that_turn_out_wrong_can_be_sent_back(project: Project) -> None:
+    coder = (
+        "wanted = pathlib.Path('features/greet.feature').read_text()\n"
+        "if 'good morning' not in wanted:\n"
+        "    print('RESULT: blocked: the scenario is wrong'); sys.exit()\n"
+        "pathlib.Path('greeting.txt').write_text('good morning\\n'); print('RESULT: done')"
+    )
+    project.configure(coder=coder, tester=TESTER)
+    project.dk("add", "Greet", "--spec", "Greet politely.")
+    project.dk("run")
+    project.dk("approve", "1")
+    project.dk("run")
+    assert "#1 stopped at code" in project.dk("status")
+
+    project.dk("reject", "1", "--note", "it should say good morning")
+    project.dk("run")
+    shown = project.dk("show", "1")
+    assert "#1 stopped at approve" in shown and "Then it says good morning" in shown
+    project.dk("approve", "1")
+    project.dk("run")
+
+    assert project.merged("greeting.txt") == "good morning\n"
+    assert "good morning" in (project.merged("features/greet.feature") or "")
+
+
+def test_a_ticket_that_is_still_being_worked_on_cannot_be_sent_back(project: Project) -> None:
+    project.configure(coder=HELLO, tester=TESTER)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+    project.dk("approve", "1")
+
+    assert "#1 is not stopped" in project.refused("reject", "1", "--note", "no")
 
 
 def test_the_test_writer_is_told_to_use_the_projects_own_folder(project: Project) -> None:

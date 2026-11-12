@@ -44,13 +44,24 @@ def _status(tickets: list[Ticket]) -> None:
                 print(("  " if epic else "") + _line(ticket, steps))
 
 
-def _retry(tickets: Tickets, number: int, answer: str) -> None:
+def _stopped(tickets: Tickets, number: int) -> tuple[Ticket, process.Position]:
     ticket = tickets.get(number)
     if not ticket.stopped:
         raise LookupError(f"#{number} is not stopped")
-    position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
-    tickets.move(number, *vars(process.retry(position, answer)).values())
-    tickets.record(number, f"sent on by the user{': ' + answer if answer else ''}")
+    return ticket, process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+
+
+def _said(tickets: Tickets, number: int, what: str, words: str) -> None:
+    """What the user says about a ticket becomes part of it, for every agent after."""
+    if words:
+        tickets.amend(number, f"The user added later: {words}")
+    tickets.record(number, f"{what} by the user{': ' + words if words else ''}")
+
+
+def _retry(tickets: Tickets, number: int, answer: str) -> None:
+    ticket, position = _stopped(tickets, number)
+    tickets.move(number, *vars(process.retry(position)).values())
+    _said(tickets, number, "sent on", answer)
     print(f"#{number} will continue at {ticket.step} on the next run")
 
 
@@ -69,15 +80,15 @@ def _cancel(tickets: Tickets, number: int) -> None:
 def _decide(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
     if os.environ.get(agents.WHO):
         raise LookupError("only the user can approve or reject; ask them to run this themselves")
-    ticket = tickets.get(number)
-    position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
-    if not process.waiting(process.PROCESS, position):
+    ticket, position = _stopped(tickets, number)
+    if approved and not process.waiting(process.PROCESS, position):
         raise LookupError(f"#{number} is not waiting for your approval")
-    decided = process.decide(process.PROCESS, position, approved, reason)
+    if not approved and not ticket.protected:
+        raise LookupError(f"#{number} has no behaviour tests to send back")
+    decide = process.approve if approved else process.send_back
+    decided = decide(process.PROCESS, position)
     tickets.move(number, *vars(decided).values())
-    tickets.record(
-        number, "approved by the user" if approved else f"rejected by the user: {reason}"
-    )
+    _said(tickets, number, "approved" if approved else "rejected", reason)
     print(f"#{number} will continue at {decided.step} on the next run")
 
 

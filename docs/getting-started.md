@@ -87,6 +87,8 @@ Things to know:
 - **Each agent can use a different model.** A smaller model for reviews, for example.
 - **Checks** are whatever proves your project works: tests, lint, a build. DevKit runs them
   itself in the ticket's copy of the code; it never takes an agent's word for it.
+- **DevKit makes the commits**, one per step, with the ticket's title as the message. Agents
+  are told not to commit, so do not ask in `AGENTS.md` for anything in commit messages.
 - If your project has an `AGENTS.md`, Pi reads it, so project conventions belong there.
 
 ## 4. First ticket
@@ -118,6 +120,10 @@ Herdr shows a notification, and `dk status` shows the ticket as stopped with the
 | a check or review failed too many times | Read `dk show N`, then `dk retry N --note "hint"` for a fresh set of attempts |
 | `the merge could not be done` | Usually your own uncommitted changes are in the way. Commit or move them, then `dk retry N` |
 | `the behaviour tests are ready for you` | See the next section |
+| a coder says an approved scenario is wrong | `dk reject N --note "what to change"`: the test-writer rewrites it and you approve again |
+
+Whatever you write in `--note` is added to the ticket, so every agent that works on it
+afterwards reads it.
 
 A ticket you no longer want: `dk cancel N`, or tell the Principal. Its unmerged work is
 thrown away.

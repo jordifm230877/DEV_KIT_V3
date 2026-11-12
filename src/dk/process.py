@@ -113,10 +113,9 @@ def advance(
     return Position(_rework(process, position.step), attempts, outcome.reason, spent)
 
 
-def retry(position: Position, answer: str) -> Position:
+def retry(position: Position) -> Position:
     """The user sends a stopped ticket on again, with a fresh set of attempts."""
-    note = f"{position.note}\nThe user answers: {answer}" if answer else position.note
-    return Position(position.step, 0, note)
+    return Position(position.step, 0, position.note)
 
 
 def held_by(follows: Sequence[int], steps: Mapping[int, str]) -> list[int]:
@@ -138,9 +137,14 @@ def waiting(process: Sequence[Step], position: Position) -> bool:
     return position.stopped and kinds.get(position.step) == "user"
 
 
-def decide(process: Sequence[Step], position: Position, approved: bool, reason: str) -> Position:
-    """The user's decision at a `user` step: on to the next step, or back with the reason.
-    Sending work back is the user's choice, not a failed attempt."""
-    if approved:
-        return advance(process, replace(position, stopped=False), Passed(), 1)
-    return Position(_rework(process, position.step), position.attempts, reason)
+def approve(process: Sequence[Step], position: Position) -> Position:
+    """The user accepts what waits for them; the ticket moves on."""
+    return advance(process, replace(position, stopped=False), Passed(), 1)
+
+
+def send_back(process: Sequence[Step], position: Position) -> Position:
+    """The user returns what they were asked to approve, or approved earlier and now find
+    wrong, to whoever wrote it. It is the user's choice, not a failed attempt."""
+    names = [step.name for step in process]
+    asked = [step.name for step in process[: names.index(position.step) + 1] if step.kind == "user"]
+    return Position(_rework(process, asked[-1]), position.attempts)
