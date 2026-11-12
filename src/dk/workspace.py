@@ -99,6 +99,13 @@ class Workspace:
             return True, []
         return True, self._must(copy, "diff", "--name-only", "--diff-filter=U").splitlines()
 
+    def discard(self, ticket: int) -> None:
+        """Throw away the ticket's copy and everything in it, if it has one."""
+        copy = self._copy(ticket)
+        if copy.exists():
+            self._must(self._project, "worktree", "remove", "--force", str(copy))
+            self._must(self._project, "branch", "-qD", f"ticket/{ticket}")
+
     def merge(self, ticket: int, title: str) -> str | None:
         """Bring the ticket into the project. Returns None, or why it could not be done."""
         message = f"Merge ticket #{ticket}: {title}"

@@ -50,6 +50,18 @@ def _retry(tickets: Tickets, number: int, answer: str) -> None:
     print(f"#{number} will continue at {ticket.step} on the next run")
 
 
+def _cancel(tickets: Tickets, number: int) -> None:
+    ticket = tickets.get(number)
+    position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+    try:
+        cancelled = process.cancel(position)
+    except LookupError as error:
+        raise LookupError(f"#{number} {error}") from None
+    tickets.move(number, *vars(cancelled).values())
+    tickets.record(number, "cancelled")
+    print(f"#{number} cancelled; its unmerged work is thrown away on the next run")
+
+
 def _decide(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
     if os.environ.get(agents.WHO):
         raise LookupError("only the user can approve or reject; ask them to run this themselves")
@@ -95,6 +107,9 @@ def _parser() -> argparse.ArgumentParser:
     retry = commands.add_parser("retry", help="send a stopped ticket on again")
     retry.add_argument("ticket", type=int)
     retry.add_argument("--note", default="", help="an answer or instruction for the agent")
+    commands.add_parser("cancel", help="give a ticket up and throw its work away").add_argument(
+        "ticket", type=int
+    )
     commands.add_parser("approve", help="accept what waits for you").add_argument(
         "ticket", type=int
     )
@@ -179,6 +194,8 @@ def _execute(args: argparse.Namespace) -> None:
         _show(tickets, Workspace(project, home / "work"), args.ticket)
     elif args.command == "retry":
         _retry(tickets, args.ticket, args.note)
+    elif args.command == "cancel":
+        _cancel(tickets, args.ticket)
     else:
         approved = args.command == "approve"
         _decide(tickets, args.ticket, approved, "" if approved else args.note)

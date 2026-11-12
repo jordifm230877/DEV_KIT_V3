@@ -10,6 +10,7 @@ from dataclasses import dataclass, replace
 from typing import Literal
 
 DONE = "done"
+CANCELLED = "cancelled"  # the user no longer wants the ticket
 
 
 @dataclass(frozen=True)
@@ -70,7 +71,7 @@ Outcome = Passed | Failed | Lost | Stopped
 
 @dataclass(frozen=True)
 class Position:
-    """Where a ticket is: a step name or `DONE`, the failed attempts so far, and a note
+    """Where a ticket is: a step name, `DONE` or `CANCELLED`, the failed attempts so far, and a note
     for whoever takes the step next. A stopped ticket waits at its step for the user."""
 
     step: str
@@ -80,7 +81,7 @@ class Position:
 
     @property
     def final(self) -> bool:
-        return self.stopped or self.step == DONE
+        return self.stopped or self.step in (DONE, CANCELLED)
 
 
 def start(process: Sequence[Step]) -> Position:
@@ -116,6 +117,13 @@ def retry(position: Position, answer: str) -> Position:
     """The user sends a stopped ticket on again, with a fresh set of attempts."""
     note = f"{position.note}\nThe user answers: {answer}" if answer else position.note
     return Position(position.step, 0, note)
+
+
+def cancel(position: Position) -> Position:
+    """The ticket is given up, wherever it was; finished work stays finished."""
+    if position.step in (DONE, CANCELLED):
+        raise LookupError(f"is already {position.step}")
+    return Position(CANCELLED, position.attempts)
 
 
 def waiting(process: Sequence[Step], position: Position) -> bool:

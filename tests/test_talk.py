@@ -56,9 +56,19 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     project.dk("talk")
 
     brief = (project.root / "brief.txt").read_text()
-    for word in ("add", "status", "show", "retry", "acceptance", "approve"):
+    for word in ("add", "status", "show", "retry", "cancel", "acceptance", "approve"):
         assert word in brief
     assert len(brief.split()) < 300
+
+
+def test_the_principal_explores_itself_and_keeps_tickets_for_changes(project: Project) -> None:
+    project.configure(coder=HELLO, principal="pathlib.Path('brief.txt').write_text(prompt)")
+
+    project.dk("talk")
+
+    brief = (project.root / "brief.txt").read_text()
+    assert brief.index("Explore") < brief.index("never tickets") < brief.index("Plan")
+    assert "docs/discovery.md" in brief
 
 
 def test_the_principal_cannot_approve_for_the_user(project: Project) -> None:

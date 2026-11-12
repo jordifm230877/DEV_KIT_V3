@@ -98,6 +98,13 @@ Each step ends with something usable.
 - The Principal is an ordinary interactive agent with a short brief; it learns what happened
   by asking `dk`, and Herdr notifies the user when a ticket needs them.
 - Closing the conversation stops work in progress; that step is redone next time.
+- Exploring is not a ticket. Before it is clear what to build, the Principal studies and
+  asks in the conversation itself and writes the result in `docs/discovery.md`; tickets are
+  only for changes to the project that can be checked. A first trial turned "survey this
+  repository" into tickets, and the test-writer wrote behaviour tests for a survey.
+- `dk cancel` gives a ticket up wherever it is; any agent may run it. A job in progress is
+  left to end and its result is ignored. The director removes the copy at the end of a run,
+  never the command, so a copy is not removed under an agent working in it.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

@@ -9,6 +9,8 @@
 - **Outcome** — how a step ended: passed, failed (the work goes back to be redone), lost (the step gave nothing usable and is done again) or stopped (the user decides).
 - **Attempt** — one try at a ticket; a failed or lost outcome uses one up.
 - **Stopped** — a ticket that waits at its step for the user: out of attempts, blocked, a question, or a merge that could not be done. `dk retry` sends it on.
+- **Cancelled** — a ticket given up with `dk cancel`; nobody works on it again and its unmerged work is thrown away.
+- **Exploring** — finding out what to build, done by the Principal in the conversation and written in `docs/discovery.md`; never a ticket.
 - **Skipped** — a step whose role no agent has; the history records it.
 - **Verdict** — a reviewer's answer: approved or rejected with what must change.
 - **Brief** — the instructions an agent receives for one job.
@@ -21,5 +23,5 @@
 - **Director** — the piece that decides what happens next to each ticket.
 - **Clash** — a ticket's work collides with work merged while it was in progress; the coder gets the files to resolve.
 - **Tab** — a Herdr tab that shows one agent's work as it happens; nothing typed there reaches the agent.
-- **Principal** — the agent the user talks with; it writes tickets and reports, and does no work on them itself.
+- **Principal** — the agent the user talks with; it explores, writes tickets and reports, and does no work on tickets itself.
 - **Conversation** — a `dk talk` session; the director works behind it and stops when it ends.

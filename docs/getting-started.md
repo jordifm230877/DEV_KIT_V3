@@ -59,10 +59,14 @@ role = "qa"
 program = "pi"
 model = "openai-codex/gpt-6.1-sol"
 
-[checks]                # your project's own commands; each must exit 0
+[checks]                # REPLACE with your project's own commands; each must exit 0
 unit = ["python3", "-m", "unittest", "-q"]
-behaviour = ["behave"]  # runs the behaviour tests: use your project's own command here
+behaviour = ["behave"]  # the command that runs the behaviour tests
 ```
+
+The two checks above only fit a Python project. A Rust project would have, for example,
+`unit = ["cargo", "test"]` and `lint = ["cargo", "clippy", "--", "-D", "warnings"]`. A check
+whose command is not installed fails every ticket, so never leave the example as it is.
 
 Then commit it:
 
@@ -75,8 +79,7 @@ Things to know:
 - **Only the coder is required.** Leave out the verifier or QA and that review is skipped.
   Leave out the principal and you write tickets yourself with `dk add`. Leave out the
   tester, together with the `behaviour` check, and tickets go straight to the coder.
-- **The `behaviour` check must be a command that exists in your project**: `behave` for
-  Python, your Cucumber command for Java. A command that is not installed fails every ticket.
+- **The `behaviour` check** is `behave` for Python, your Cucumber command for Java.
 - **More agents is more lines.** Add `coder-2` with `role = "coder"` and two tickets advance
   at once. The same works for verifiers and QA.
 - **Each agent can use a different model.** A smaller model for reviews, for example.
@@ -92,8 +95,11 @@ Open a terminal in the project, inside Herdr if you use it, and run:
 dk talk
 ```
 
-Tell the Principal what you want. It asks until it is clear, writes the ticket, and the work
-starts behind the conversation. In Herdr you will see a `tickets` tab with overall progress
+Tell the Principal what you want. While it is not yet clear what to build, it explores
+with you: it reads code, asks, and writes what was found and decided in
+`docs/discovery.md`. No ticket is written in that phase. When you say it is clear enough, it
+proposes epics and tickets, writes them once you agree, and the work starts behind the
+conversation. In Herdr you will see a `tickets` tab with overall progress
 and one tab per agent showing what it is doing. Ask the Principal how things are going
 whenever you like. Leaving the conversation (Ctrl-D) stops the work; whatever was half done
 is redone next time.
@@ -110,6 +116,9 @@ Herdr shows a notification, and `dk status` shows the ticket as stopped with the
 | a check or review failed too many times | Read `dk show N`, then `dk retry N --note "hint"` for a fresh set of attempts |
 | `the merge could not be done` | Usually your own uncommitted changes are in the way. Commit or move them, then `dk retry N` |
 | `the behaviour tests are ready for you` | See the next section |
+
+A ticket you no longer want: `dk cancel N`, or tell the Principal. Its unmerged work is
+thrown away.
 
 ## 6. Behaviour tests
 
@@ -136,6 +145,7 @@ dk add "Title" --spec "What is wanted and how to tell it is done" --epic "Option
 dk run            # work on every unfinished ticket, then exit
 dk status
 dk show 1
+dk cancel 1       # give a ticket up
 ```
 
 ## 8. Where things are

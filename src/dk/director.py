@@ -17,6 +17,7 @@ from queue import Queue
 from dk import agents, briefs, checks
 from dk.config import Agent, Config, ConfigError
 from dk.process import (
+    CANCELLED,
     PROCESS,
     Failed,
     Lost,
@@ -71,6 +72,9 @@ class Director:
                 if not active and not keep_going:
                     break
                 time.sleep(_LOOK_EVERY)
+        for ticket in self.tickets.all():
+            if ticket.step == CANCELLED:
+                self.workspace.discard(ticket.id)
 
     def _take_up(self, together: ThreadPoolExecutor, active: dict[int, Future[None]]) -> None:
         """Start on tickets that can advance and are not being worked on; let go of those
@@ -86,8 +90,8 @@ class Director:
         while not position.final and not self.stop.is_set():
             step = next(step for step in PROCESS if step.name == position.step)
             outcome = self._perform(step, ticket, position)
-            if self.stop.is_set():
-                return  # work cut short is thrown away, not judged
+            if self.stop.is_set() or self.tickets.get(ticket.id).step == CANCELLED:
+                return  # work cut short or no longer wanted is thrown away, not judged
             position = advance(PROCESS, position, outcome, self.config.max_attempts)
             self.tickets.move(ticket.id, *vars(position).values())
             if not isinstance(outcome, Passed):
