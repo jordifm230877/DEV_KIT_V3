@@ -54,3 +54,82 @@ def test_instructions_can_be_handed_over_as_an_argument(tmp_path: Path) -> None:
 )
 def test_only_a_final_result_line_counts_as_an_answer(output: str, reply: agents.Reply) -> None:
     assert agents.read(output) == reply
+
+
+PI_EVENTS = [
+    {"type": "session", "version": 3, "id": "x"},
+    {"type": "message_end", "message": {"role": "system", "content": ""}},
+    {
+        "type": "message_end",
+        "message": {"role": "user", "content": [{"type": "text", "text": "the brief"}]},
+    },
+    {"type": "tool_execution_start", "toolName": "bash", "args": {"command": "echo hi"}},
+    {"type": "tool_execution_start", "toolName": "edit", "args": {"path": "wc.py", "edits": []}},
+    {"type": "message_update", "assistantMessageEvent": {"type": "text_delta"}},
+    {
+        "type": "message_end",
+        "message": {
+            "role": "assistant",
+            "content": [
+                {"type": "toolCall", "name": "bash"},
+                {"type": "text", "text": "All good.\n\nRESULT: done"},
+            ],
+        },
+    },
+    {"type": "agent_settled", "aborted": False},
+]
+
+
+def test_pis_detailed_output_is_shown_as_readable_lines(tmp_path: Path) -> None:
+    import json
+
+    emit = f"for event in {PI_EVENTS!r}:\n    print(__import__('json').dumps(event))"
+    assert json.loads(json.dumps(PI_EVENTS)) == PI_EVENTS
+    log = tmp_path / "agent.log"
+
+    reply = agents.ask(
+        [sys.executable, "-c", emit], "x", tmp_path, log, 30, plain=agents.reader("pi")
+    )
+
+    assert reply == agents.Reply("done")
+    assert log.read_text().splitlines() == [
+        "> bash echo hi",
+        "> edit wc.py",
+        "All good.",
+        "",
+        "RESULT: done",
+    ]
+
+
+def test_pi_is_asked_for_its_detailed_output() -> None:
+    argv = agents.command("pi", "some/model", writes=True)
+
+    assert argv[argv.index("--mode") + 1] == "json"
+
+
+def test_output_that_is_not_what_pi_normally_prints_is_shown_as_it_is() -> None:
+    plain = agents.reader("pi")
+
+    assert plain("Error: not logged in\n") == "Error: not logged in\n"
+    assert plain("[1, 2]\n") == "[1, 2]\n"
+
+
+def test_each_job_is_added_below_the_ones_before_under_its_own_heading(tmp_path: Path) -> None:
+    log = tmp_path / "agent.log"
+    say = [sys.executable, "-c", "import sys; print(sys.stdin.read()); print('RESULT: done')"]
+
+    agents.ask(say, "first job", tmp_path, log, 30, title="#1 One")
+    reply = agents.ask(say, "second job", tmp_path, log, 30, title="#2 Two")
+
+    shown = log.read_text()
+    assert shown.index("#1 One") < shown.index("first job") < shown.index("#2 Two")
+    assert reply == agents.Reply("done")
+
+
+def test_an_earlier_jobs_answer_is_not_taken_for_this_ones(tmp_path: Path) -> None:
+    log = tmp_path / "agent.log"
+    agents.ask([sys.executable, "-c", "print('RESULT: done')"], "x", tmp_path, log, 30)
+
+    reply = agents.ask([sys.executable, "-c", "pass"], "x", tmp_path, log, 30)
+
+    assert reply == agents.Reply("unclear")

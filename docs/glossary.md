@@ -20,3 +20,4 @@
 - **Waiting** — a ticket stopped at a step that is the user's own decision (`dk approve` / `dk reject`).
 - **Director** — the piece that decides what happens next to each ticket.
 - **Clash** — a ticket's work collides with work merged while it was in progress; the coder gets the files to resolve.
+- **Tab** — a Herdr tab that shows one agent's work as it happens; nothing typed there reaches the agent.

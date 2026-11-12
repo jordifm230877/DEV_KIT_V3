@@ -6,13 +6,16 @@ This piece knows how to start each kind of program; it knows nothing about the p
 
 from __future__ import annotations
 
+import contextlib
+import json
 import os
 import signal
 import subprocess
-from collections.abc import Sequence
+import threading
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 INSTRUCTIONS = "{instructions}"
 Answer = Literal["done", "approved", "rejected", "blocked", "question"]
@@ -20,7 +23,7 @@ ANSWERS: tuple[Answer, ...] = ("done", "approved", "rejected", "blocked", "quest
 _READ_ONLY = ("--tools", "read,bash,grep,find,ls")
 
 _PROGRAMS = {
-    "pi": ("pi", "-p", "--no-session", "--model", "{model}"),
+    "pi": ("pi", "-p", "--no-session", "--mode", "json", "--model", "{model}"),
 }
 
 
@@ -54,30 +57,87 @@ def read(output: str) -> Reply:
     return Reply("unclear")
 
 
-def ask(argv: Sequence[str], instructions: str, cwd: Path, log: Path, seconds: float) -> Reply:
-    """Run the agent to the end of its job. Its output goes to `log` as it is produced.
+def _tool(event: dict[str, Any]) -> str:
+    details = event.get("args") or {}
+    return f"> {event.get('toolName')} {details.get('command') or details.get('path') or ''}\n"
+
+
+def _spoken(event: dict[str, Any]) -> str:
+    message = event.get("message") or {}
+    if message.get("role") != "assistant":
+        return ""
+    texts = [part["text"] for part in message["content"] if part.get("type") == "text"]
+    return "".join(text.rstrip("\n") + "\n" for text in texts)
+
+
+def _pi(line: str) -> str:
+    """One line of Pi's detailed output as something a person can follow, or nothing."""
+    try:
+        event = json.loads(line)
+    except ValueError:
+        return line
+    if not isinstance(event, dict):
+        return line
+    shows = {"tool_execution_start": _tool, "message_end": _spoken}
+    return shows.get(event.get("type", ""), lambda _: "")(event)
+
+
+def reader(program: str) -> Callable[[str], str]:
+    """How to turn each line a program prints into what is shown; by default, as it is."""
+    return {"pi": _pi}.get(program, str)
+
+
+def _start(argv: Sequence[str], instructions: str, cwd: Path) -> subprocess.Popen[str]:
+    by_argument = INSTRUCTIONS in argv
+    child = subprocess.Popen(
+        [instructions if part == INSTRUCTIONS else part for part in argv],
+        cwd=cwd,
+        stdin=subprocess.DEVNULL if by_argument else subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+        text=True,
+        errors="replace",
+    )
+    if child.stdin:
+        child.stdin.write(instructions)
+        child.stdin.close()
+    return child
+
+
+def ask(
+    argv: Sequence[str],
+    instructions: str,
+    cwd: Path,
+    log: Path,
+    seconds: float,
+    title: str = "",
+    plain: Callable[[str], str] = str,
+) -> Reply:
+    """Run the agent to the end of its job, adding what it does to `log` as it happens.
 
     Instructions replace an `{instructions}` argument if there is one; otherwise they are
-    the program's standard input.
+    the program's standard input. `plain` turns each printed line into what is shown.
     """
-    by_argument = INSTRUCTIONS in argv
-    argv = [instructions if part == INSTRUCTIONS else part for part in argv]
     log.parent.mkdir(parents=True, exist_ok=True)
-    with log.open("wb") as output:
-        child = subprocess.Popen(
-            argv,
-            cwd=cwd,
-            stdin=subprocess.DEVNULL if by_argument else subprocess.PIPE,
-            stdout=output,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-        )
-        try:
-            child.communicate(None if by_argument else instructions.encode(), timeout=seconds)
-        except subprocess.TimeoutExpired:
+    child = _start(argv, instructions, cwd)
+    late = threading.Event()
+
+    def cut_off() -> None:
+        late.set()
+        with contextlib.suppress(ProcessLookupError):
             os.killpg(child.pid, signal.SIGKILL)
-            child.wait()
-            return Reply("unclear")
-    if child.returncode != 0:
-        return Reply("unclear")
-    return read(log.read_text(errors="replace"))
+
+    limit = threading.Timer(seconds, cut_off)
+    limit.start()
+    said = ""
+    with log.open("a") as shown:
+        shown.write(f"\n=== {title} ===\n" if title else "")
+        assert child.stdout is not None
+        for line in child.stdout:
+            said += (text := plain(line))
+            shown.write(text)
+            shown.flush()
+    code = child.wait()
+    limit.cancel()
+    return Reply("unclear") if late.is_set() or code != 0 else read(said)

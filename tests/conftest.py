@@ -75,6 +75,13 @@ class Project:
         return path.read_text() if path.exists() else None
 
 
+@pytest.fixture(autouse=True)
+def outside_herdr(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests never touch the Herdr session they may happen to be started from."""
+    for name in ("HERDR_WORKSPACE_ID", "HERDR_BIN_PATH", "HERDR_TAB_ID", "HERDR_PANE_ID"):
+        monkeypatch.delenv(name, raising=False)
+
+
 @pytest.fixture
 def project(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> Project:
     root = tmp_path / "project"

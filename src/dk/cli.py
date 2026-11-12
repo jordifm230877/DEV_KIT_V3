@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import os
 from collections.abc import Sequence
 from pathlib import Path
 
-from dk import agents, config, process
+from dk import agents, config, process, screen
 from dk.director import Director
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
@@ -75,7 +76,8 @@ def _parser() -> argparse.ArgumentParser:
     add.add_argument("title")
     add.add_argument("--spec", required=True, help="what is wanted and how to tell it is done")
     add.add_argument("--epic", default="", help="the larger piece of work this belongs to")
-    commands.add_parser("run", help="work on every unfinished ticket")
+    run = commands.add_parser("run", help="work on every unfinished ticket")
+    run.add_argument("--no-tabs", action="store_true", help="do not open Herdr tabs")
     commands.add_parser("status", help="list the tickets")
     show = commands.add_parser("show", help="one ticket and everything that happened to it")
     show.add_argument("ticket", type=int)
@@ -91,6 +93,14 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _run(director: Director, no_tabs: bool) -> None:
+    """Do the work; inside Herdr, with a tab per agent to watch it."""
+    inside = os.environ.get("HERDR_WORKSPACE_ID", "")
+    watched = director.shown() if inside and not no_tabs else {}
+    with screen.tabs(os.environ.get("HERDR_BIN_PATH", "herdr"), inside, watched):
+        director.run()
+
+
 def _execute(args: argparse.Namespace) -> None:
     project: Path = args.project.resolve()
     home = project / HOME
@@ -103,7 +113,8 @@ def _execute(args: argparse.Namespace) -> None:
         number = tickets.add(args.title, args.spec, first, args.epic)
         print(f"#{number} written")
     elif args.command == "run":
-        Director(config.load(project), tickets, workspace, home / "logs", print).run()
+        director = Director(config.load(project), tickets, workspace, home / "logs", print)
+        _run(director, args.no_tabs)
     elif args.command == "status":
         _status(tickets.all())
     elif args.command == "show":

@@ -66,6 +66,10 @@ argument) and must end its output with one line: `RESULT: done` (a coder or test
 Behaviour tests are `.feature` files under `features/`. DevKit does not run them itself: add
 your project's own command for them (Cucumber, behave, ...) to `[checks]`.
 
+Started inside [Herdr](https://herdr.dev), `dk run` opens one tab per agent showing what it
+is doing, and closes them when the run ends (`--no-tabs` to skip). The same text stays in
+`.devkit/logs/<agent>.log`.
+
 DevKit keeps its own files in `.devkit/` inside the project (ticket list, working copies,
 logs); it ignores itself in Git.
 

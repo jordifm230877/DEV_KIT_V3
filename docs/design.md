@@ -48,7 +48,7 @@ request.
 | `briefs` | The short instructions each role receives | — |
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
 | `checks` | Runs the project's check commands | Interpret results |
-| screen *(later)* | One Herdr tab per agent, showing its live output; watch-only | Affect the run |
+| `screen` | One Herdr tab per agent, showing what it is doing; watch-only | Affect the run |
 | conversation *(later)* | The tab where the user talks to the Principal | Finish tickets or skip steps |
 
 An agent answers every job in one of three ways: done, blocked (with the reason), or a
@@ -78,7 +78,7 @@ Each step ends with something usable.
 1. **One ticket end to end** with one Pi coder, from the command line. *(done)*
 2. Verifier and QA steps; several agents per role; tickets in parallel; the behaviour-test
    step with its approval and read-only rule; epics as a label on tickets. *(done)*
-3. Herdr tabs.
+3. Herdr tabs. *(done)*
 4. Conversation with the Principal.
 5. Later: Claude and Codex as agent programs, a second-opinion agent, web access.
 

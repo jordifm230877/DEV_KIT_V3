@@ -70,7 +70,7 @@ class Director:
         job = {"tester": self._specify, "coder": self._code}.get(step.role, self._review)
         agent = self._free[step.role].get()
         try:
-            return job(agent, self.tickets.get(ticket.id), position, logs)
+            return job(agent, self.tickets.get(ticket.id), position)
         finally:
             self._free[step.role].put(agent)
 
@@ -90,17 +90,26 @@ class Director:
         trouble = self.workspace.merge(ticket.id, ticket.title)
         return Stopped(trouble) if trouble else Passed()
 
-    def _ask(
-        self, agent: Agent, writes: bool, brief: str, ticket: Ticket, logs: Path
-    ) -> agents.Reply:
+    def shown(self) -> dict[str, Path]:
+        """For each agent, the file that fills with what it is doing."""
+        return {agent.name: self.logs / f"{agent.name}.log" for agent in self.config.agents}
+
+    def _ask(self, agent: Agent, writes: bool, brief: str, ticket: Ticket) -> agents.Reply:
         argv = agent.command or agents.command(agent.program, agent.model, writes)
         copy = self.workspace.prepare(ticket.id)
         self.tickets.record(ticket.id, f"{agent.name} started")
-        seconds = self.config.agent_minutes * 60
-        return agents.ask(argv, brief, copy, logs / f"{agent.name}.log", seconds)
+        return agents.ask(
+            argv,
+            brief,
+            copy,
+            self.shown()[agent.name],
+            self.config.agent_minutes * 60,
+            title=f"#{ticket.id} {ticket.title} ({ticket.step})",
+            plain=agents.reader(agent.program),
+        )
 
-    def _produce(self, agent: Agent, brief: str, ticket: Ticket, logs: Path) -> Outcome:
-        reply = self._ask(agent, True, brief, ticket, logs)
+    def _produce(self, agent: Agent, brief: str, ticket: Ticket) -> Outcome:
+        reply = self._ask(agent, True, brief, ticket)
         if reply.kind in ("blocked", "question"):
             return Stopped(f"{reply.kind}: {reply.text}")
         if reply.kind != "done":
@@ -109,9 +118,9 @@ class Director:
             return Failed(f"{agent.name} said it was done but changed nothing")
         return Passed()
 
-    def _specify(self, agent: Agent, ticket: Ticket, position: Position, logs: Path) -> Outcome:
+    def _specify(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         brief = briefs.tester(ticket.id, ticket.title, ticket.spec, position.note)
-        outcome = self._produce(agent, brief, ticket, logs)
+        outcome = self._produce(agent, brief, ticket)
         if not isinstance(outcome, Passed):
             return outcome
         tests = self.workspace.fingerprints(ticket.id, BEHAVIOUR_TESTS)
@@ -120,22 +129,22 @@ class Director:
         self.tickets.protect(ticket.id, tests)
         return Passed()
 
-    def _code(self, agent: Agent, ticket: Ticket, position: Position, logs: Path) -> Outcome:
+    def _code(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         tests = ticket.protected
         brief = briefs.coder(ticket.id, ticket.title, ticket.spec, position.note, sorted(tests))
-        outcome = self._produce(agent, brief, ticket, logs)
+        outcome = self._produce(agent, brief, ticket)
         changed = self.workspace.tampered(ticket.id, tests) if tests else []
         if isinstance(outcome, Passed) and changed:
             self.workspace.put_back(ticket.id, tests, changed)
             return Failed(briefs.tampering(changed))
         return outcome
 
-    def _review(self, agent: Agent, ticket: Ticket, position: Position, logs: Path) -> Outcome:
+    def _review(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         base = self.workspace.base(ticket.id)
         brief = briefs.reviewer(
             agent.role, ticket.id, ticket.title, ticket.spec, base, bool(ticket.protected)
         )
-        reply = self._ask(agent, False, brief, ticket, logs)
+        reply = self._ask(agent, False, brief, ticket)
         self.workspace.restore(ticket.id)
         if reply.kind in ("blocked", "question"):
             return Stopped(f"{reply.kind}: {reply.text}")
