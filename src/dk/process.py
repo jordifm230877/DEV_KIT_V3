@@ -40,6 +40,11 @@ class Passed:
 
 
 @dataclass(frozen=True)
+class Skipped(Passed):
+    """Nobody is there to do the step; the ticket moves on without it."""
+
+
+@dataclass(frozen=True)
 class Failed:
     """The work is not good enough; it goes back to whoever produced it."""
 

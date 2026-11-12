@@ -91,8 +91,10 @@ def test_a_review_nobody_is_there_to_do_is_skipped_openly(project: Project) -> N
     project.configure(coder=HELLO, qa=APPROVES)
     project.dk("add", "Greet", "--spec", "Say hello.")
 
-    project.dk("run")
+    said = project.dk("run")
 
+    assert "#1 verify skipped" in said and "#1 verify passed" not in said
+    assert "#1 qa passed" in said
     history = project.dk("show", "1")
     assert "verify skipped: no verifier" in history and "qa-1 started" in history
 

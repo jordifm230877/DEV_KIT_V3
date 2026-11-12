@@ -15,7 +15,18 @@ from queue import Queue
 
 from dk import agents, briefs, checks
 from dk.config import Agent, Config, ConfigError
-from dk.process import PROCESS, Failed, Lost, Outcome, Passed, Position, Step, Stopped, advance
+from dk.process import (
+    PROCESS,
+    Failed,
+    Lost,
+    Outcome,
+    Passed,
+    Position,
+    Skipped,
+    Step,
+    Stopped,
+    advance,
+)
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 
@@ -64,7 +75,7 @@ class Director:
             if step.required:
                 raise ConfigError(f"no agent has the role '{step.role}'")
             self.tickets.record(ticket.id, f"{step.name} skipped: no {step.role}")
-            return Passed()
+            return Skipped()
         if step.kind == "user":
             return Stopped(briefs.approval(ticket.id))
         job = {"tester": self._specify, "coder": self._code}.get(step.role, self._review)
