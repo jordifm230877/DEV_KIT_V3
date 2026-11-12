@@ -99,6 +99,11 @@ class Workspace:
             return True, []
         return True, self._must(copy, "diff", "--name-only", "--diff-filter=U").splitlines()
 
+    def unsaved(self) -> list[str]:
+        """The project's files that Git does not hold as they are now; copies lack them."""
+        changed = self._must(self._project, "status", "--porcelain").splitlines()
+        return [line[3:] for line in changed]
+
     def discard(self, ticket: int) -> None:
         """Throw away the ticket's copy and everything in it, if it has one."""
         copy = self._copy(ticket)

@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 
-from dk import agents, briefs, config, process, screen, starter
+from dk import agents, briefs, config, preflight, process, screen, starter
 from dk.director import PRINCIPAL, Director
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
@@ -126,6 +126,7 @@ def _parser() -> argparse.ArgumentParser:
         command.add_argument("--no-tabs", action="store_true", help="do not open Herdr tabs")
     init = commands.add_parser("init", help="write a first devkit.toml and AGENTS.md")
     init.add_argument("--model", required=True, help="the model every agent starts with")
+    commands.add_parser("check", help="find what would stop the first ticket")
     commands.add_parser("status", help="list the tickets")
     show = commands.add_parser("show", help="one ticket and everything that happened to it")
     show.add_argument("ticket", type=int)
@@ -197,6 +198,16 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
         raise trouble[0]
 
 
+def _check(project: Path, home: Path) -> None:
+    workspace = Workspace(project, home / "work")
+    found = preflight.run(config.load(project), project, workspace, home / "logs", PRINCIPAL)
+    for fine, what in found:
+        print(f"{'ok      ' if fine else 'PROBLEM '} {what}")
+    wrong = sum(not fine for fine, _ in found)
+    if wrong:
+        raise LookupError(f"{wrong} thing{'s' if wrong > 1 else ''} to fix before starting")
+
+
 def _add(args: argparse.Namespace, tickets: Tickets) -> None:
     first = process.start(process.PROCESS).step
     number = tickets.add(args.title, args.spec, first, args.epic, args.after)
@@ -217,6 +228,7 @@ def _execute(args: argparse.Namespace) -> None:
     tickets = Tickets(home / "tickets.db")
     commands: dict[str, Callable[[], None]] = {
         "add": lambda: _add(args, tickets),
+        "check": lambda: _check(project, home),
         "init": lambda: print(*starter.write(project, args.model), sep="\n"),
         "run": lambda: _run(args, project, home, tickets),
         "talk": lambda: _talk(project, home, tickets, args.no_tabs),

@@ -7,7 +7,12 @@ from pathlib import Path
 
 SOURCE = Path(__file__).parent.parent / "src" / "dk"
 MAX_LINES = 300
-COMPOSERS = {"director", "cli", "__main__"}  # the only pieces allowed to know the others
+COMPOSERS = {
+    "director",
+    "preflight",
+    "cli",
+    "__main__",
+}  # the only pieces allowed to know the others
 GROUNDWORK = {"dk.child"}  # shared by any piece; knows about none of them
 
 
