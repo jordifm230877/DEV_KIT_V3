@@ -10,7 +10,8 @@ See [the design](docs/design.md) and [the glossary](docs/glossary.md).
 
 ## Status
 
-Working so far (see the [build order](docs/design.md#build-order)): a ticket goes from
+Working so far (see the [build order](docs/design.md#build-order)): you talk with a
+Principal agent that writes the tickets, or write them yourself; a ticket goes from
 written to merged through a coder, the project's checks, a verifier and QA. With a test-writer
 agent, behaviour tests (Gherkin) are written first, wait for your approval and are then
 read-only. With several coders, tickets advance side by side; merges happen one at a time, each checked together
@@ -26,6 +27,12 @@ max_attempts = 3            # failed attempts before a ticket stops and waits fo
 [[agents]]
 name = "coder-1"
 role = "coder"
+program = "pi"
+model = "provider/model-name"
+
+[[agents]]                  # optional: the agent you talk to with `dk talk`
+name = "principal"
+role = "principal"
 program = "pi"
 model = "provider/model-name"
 
@@ -45,7 +52,13 @@ model = "provider/model-name"
 unit = ["pytest", "-q"]
 ```
 
-Then:
+Then either talk:
+
+```bash
+dk talk           # a conversation with the Principal; work goes on behind it until you leave
+```
+
+or use the commands yourself:
 
 ```bash
 dk add "Greeting" --spec "Create greeting.txt containing hello."   # optionally --epic NAME
@@ -53,7 +66,7 @@ dk run            # work on every unfinished ticket
 dk status         # one line per ticket
 dk show 1         # the ticket and everything that happened to it
 dk retry 1 --note "an answer"   # send a stopped ticket on again
-dk approve 1      # accept the behaviour tests shown by `dk show 1`
+dk approve 1      # accept the behaviour tests shown by `dk show 1`; only you can, no agent
 dk reject 1 --note "what to change"
 ```
 

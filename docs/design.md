@@ -49,14 +49,16 @@ request.
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
 | `checks` | Runs the project's check commands | Interpret results |
 | `screen` | One Herdr tab per agent, showing what it is doing; watch-only | Affect the run |
-| conversation *(later)* | The tab where the user talks to the Principal | Finish tickets or skip steps |
+| `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
+| conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve, finish tickets or skip steps |
 
 An agent answers every job in one of three ways: done, blocked (with the reason), or a
 question for the user. It never needs to know what happens next.
 
 ## Rules that keep it small
 
-- Pieces do not import each other; only `director` and `cli` know them all.
+- Pieces do not import each other; only `director` and `cli` know them all. `child` is
+  groundwork any piece may use.
 - No piece is longer than 300 lines.
 - No runtime dependencies beyond Python, Git, Herdr and the agent programs.
 - Protection is added only for problems that have actually happened.
@@ -79,7 +81,7 @@ Each step ends with something usable.
 2. Verifier and QA steps; several agents per role; tickets in parallel; the behaviour-test
    step with its approval and read-only rule; epics as a label on tickets. *(done)*
 3. Herdr tabs. *(done)*
-4. Conversation with the Principal.
+4. Conversation with the Principal. *(done)*
 5. Later: Claude and Codex as agent programs, a second-opinion agent, web access.
 
 ## Decisions taken while building
@@ -91,6 +93,11 @@ Each step ends with something usable.
   scenarios of its own. Changed or deleted ones are put back and the work is returned.
 - Sending behaviour tests back is the user's choice and does not use up an attempt.
 - An epic is only a name that groups tickets, until the Principal exists to manage them.
+- Approving and rejecting behaviour tests is the user's own act: `dk` refuses them to any
+  program started by an agent. The Principal shows the tests and asks the user to run it.
+- The Principal is an ordinary interactive agent with a short brief; it learns what happened
+  by asking `dk`, and Herdr notifies the user when a ticket needs them.
+- Closing the conversation stops work in progress; that step is redone next time.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 
