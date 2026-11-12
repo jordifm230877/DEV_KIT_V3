@@ -198,3 +198,20 @@ def test_the_test_writer_is_told_that_scenarios_must_stay_true(project: Project)
 
     brief = (project.root.parent / "tools" / "brief.txt").read_text()
     assert "stay true" in brief and "later tickets" in brief
+
+
+def test_a_test_writer_asked_again_is_told_its_earlier_scenarios_are_its_to_rewrite(
+    project: Project,
+) -> None:
+    tester = "pathlib.Path(sys.argv[0]).with_name('brief.txt').write_text(prompt)\n" + TESTER
+    project.configure(coder=HELLO, tester=tester)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+    first = (project.root.parent / "tools" / "brief.txt").read_text()
+
+    project.dk("reject", "1", "--note", "it should say good morning")
+    project.dk("run")
+
+    again = (project.root.parent / "tools" / "brief.txt").read_text()
+    assert "yours to rewrite" not in first
+    assert "features/greet.feature" in again and "yours to rewrite" in again

@@ -44,11 +44,16 @@ not program can check. Scenarios are kept and must stay true while later tickets
 product: describe what a user of the product sees, never this change itself ("nothing else
 changed", "the checks pass", "no dependency was added").
 Write only .feature files: no code and no step definitions.
-Do not commit and do not change anything outside this directory.
+{mine}Do not commit and do not change anything outside this directory.
 
 When you have finished, end your reply with exactly one of these lines:
 RESULT: done
 {always}"""
+
+_MINE = """\
+You wrote these for this ticket earlier and the user wants them changed: {files}.
+They are yours to rewrite, whatever other rules say about existing scenarios.
+"""
 
 _REVIEWER = """\
 You are {who}. The current directory is a copy of the project with the work for this ticket.
@@ -90,8 +95,11 @@ def _notes(note: str) -> str:
     return _NOTE.format(note=note) if note else ""
 
 
-def tester(ticket: int, title: str, spec: str, note: str) -> str:
-    return _TESTER.format(ticket=_ticket(ticket, title, spec), note=_notes(note), always=_ALWAYS)
+def tester(ticket: int, title: str, spec: str, note: str, earlier: list[str]) -> str:
+    mine = _MINE.format(files=", ".join(earlier)) if earlier else ""
+    return _TESTER.format(
+        ticket=_ticket(ticket, title, spec), note=_notes(note), mine=mine, always=_ALWAYS
+    )
 
 
 def coder(ticket: int, title: str, spec: str, note: str, protected: list[str]) -> str:

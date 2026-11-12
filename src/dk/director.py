@@ -190,7 +190,8 @@ class Director:
 
     def _specify(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         note = self._fresh(ticket, position.note)
-        brief = briefs.tester(ticket.id, ticket.title, ticket.spec, note)
+        earlier = sorted(ticket.protected)
+        brief = briefs.tester(ticket.id, ticket.title, ticket.spec, note, earlier)
         outcome = self._produce(agent, brief, ticket)
         if not isinstance(outcome, Passed):
             return outcome
