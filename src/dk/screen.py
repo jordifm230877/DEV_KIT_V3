@@ -35,6 +35,11 @@ def _open(herdr: str, workspace: str, name: str, shown: Path) -> str | None:
     return str(tab)
 
 
+def notify(herdr: str, title: str, body: str) -> None:
+    """Tell the user, wherever they are in Herdr, that something needs them."""
+    _herdr(herdr, "notification", "show", title, "--body", body, "--sound", "request")
+
+
 @contextmanager
 def tabs(herdr: str, workspace: str, shown: Mapping[str, Path]) -> Iterator[None]:
     """Open a tab for each named file while the work goes on, and close them afterwards."""

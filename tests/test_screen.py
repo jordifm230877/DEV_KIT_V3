@@ -2,52 +2,11 @@
 
 from __future__ import annotations
 
-import json
-import sys
-from pathlib import Path
-
 import pytest
-from conftest import Project
+from conftest import Herdr, Project
 
 HELLO = "pathlib.Path('greeting.txt').write_text('hello\\n')\nprint('wrote it\\nRESULT: done')"
 APPROVES = "print('RESULT: approved')"
-FAKE_HERDR = """\
-import json, pathlib, sys
-calls = pathlib.Path(__file__).with_name("herdr-calls.jsonl")
-before = calls.read_text().count("\\n") if calls.exists() else 0
-with calls.open("a") as log:
-    log.write(json.dumps(sys.argv[1:]) + "\\n")
-if pathlib.Path(__file__).with_name("herdr-broken").exists():
-    sys.exit(1)
-if sys.argv[1:3] == ["tab", "create"]:
-    n = before + 1
-    made = {"tab": {"tab_id": f"w1:t{n}"}, "root_pane": {"pane_id": f"w1:p{n}"}}
-    print(json.dumps({"result": made}))
-"""
-
-
-class Herdr:
-    def __init__(self, folder: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        self._folder = folder
-        script = folder / "herdr.py"
-        script.write_text(FAKE_HERDR)
-        launcher = folder / "herdr"
-        launcher.write_text(f'#!/bin/sh\nexec {sys.executable} {script} "$@"\n')
-        launcher.chmod(0o755)
-        monkeypatch.setenv("HERDR_BIN_PATH", str(launcher))
-        monkeypatch.setenv("HERDR_WORKSPACE_ID", "w1")
-
-    def calls(self) -> list[list[str]]:
-        log = self._folder / "herdr-calls.jsonl"
-        return [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
-
-    def breaks(self) -> None:
-        (self._folder / "herdr-broken").touch()
-
-
-@pytest.fixture
-def herdr(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Herdr:
-    return Herdr(tmp_path, monkeypatch)
 
 
 def test_each_agent_gets_a_tab_showing_its_work_and_the_tabs_close_at_the_end(

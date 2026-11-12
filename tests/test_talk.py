@@ -1,0 +1,153 @@
+"""The user talks to the Principal while the work goes on behind the conversation."""
+
+from __future__ import annotations
+
+import time
+
+import pytest
+from conftest import Herdr, Project
+
+HELLO = "pathlib.Path('greeting.txt').write_text('hello\\n')\nprint('RESULT: done')"
+# A stand-in Principal: it finds the `dk` command in its brief and uses it like a model would.
+PRINCIPAL = """
+import re, shlex, subprocess, time
+DK = shlex.split(re.search(r"`([^`]*-m dk[^`]*)`", prompt).group(1))
+notes = pathlib.Path(sys.argv[0]).with_name("principal-notes.txt")
+
+def dk(*args):
+    done = subprocess.run([*DK, *args], capture_output=True, text=True)
+    return done.returncode, done.stdout
+
+def wait_for(text, ticket="1"):
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        if text in dk("show", ticket)[1]:
+            return
+        time.sleep(0.05)
+    notes.write_text(f"never saw: {text}")
+    sys.exit(0)
+"""
+
+
+def notes(project: Project) -> str:
+    path = project.root.parent / "tools" / "principal-notes.txt"
+    return path.read_text() if path.exists() else ""
+
+
+def test_a_ticket_the_principal_writes_is_done_while_the_conversation_is_open(
+    project: Project,
+) -> None:
+    talk = PRINCIPAL + (
+        "dk('add', 'Greet', '--spec', 'Say hello.', '--epic', 'Manners')\n"
+        "wait_for('#1 done')\n"
+        "notes.write_text('saw it done')"
+    )
+    project.configure(coder=HELLO, principal=talk)
+
+    project.dk("talk")
+
+    assert notes(project) == "saw it done"
+    assert project.merged("greeting.txt") == "hello\n"
+
+
+def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: Project) -> None:
+    project.configure(coder=HELLO, principal="pathlib.Path('brief.txt').write_text(prompt)")
+
+    project.dk("talk")
+
+    brief = (project.root / "brief.txt").read_text()
+    for word in ("add", "status", "show", "retry", "acceptance", "approve"):
+        assert word in brief
+    assert len(brief.split()) < 300
+
+
+def test_the_principal_cannot_approve_for_the_user(project: Project) -> None:
+    tester = (
+        "pathlib.Path('features').mkdir(exist_ok=True)\n"
+        "pathlib.Path('features/greet.feature').write_text('Feature: Greeting\\n')\n"
+        "print('RESULT: done')"
+    )
+    talk = PRINCIPAL + (
+        "dk('add', 'Greet', '--spec', 'Say hello.')\n"
+        "wait_for('stopped at approve')\n"
+        "code, said = dk('approve', '1')\n"
+        "notes.write_text(f'{code} {said}')"
+    )
+    project.configure(coder=HELLO, tester=tester, principal=talk)
+
+    project.dk("talk")
+
+    assert notes(project).startswith("1 ") and "only the user" in notes(project)
+    assert "#1 stopped at approve" in project.dk("status")
+    project.dk("approve", "1")
+    assert "#1 code" in project.dk("status")
+
+
+def test_no_agent_can_approve_or_reject(project: Project, monkeypatch: pytest.MonkeyPatch) -> None:
+    who = "pathlib.Path('who.txt').write_text(__import__('os').environ['DK_AGENT'])"
+    project.configure(coder=who + "\nprint('RESULT: done')")
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+    assert project.merged("who.txt") == "coder-1"
+
+    monkeypatch.setenv("DK_AGENT", "coder-1")
+
+    assert "only the user" in project.refused("approve", "1")
+    assert "only the user" in project.refused("reject", "1", "--note", "no")
+
+
+def test_an_answer_given_during_the_conversation_lets_the_ticket_continue(
+    project: Project,
+) -> None:
+    asks = (
+        "if 'Catalan' in prompt:\n"
+        "    pathlib.Path('greeting.txt').write_text('hola\\n'); print('RESULT: done')\n"
+        "else:\n"
+        "    print('RESULT: question: which language?')"
+    )
+    talk = PRINCIPAL + (
+        "dk('add', 'Greet', '--spec', 'Say hello.')\n"
+        "wait_for('which language?')\n"
+        "dk('retry', '1', '--note', 'Catalan')\n"
+        "wait_for('#1 done')\n"
+    )
+    project.configure(coder=asks, principal=talk)
+
+    project.dk("talk")
+
+    assert project.merged("greeting.txt") == "hola\n"
+
+
+def test_closing_the_conversation_stops_the_work_without_judging_it(project: Project) -> None:
+    slow = "import time; time.sleep(60)\nprint('RESULT: done')"
+    talk = PRINCIPAL + "dk('add', 'Slow', '--spec', 'x')\nwait_for('coder-1 started')\n"
+    project.configure(coder=slow, principal=talk)
+    started = time.monotonic()
+
+    project.dk("talk")
+
+    assert time.monotonic() - started < 20
+    status = project.dk("status")
+    assert "#1 code" in status and "attempt" not in status and "stopped" not in status
+
+
+def test_talking_needs_a_principal(project: Project) -> None:
+    project.configure(coder=HELLO)
+
+    assert "no agent has the role 'principal'" in project.refused("talk")
+
+
+def test_inside_herdr_the_user_is_told_when_a_ticket_needs_them(
+    project: Project, herdr: Herdr
+) -> None:
+    talk = PRINCIPAL + "dk('add', 'Vague', '--spec', 'x')\nwait_for('stopped at code')\n"
+    project.configure(coder="print('RESULT: question: which language?')", principal=talk)
+
+    project.dk("talk")
+
+    calls = herdr.calls()
+    told = [call for call in calls if call[:2] == ["notification", "show"]]
+    assert len(told) == 1 and "#1 Vague" in told[0][2]
+    assert "which language?" in told[0][told[0].index("--body") + 1]
+    labels = [call[call.index("--label") + 1] for call in calls if call[:2] == ["tab", "create"]]
+    assert labels == ["tickets", "coder-1"]

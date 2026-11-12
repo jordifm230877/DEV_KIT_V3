@@ -32,7 +32,7 @@ class Project:
         coders: int = 1,
         **others: str,
     ) -> None:
-        """Each role is a Python body that reads its instructions as `prompt`.
+        """Each role is a Python body that finds its instructions in `prompt`.
 
         `others` adds one agent per extra role, for example `verifier="..."`.
         """
@@ -42,7 +42,8 @@ class Project:
         agents = ""
         for role, body in {"coder": coder, **others}.items():
             script = tools / f"{role}.py"
-            script.write_text(f"import sys, pathlib\nprompt = sys.stdin.read()\n{body}\n")
+            given = "sys.argv[-1]" if role == "principal" else "sys.stdin.read()"
+            script.write_text(f"import sys, pathlib\nprompt = {given}\n{body}\n")
             for number in range(1, (coders if role == "coder" else 1) + 1):
                 command = json.dumps([sys.executable, str(script)])
                 agents += (
@@ -92,3 +93,42 @@ def project(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> Project:
     made.git("add", "README.md")
     made.git("commit", "-qm", "initial")
     return made
+
+
+FAKE_HERDR = """\
+import json, pathlib, sys
+calls = pathlib.Path(__file__).with_name("herdr-calls.jsonl")
+before = calls.read_text().count("\\n") if calls.exists() else 0
+with calls.open("a") as log:
+    log.write(json.dumps(sys.argv[1:]) + "\\n")
+if pathlib.Path(__file__).with_name("herdr-broken").exists():
+    sys.exit(1)
+if sys.argv[1:3] == ["tab", "create"]:
+    n = before + 1
+    made = {"tab": {"tab_id": f"w1:t{n}"}, "root_pane": {"pane_id": f"w1:p{n}"}}
+    print(json.dumps({"result": made}))
+"""
+
+
+class Herdr:
+    def __init__(self, folder: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        self._folder = folder
+        script = folder / "herdr.py"
+        script.write_text(FAKE_HERDR)
+        launcher = folder / "herdr"
+        launcher.write_text(f'#!/bin/sh\nexec {sys.executable} {script} "$@"\n')
+        launcher.chmod(0o755)
+        monkeypatch.setenv("HERDR_BIN_PATH", str(launcher))
+        monkeypatch.setenv("HERDR_WORKSPACE_ID", "w1")
+
+    def calls(self) -> list[list[str]]:
+        log = self._folder / "herdr-calls.jsonl"
+        return [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
+
+    def breaks(self) -> None:
+        (self._folder / "herdr-broken").touch()
+
+
+@pytest.fixture
+def herdr(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Herdr:
+    return Herdr(tmp_path, monkeypatch)
