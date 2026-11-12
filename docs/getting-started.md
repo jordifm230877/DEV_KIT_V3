@@ -36,6 +36,12 @@ program = "pi"
 model = "openai-codex/gpt-6.1-sol"
 
 [[agents]]
+name = "tester-1"       # writes the behaviour tests you approve before any code
+role = "tester"
+program = "pi"
+model = "openai-codex/gpt-6.1-sol"
+
+[[agents]]
 name = "coder-1"
 role = "coder"
 program = "pi"
@@ -55,6 +61,7 @@ model = "openai-codex/gpt-6.1-sol"
 
 [checks]                # your project's own commands; each must exit 0
 unit = ["python3", "-m", "unittest", "-q"]
+behaviour = ["behave"]  # runs the behaviour tests: use your project's own command here
 ```
 
 Then commit it:
@@ -66,7 +73,10 @@ git add devkit.toml && git commit -m "Configure DevKit"
 Things to know:
 
 - **Only the coder is required.** Leave out the verifier or QA and that review is skipped.
-  Leave out the principal and you write tickets yourself with `dk add`.
+  Leave out the principal and you write tickets yourself with `dk add`. Leave out the
+  tester, together with the `behaviour` check, and tickets go straight to the coder.
+- **The `behaviour` check must be a command that exists in your project**: `behave` for
+  Python, your Cucumber command for Java. A command that is not installed fails every ticket.
 - **More agents is more lines.** Add `coder-2` with `role = "coder"` and two tickets advance
   at once. The same works for verifiers and QA.
 - **Each agent can use a different model.** A smaller model for reviews, for example.
@@ -101,22 +111,11 @@ Herdr shows a notification, and `dk status` shows the ticket as stopped with the
 | `the merge could not be done` | Usually your own uncommitted changes are in the way. Commit or move them, then `dk retry N` |
 | `the behaviour tests are ready for you` | See the next section |
 
-## 6. Behaviour tests (optional)
+## 6. Behaviour tests
 
-Add a test-writer and every ticket starts with Gherkin scenarios that you approve before
-any code is written:
-
-```toml
-[[agents]]
-name = "tester-1"
-role = "tester"
-program = "pi"
-model = "openai-codex/gpt-6.1-sol"
-```
-
-Also add your project's command for running them to `[checks]`, for example
-`behaviour = ["behave"]` for Python or your Cucumber command for Java, and say in
-`AGENTS.md` where step definitions go.
+With a tester in the configuration, every ticket starts with Gherkin scenarios
+(`features/*.feature`) that you approve before any code is written. Say in `AGENTS.md` where
+the code that connects the scenarios to your product goes (for `behave`, `features/steps/`).
 
 When the scenarios are ready the ticket waits. **In a second terminal** in the project:
 
