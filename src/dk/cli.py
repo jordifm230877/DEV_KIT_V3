@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 
-from dk import agents, briefs, config, process, screen
+from dk import agents, briefs, config, process, screen, starter
 from dk.director import PRINCIPAL, Director
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
@@ -124,6 +124,8 @@ def _parser() -> argparse.ArgumentParser:
     ):
         command = commands.add_parser(name, help=text)
         command.add_argument("--no-tabs", action="store_true", help="do not open Herdr tabs")
+    init = commands.add_parser("init", help="write a first devkit.toml and AGENTS.md")
+    init.add_argument("--model", required=True, help="the model every agent starts with")
     commands.add_parser("status", help="list the tickets")
     show = commands.add_parser("show", help="one ticket and everything that happened to it")
     show.add_argument("ticket", type=int)
@@ -195,33 +197,37 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
         raise trouble[0]
 
 
+def _add(args: argparse.Namespace, tickets: Tickets) -> None:
+    first = process.start(process.PROCESS).step
+    number = tickets.add(args.title, args.spec, first, args.epic, args.after)
+    print(f"#{number} written")
+
+
+def _run(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets) -> None:
+    director = _director(project, home, tickets, print)
+    with _watching(director.shown(), args.no_tabs):
+        director.run()
+
+
 def _execute(args: argparse.Namespace) -> None:
     project: Path = args.project.resolve()
     home = project / HOME
     home.mkdir(exist_ok=True)
     (home / ".gitignore").write_text("*\n")
     tickets = Tickets(home / "tickets.db")
-    if args.command == "add":
-        first = process.start(process.PROCESS).step
-        number = tickets.add(args.title, args.spec, first, args.epic, args.after)
-        print(f"#{number} written")
-    elif args.command == "run":
-        director = _director(project, home, tickets, print)
-        with _watching(director.shown(), args.no_tabs):
-            director.run()
-    elif args.command == "talk":
-        _talk(project, home, tickets, args.no_tabs)
-    elif args.command == "status":
-        _status(tickets.all())
-    elif args.command == "show":
-        _show(tickets, Workspace(project, home / "work"), args.ticket)
-    elif args.command == "retry":
-        _retry(tickets, args.ticket, args.note)
-    elif args.command == "cancel":
-        _cancel(tickets, args.ticket)
-    else:
-        approved = args.command == "approve"
-        _decide(tickets, args.ticket, approved, "" if approved else args.note)
+    commands: dict[str, Callable[[], None]] = {
+        "add": lambda: _add(args, tickets),
+        "init": lambda: print(*starter.write(project, args.model), sep="\n"),
+        "run": lambda: _run(args, project, home, tickets),
+        "talk": lambda: _talk(project, home, tickets, args.no_tabs),
+        "status": lambda: _status(tickets.all()),
+        "show": lambda: _show(tickets, Workspace(project, home / "work"), args.ticket),
+        "retry": lambda: _retry(tickets, args.ticket, args.note),
+        "cancel": lambda: _cancel(tickets, args.ticket),
+        "approve": lambda: _decide(tickets, args.ticket, True, ""),
+        "reject": lambda: _decide(tickets, args.ticket, False, args.note),
+    }
+    commands[args.command]()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
