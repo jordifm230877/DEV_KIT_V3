@@ -123,7 +123,8 @@ class Director:
             return Skipped()
         if step.kind == "user":
             return Stopped(briefs.approval(ticket.id))
-        job = {"tester": self._specify, "coder": self._code}.get(step.role, self._review)
+        jobs = {"specify": self._specify, "vet": self._vet, "code": self._code}
+        job = jobs.get(step.name, self._review)
         agent = self._free[step.role].get()
         try:
             return job(agent, self.tickets.get(ticket.id), position)
@@ -212,17 +213,28 @@ class Director:
             return Failed(briefs.tampering(changed))
         return outcome
 
+    def _vet(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
+        """Have the behaviour tests looked over before the user is asked to approve them."""
+        if not ticket.protected:
+            return Skipped()
+        tests = sorted(ticket.protected)
+        brief = briefs.vetting(ticket.id, ticket.title, ticket.spec, tests)
+        return self._judge(agent, brief, ticket, "behaviour tests")
+
     def _review(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         base = self.workspace.base(ticket.id)
         brief = briefs.reviewer(
             agent.role, ticket.id, ticket.title, ticket.spec, base, bool(ticket.protected)
         )
+        return self._judge(agent, brief, ticket, "work")
+
+    def _judge(self, agent: Agent, brief: str, ticket: Ticket, what: str) -> Outcome:
         reply = self._ask(agent, False, brief, ticket)
         self.workspace.restore(ticket.id)
         if reply.kind in ("blocked", "question"):
             return Stopped(f"{reply.kind}: {reply.text}")
         if reply.kind == "rejected":
-            return Failed(f"{agent.name} rejected the work: {reply.text}")
+            return Failed(f"{agent.name} rejected the {what}: {reply.text}")
         if reply.kind != "approved":
             return _unclear(agent, reply)
         return Passed()

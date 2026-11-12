@@ -26,6 +26,7 @@ class Step:
 
 PROCESS: tuple[Step, ...] = (
     Step("specify", "work", "tester"),
+    Step("vet", "review", "verifier"),
     Step("approve", "user", "tester"),
     Step("code", "work", "coder", required=True),
     Step("check", "checks"),

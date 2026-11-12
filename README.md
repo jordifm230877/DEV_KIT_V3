@@ -20,7 +20,9 @@ with what was merged before it. Tried with a real model through Pi on small thro
 
 ## Use
 
-Put a `devkit.toml` in your Git project and commit it:
+`dk init --model MODEL` writes a first `devkit.toml` and `AGENTS.md`, and `dk check` tells
+you whether the agents, the checks and the repository are ready. By hand, put a
+`devkit.toml` in your Git project and commit it:
 
 ```toml
 max_attempts = 3            # failed attempts before a ticket stops and waits for you

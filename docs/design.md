@@ -18,7 +18,8 @@ one page, the design has grown too much.
 1. The user and the Principal discuss what to build and write one or more **epics**.
 2. Epics are split into **tickets**: what is wanted, and the acceptance criteria.
 3. A test-writer agent turns each ticket into **behaviour tests** in Gherkin
-   ("given, when, then"), as `.feature` files.
+   ("given, when, then"), as `.feature` files. If there is a verifier, it looks them over
+   first and sends back scenarios that are not about what a user of the product sees.
 4. **The user approves the behaviour tests.** From then on their text is read-only: the
    program rejects any delivery that changed it. If a test turns out to be wrong, the agent
    says so and the user decides.
@@ -49,6 +50,8 @@ request.
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
 | `checks` | Runs the project's check commands | Interpret results |
 | `screen` | One Herdr tab per agent, showing what it is doing; watch-only | Affect the run |
+| `starter` | Writes a first `devkit.toml` and `AGENTS.md` (`dk init`) | Overwrite anything |
+| `preflight` | Finds what would stop the first ticket (`dk check`); a composer | Change anything |
 | `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
 | conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve, finish tickets or skip steps |
 
@@ -123,6 +126,13 @@ Each step ends with something usable.
 - `dk reject` also works on a ticket stopped after approval: approved behaviour tests that
   turn out wrong go back to the test-writer and are approved again. A coder had stopped on
   an approved scenario that could not be met, and there was no way to change it.
+- Behaviour tests are vetted before the user sees them (step `vet`, done by the verifier,
+  skipped without one). Three of the first six stops in the real trial came from approved
+  scenarios about the change or the process ("no dependency was added", "the checks pass",
+  "the commit message explains"); asking the test-writer not to write them was not enough.
+- `dk init` and `dk check` exist because every setup mistake in that trial was found late,
+  after a ticket had used its attempts. `preflight` is a fourth composer rather than more
+  lines in `cli`.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

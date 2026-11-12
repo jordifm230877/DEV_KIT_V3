@@ -12,6 +12,7 @@
 - **Cancelled** — a ticket given up with `dk cancel`; nobody works on it again and its unmerged work is thrown away.
 - **Exploring** — finding out what to build, done by the Principal in the conversation and written in `docs/discovery.md`; never a ticket.
 - **Follows** — a ticket that builds on another (`--after`) and is not started until that one is merged or cancelled.
+- **Vetting** — the look a reviewer takes at new behaviour tests before the user is asked to approve them (step `vet`).
 - **Skipped** — a step whose role no agent has; the history records it.
 - **Verdict** — a reviewer's answer: approved or rejected with what must change.
 - **Brief** — the instructions an agent receives for one job.

@@ -24,7 +24,25 @@ the code needs no reinstall. To remove it: `uv tool uninstall devkit3`.
 The project must be a Git repository with at least one commit, and you should be on the
 branch you want finished work merged into.
 
-Create `devkit.toml` in its top folder:
+The quick way writes a first `devkit.toml` and `AGENTS.md` for you, with a full team on one
+model and, for a kind of project it recognises (Rust so far), the right checks:
+
+```bash
+dk init --model openai-codex/gpt-6.1-sol
+```
+
+Read both files, fill in what is marked, and commit them. Then make sure everything works
+before the first ticket:
+
+```bash
+dk check
+```
+
+It asks every agent one small question, runs every check once, and lists files that are not
+committed. Fix whatever it reports as `PROBLEM`; each of those would otherwise stop a ticket
+after it had used up its attempts.
+
+Written by hand, `devkit.toml` looks like this:
 
 ```toml
 max_attempts = 3        # failed attempts before a ticket stops and waits for you
@@ -131,7 +149,9 @@ thrown away.
 ## 6. Behaviour tests
 
 With a tester in the configuration, every ticket starts with Gherkin scenarios
-(`.feature` files) that you approve before any code is written. Say in `AGENTS.md` where
+(`.feature` files) that you approve before any code is written. If there is a verifier, it
+looks them over first and sends back any that are not about what a user of the product sees,
+so what reaches you is already filtered. Say in `AGENTS.md` where
 the scenarios go and where the code that connects them to your product goes (for `behave`,
 `features/` and `features/steps/`). Without that, scenarios go under `features/`.
 

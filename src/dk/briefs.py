@@ -51,7 +51,7 @@ RESULT: done
 {always}"""
 
 _MINE = """\
-You wrote these for this ticket earlier and the user wants them changed: {files}.
+You wrote these for this ticket earlier and they must change: {files}.
 They are yours to rewrite, whatever other rules say about existing scenarios.
 """
 
@@ -85,6 +85,34 @@ _TASKS = {
         "",
     ),
 }
+
+
+_VETTING = """\
+You look over behaviour tests before the user is asked to approve them. The current directory
+is a copy of the project.
+
+{ticket}
+These Gherkin scenarios were written for this ticket and are not yet shown to the user:
+{files}
+
+Reject them unless every scenario:
+- describes something a user of the product can see or do, in plain words;
+- will stay true while later tickets change the product: nothing about this change itself,
+  about what was left unchanged, or about commits, checks, reviews and reports;
+- is something the ticket asks for;
+- can be checked by running the product.
+Do not change any file; anything you change is thrown away.
+
+End your reply with exactly one of these lines:
+RESULT: approved
+RESULT: rejected: <which scenarios must go or change, and why>
+{always}"""
+
+
+def vetting(ticket: int, title: str, spec: str, files: list[str]) -> str:
+    return _VETTING.format(
+        ticket=_ticket(ticket, title, spec), files=", ".join(files), always=_ALWAYS
+    )
 
 
 def _ticket(ticket: int, title: str, spec: str) -> str:
