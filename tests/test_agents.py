@@ -133,3 +133,26 @@ def test_an_earlier_jobs_answer_is_not_taken_for_this_ones(tmp_path: Path) -> No
     reply = agents.ask([sys.executable, "-c", "pass"], "x", tmp_path, log, 30)
 
     assert reply == agents.Reply("unclear")
+
+
+def test_an_error_pi_got_from_the_model_is_shown_and_reported(tmp_path: Path) -> None:
+    refused = {
+        "type": "message_end",
+        "message": {
+            "role": "assistant",
+            "content": [],
+            "stopReason": "error",
+            "errorMessage": "400: this model is not available in your region",
+        },
+    }
+    emit = f"print(__import__('json').dumps({refused!r}))"
+    log = tmp_path / "agent.log"
+
+    reply = agents.ask(
+        [sys.executable, "-c", emit], "x", tmp_path, log, 30, plain=agents.reader("pi")
+    )
+
+    assert reply == agents.Reply(
+        "unclear", "error: 400: this model is not available in your region"
+    )
+    assert "error: 400: this model is not available in your region" in log.read_text()

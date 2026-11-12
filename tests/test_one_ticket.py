@@ -202,3 +202,17 @@ def test_planted_git_hooks_are_not_run(project: Project) -> None:
 
     assert "#1 done" in project.dk("status")
     assert not (project.root.parent / "ran").exists()
+
+
+def test_a_coder_that_ends_without_an_answer_is_reported_with_what_it_last_said(
+    project: Project,
+) -> None:
+    project.configure(
+        coder="print('starting\\n\\nthe model refused the request\\n')", max_attempts=1
+    )
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    status = project.dk("status")
+    assert "without a clear answer; it last said: the model refused the request" in status

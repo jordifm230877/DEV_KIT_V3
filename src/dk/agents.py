@@ -81,6 +81,8 @@ def _spoken(event: dict[str, Any]) -> str:
     if message.get("role") != "assistant":
         return ""
     texts = [part["text"] for part in message["content"] if part.get("type") == "text"]
+    if message.get("errorMessage"):  # the model or its provider refused the request
+        texts.append(f"error: {message['errorMessage']}")
     return "".join(text.rstrip("\n") + "\n" for text in texts)
 
 
@@ -131,7 +133,11 @@ def ask(
 
         feed = None if by_argument else instructions
         code = child.run(argv, cwd, show, seconds, stop, feed, {WHO: name})
-    return read("".join(said)) if code == 0 else Reply("unclear")
+    reply = read("".join(said)) if code == 0 else Reply("unclear")
+    if reply.kind == "unclear":  # say what it last said, which is usually why
+        last = [line.strip() for line in "".join(said).splitlines() if line.strip()][-1:]
+        return Reply("unclear", "".join(last))
+    return reply
 
 
 def converse(argv: Sequence[str], brief: str, cwd: Path, name: str) -> int:

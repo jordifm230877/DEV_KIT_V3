@@ -40,6 +40,11 @@ PRINCIPAL = "principal"  # the one role that talks with the user instead of taki
 _LOOK_EVERY = 0.05
 
 
+def _unclear(agent: Agent, reply: agents.Reply) -> Lost:
+    last = f"; it last said: {reply.text}" if reply.text else ""
+    return Lost(f"{agent.name} ended without a clear answer{last}")
+
+
 def _position(ticket: Ticket) -> Position:
     return Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
 
@@ -171,7 +176,7 @@ class Director:
         if reply.kind in ("blocked", "question"):
             return Stopped(f"{reply.kind}: {reply.text}")
         if reply.kind != "done":
-            return Lost(f"{agent.name} ended without a clear answer")
+            return _unclear(agent, reply)
         if not self.workspace.save(ticket.id, f"Ticket #{ticket.id}: {ticket.title}"):
             return Failed(f"{agent.name} said it was done but changed nothing")
         return Passed()
@@ -209,5 +214,5 @@ class Director:
         if reply.kind == "rejected":
             return Failed(f"{agent.name} rejected the work: {reply.text}")
         if reply.kind != "approved":
-            return Lost(f"{agent.name} ended without a clear answer")
+            return _unclear(agent, reply)
         return Passed()
