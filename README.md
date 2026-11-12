@@ -6,7 +6,8 @@ the work only when they pass.
 
 DevKit 3 is a from-scratch successor to DevKit V1 and V2. Its goals, in order: simple to use,
 small enough to read, and built from pieces that can be replaced one at a time.
-See [the design](docs/design.md) and [the glossary](docs/glossary.md).
+Start with [Getting started](docs/getting-started.md). See also [the design](docs/design.md)
+and [the glossary](docs/glossary.md).
 
 ## Status
 
