@@ -50,6 +50,7 @@ def test_rejected_behaviour_tests_are_rewritten_with_the_users_reason(project: P
 
     shown = project.dk("show", "1")
     assert "#1 stopped at approve" in shown and "Then it says good morning" in shown
+    assert "attempt" not in project.dk("status"), "the user's own decision is not a failed attempt"
 
 
 @pytest.mark.parametrize(

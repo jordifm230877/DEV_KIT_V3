@@ -17,7 +17,8 @@ _SCHEMA = """
 CREATE TABLE IF NOT EXISTS ticket (
     id INTEGER PRIMARY KEY, title TEXT NOT NULL, spec TEXT NOT NULL,
     step TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, note TEXT NOT NULL DEFAULT '',
-    stopped INTEGER NOT NULL DEFAULT 0, protected TEXT NOT NULL DEFAULT '{}'
+    stopped INTEGER NOT NULL DEFAULT 0, protected TEXT NOT NULL DEFAULT '{}',
+    epic TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS history (
     id INTEGER PRIMARY KEY, ticket INTEGER NOT NULL REFERENCES ticket(id),
@@ -36,6 +37,7 @@ class Ticket:
     note: str
     stopped: bool
     protected: dict[str, str]  # read-only files and the fingerprint of their content
+    epic: str
 
 
 class Tickets:
@@ -50,21 +52,22 @@ class Tickets:
             done = self._db.execute(statement, values)
             return done.fetchall(), done.lastrowid
 
-    def add(self, title: str, spec: str, step: str) -> int:
+    def add(self, title: str, spec: str, step: str, epic: str) -> int:
         _, number = self._run(
-            "INSERT INTO ticket (title, spec, step) VALUES (?, ?, ?)", title, spec, step
+            "INSERT INTO ticket (title, spec, step, epic) VALUES (?, ?, ?, ?)",
+            *(title, spec, step, epic),
         )
         assert number is not None
         return number
 
     def all(self) -> list[Ticket]:
         rows, _ = self._run(
-            "SELECT id, title, spec, step, attempts, note, stopped, protected FROM ticket"
+            "SELECT id, title, spec, step, attempts, note, stopped, protected, epic FROM ticket"
             " ORDER BY id"
         )
         return [
-            Ticket(number, title, spec, step, attempts, note, bool(stopped), json.loads(protected))
-            for number, title, spec, step, attempts, note, stopped, protected in rows
+            Ticket(number, title, spec, step, attempts, note, bool(stop), json.loads(files), epic)
+            for number, title, spec, step, attempts, note, stop, files, epic in rows
         ]
 
     def get(self, ticket: int) -> Ticket:

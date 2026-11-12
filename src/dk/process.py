@@ -119,9 +119,9 @@ def waiting(process: Sequence[Step], position: Position) -> bool:
     return position.stopped and kinds.get(position.step) == "user"
 
 
-def decide(
-    process: Sequence[Step], position: Position, approved: bool, reason: str, max_attempts: int
-) -> Position:
-    """The user's decision at a `user` step: on to the next step, or back with the reason."""
-    outcome: Outcome = Passed() if approved else Failed(reason)
-    return advance(process, replace(position, stopped=False), outcome, max_attempts)
+def decide(process: Sequence[Step], position: Position, approved: bool, reason: str) -> Position:
+    """The user's decision at a `user` step: on to the next step, or back with the reason.
+    Sending work back is the user's choice, not a failed attempt."""
+    if approved:
+        return advance(process, replace(position, stopped=False), Passed(), 1)
+    return Position(_rework(process, position.step), position.attempts, reason)

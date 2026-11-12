@@ -48,7 +48,7 @@ unit = ["pytest", "-q"]
 Then:
 
 ```bash
-dk add "Greeting" --spec "Create greeting.txt containing hello."
+dk add "Greeting" --spec "Create greeting.txt containing hello."   # optionally --epic NAME
 dk run            # work on every unfinished ticket
 dk status         # one line per ticket
 dk show 1         # the ticket and everything that happened to it

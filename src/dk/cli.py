@@ -24,6 +24,16 @@ def _line(ticket: Ticket) -> str:
     return line
 
 
+def _status(tickets: list[Ticket]) -> None:
+    """Tickets without an epic first, then each epic with its tickets."""
+    for epic in sorted({ticket.epic for ticket in tickets}):
+        if epic:
+            print(epic)
+        for ticket in tickets:
+            if ticket.epic == epic:
+                print(("  " if epic else "") + _line(ticket))
+
+
 def _retry(tickets: Tickets, number: int, answer: str) -> None:
     ticket = tickets.get(number)
     if not ticket.stopped:
@@ -34,12 +44,12 @@ def _retry(tickets: Tickets, number: int, answer: str) -> None:
     print(f"#{number} will continue at {ticket.step} on the next run")
 
 
-def _decide(tickets: Tickets, number: int, approved: bool, reason: str, limit: int) -> None:
+def _decide(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
     ticket = tickets.get(number)
     position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
     if not process.waiting(process.PROCESS, position):
         raise LookupError(f"#{number} is not waiting for your approval")
-    decided = process.decide(process.PROCESS, position, approved, reason, limit)
+    decided = process.decide(process.PROCESS, position, approved, reason)
     tickets.move(number, *vars(decided).values())
     tickets.record(
         number, "approved by the user" if approved else f"rejected by the user: {reason}"
@@ -49,7 +59,8 @@ def _decide(tickets: Tickets, number: int, approved: bool, reason: str, limit: i
 
 def _show(tickets: Tickets, workspace: Workspace, number: int) -> None:
     ticket = tickets.get(number)
-    print(_line(ticket), ticket.spec, *tickets.history(ticket.id), sep="\n")
+    epic = [f"Epic: {ticket.epic}"] if ticket.epic else []
+    print(_line(ticket), *epic, ticket.spec, *tickets.history(ticket.id), sep="\n")
     position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
     if process.waiting(process.PROCESS, position):
         for name in sorted(ticket.protected):
@@ -63,6 +74,7 @@ def _parser() -> argparse.ArgumentParser:
     add = commands.add_parser("add", help="write a new ticket")
     add.add_argument("title")
     add.add_argument("--spec", required=True, help="what is wanted and how to tell it is done")
+    add.add_argument("--epic", default="", help="the larger piece of work this belongs to")
     commands.add_parser("run", help="work on every unfinished ticket")
     commands.add_parser("status", help="list the tickets")
     show = commands.add_parser("show", help="one ticket and everything that happened to it")
@@ -87,21 +99,20 @@ def _execute(args: argparse.Namespace) -> None:
     tickets = Tickets(home / "tickets.db")
     workspace = Workspace(project, home / "work")
     if args.command == "add":
-        number = tickets.add(args.title, args.spec, process.start(process.PROCESS).step)
+        first = process.start(process.PROCESS).step
+        number = tickets.add(args.title, args.spec, first, args.epic)
         print(f"#{number} written")
     elif args.command == "run":
         Director(config.load(project), tickets, workspace, home / "logs", print).run()
     elif args.command == "status":
-        for ticket in tickets.all():
-            print(_line(ticket))
+        _status(tickets.all())
     elif args.command == "show":
         _show(tickets, workspace, args.ticket)
     elif args.command == "retry":
         _retry(tickets, args.ticket, args.note)
     else:
-        limit = config.load(project).max_attempts
         approved = args.command == "approve"
-        _decide(tickets, args.ticket, approved, "" if approved else args.note, limit)
+        _decide(tickets, args.ticket, approved, "" if approved else args.note)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

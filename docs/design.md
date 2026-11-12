@@ -77,7 +77,7 @@ Each step ends with something usable.
 
 1. **One ticket end to end** with one Pi coder, from the command line. *(done)*
 2. Verifier and QA steps; several agents per role; tickets in parallel; the behaviour-test
-   step with its approval and read-only rule *(done)*; epics.
+   step with its approval and read-only rule; epics as a label on tickets. *(done)*
 3. Herdr tabs.
 4. Conversation with the Principal.
 5. Later: Claude and Codex as agent programs, a second-opinion agent, web access.
@@ -89,6 +89,8 @@ Each step ends with something usable.
   anyway; the check would prove nothing.
 - Read-only means the `.feature` files a ticket's test-writer wrote. A coder may add
   scenarios of its own. Changed or deleted ones are put back and the work is returned.
+- Sending behaviour tests back is the user's choice and does not use up an attempt.
+- An epic is only a name that groups tickets, until the Principal exists to manage them.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 
