@@ -61,6 +61,33 @@ class Workspace:
         self._must(copy, "reset", "-q", "--hard")
         self._must(copy, "clean", "-qfd")
 
+    def fingerprints(self, ticket: int, pattern: str) -> dict[str, str]:
+        """The files this ticket wrote that match `pattern`, each with its content's identity."""
+        copy = self._copy(ticket)
+        names = self._must(copy, "diff", "--name-only", self.base(ticket), "HEAD", "--", pattern)
+        return {
+            name: self._must(copy, "rev-parse", f"HEAD:{name}")
+            for name in names.splitlines()
+            if (copy / name).exists()
+        }
+
+    def tampered(self, ticket: int, fingerprints: dict[str, str]) -> list[str]:
+        """Which of those files no longer have the content they were recorded with."""
+        copy = self._copy(ticket)
+        return [
+            name
+            for name, content in fingerprints.items()
+            if self._git(copy, "rev-parse", f"HEAD:{name}").stdout.strip() != content
+        ]
+
+    def put_back(self, ticket: int, fingerprints: dict[str, str], names: list[str]) -> None:
+        copy = self._copy(ticket)
+        for name in names:
+            (copy / name).parent.mkdir(parents=True, exist_ok=True)
+            content = self._git(copy, "cat-file", "blob", fingerprints[name]).stdout
+            (copy / name).write_text(content)
+        self.save(ticket, "Put back approved behaviour tests")
+
     def update(self, ticket: int) -> tuple[bool, list[str]]:
         """Bring into the copy what the project gained since. Returns whether anything came,
         and the files left with conflict markers for the coder to resolve."""

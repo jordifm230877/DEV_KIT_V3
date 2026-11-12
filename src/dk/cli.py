@@ -34,6 +34,28 @@ def _retry(tickets: Tickets, number: int, answer: str) -> None:
     print(f"#{number} will continue at {ticket.step} on the next run")
 
 
+def _decide(tickets: Tickets, number: int, approved: bool, reason: str, limit: int) -> None:
+    ticket = tickets.get(number)
+    position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+    if not process.waiting(process.PROCESS, position):
+        raise LookupError(f"#{number} is not waiting for your approval")
+    decided = process.decide(process.PROCESS, position, approved, reason, limit)
+    tickets.move(number, *vars(decided).values())
+    tickets.record(
+        number, "approved by the user" if approved else f"rejected by the user: {reason}"
+    )
+    print(f"#{number} will continue at {decided.step} on the next run")
+
+
+def _show(tickets: Tickets, workspace: Workspace, number: int) -> None:
+    ticket = tickets.get(number)
+    print(_line(ticket), ticket.spec, *tickets.history(ticket.id), sep="\n")
+    position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+    if process.waiting(process.PROCESS, position):
+        for name in sorted(ticket.protected):
+            print(f"\n--- {name}", (workspace.prepare(number) / name).read_text(), sep="\n")
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="dk", description=__doc__)
     parser.add_argument("--project", type=Path, default=Path.cwd(), help="the project directory")
@@ -48,6 +70,12 @@ def _parser() -> argparse.ArgumentParser:
     retry = commands.add_parser("retry", help="send a stopped ticket on again")
     retry.add_argument("ticket", type=int)
     retry.add_argument("--note", default="", help="an answer or instruction for the agent")
+    commands.add_parser("approve", help="accept what waits for you").add_argument(
+        "ticket", type=int
+    )
+    reject = commands.add_parser("reject", help="send back what waits for you")
+    reject.add_argument("ticket", type=int)
+    reject.add_argument("--note", required=True, help="what must change")
     return parser
 
 
@@ -57,20 +85,23 @@ def _execute(args: argparse.Namespace) -> None:
     home.mkdir(exist_ok=True)
     (home / ".gitignore").write_text("*\n")
     tickets = Tickets(home / "tickets.db")
+    workspace = Workspace(project, home / "work")
     if args.command == "add":
         number = tickets.add(args.title, args.spec, process.start(process.PROCESS).step)
         print(f"#{number} written")
     elif args.command == "run":
-        workspace = Workspace(project, home / "work")
         Director(config.load(project), tickets, workspace, home / "logs", print).run()
-    elif args.command == "retry":
-        _retry(tickets, args.ticket, args.note)
     elif args.command == "status":
         for ticket in tickets.all():
             print(_line(ticket))
+    elif args.command == "show":
+        _show(tickets, workspace, args.ticket)
+    elif args.command == "retry":
+        _retry(tickets, args.ticket, args.note)
     else:
-        ticket = tickets.get(args.ticket)
-        print(_line(ticket), ticket.spec, *tickets.history(ticket.id), sep="\n")
+        limit = config.load(project).max_attempts
+        approved = args.command == "approve"
+        _decide(tickets, args.ticket, approved, "" if approved else args.note, limit)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

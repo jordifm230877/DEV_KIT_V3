@@ -11,8 +11,9 @@ See [the design](docs/design.md) and [the glossary](docs/glossary.md).
 ## Status
 
 Working so far (see the [build order](docs/design.md#build-order)): a ticket goes from
-written to merged through a coder, the project's checks, a verifier and QA. With several
-coders, tickets advance side by side; merges happen one at a time, each checked together
+written to merged through a coder, the project's checks, a verifier and QA. With a test-writer
+agent, behaviour tests (Gherkin) are written first, wait for your approval and are then
+read-only. With several coders, tickets advance side by side; merges happen one at a time, each checked together
 with what was merged before it. Tried with a real model through Pi on small throwaway projects.
 
 ## Use
@@ -34,6 +35,12 @@ role = "verifier"
 program = "pi"
 model = "provider/model-name"
 
+[[agents]]                  # optional: writes Gherkin behaviour tests before any code
+name = "tester-1"
+role = "tester"
+program = "pi"
+model = "provider/model-name"
+
 [checks]                    # run by the program in the ticket's copy; all must exit 0
 unit = ["pytest", "-q"]
 ```
@@ -46,13 +53,18 @@ dk run            # work on every unfinished ticket
 dk status         # one line per ticket
 dk show 1         # the ticket and everything that happened to it
 dk retry 1 --note "an answer"   # send a stopped ticket on again
+dk approve 1      # accept the behaviour tests shown by `dk show 1`
+dk reject 1 --note "what to change"
 ```
 
 Any program can be an agent: give `command = ["my-agent", "--flag"]` instead of `program`.
 It receives the instructions on standard input (or in place of an `"{instructions}"`
-argument) and must end its output with one line: `RESULT: done` (a coder), `RESULT: approved` or
+argument) and must end its output with one line: `RESULT: done` (a coder or test-writer), `RESULT: approved` or
 `RESULT: rejected: <what must change>` (a reviewer), `RESULT: blocked: <why>` or
 `RESULT: question: <what>`.
+
+Behaviour tests are `.feature` files under `features/`. DevKit does not run them itself: add
+your project's own command for them (Cucumber, behave, ...) to `[checks]`.
 
 DevKit keeps its own files in `.devkit/` inside the project (ticket list, working copies,
 logs); it ignores itself in Git.

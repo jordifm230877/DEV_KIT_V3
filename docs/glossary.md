@@ -16,5 +16,7 @@
 - **Copy** — a ticket's own working copy of the project (a Git worktree on branch `ticket/<n>`).
 - **Checks** — the project's own commands that must succeed; run by the program, never trusted from an agent.
 - **Behaviour test** — a Gherkin scenario written before the code and approved by the user.
+- **Protected** — a behaviour-test file the user approved; the program puts it back if a coder changes it.
+- **Waiting** — a ticket stopped at a step that is the user's own decision (`dk approve` / `dk reject`).
 - **Director** — the piece that decides what happens next to each ticket.
 - **Clash** — a ticket's work collides with work merged while it was in progress; the coder gets the files to resolve.

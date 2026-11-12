@@ -14,15 +14,18 @@ DONE = "done"
 
 @dataclass(frozen=True)
 class Step:
-    """`work` produces something, `review` judges it; the rest are done by the program."""
+    """`work` produces something, `review` judges it, `user` waits for the user's decision;
+    the rest are done by the program."""
 
     name: str
-    kind: Literal["work", "review", "checks", "merge"]
+    kind: Literal["work", "review", "user", "checks", "merge"]
     role: str = ""
     required: bool = False  # a step whose role nobody has is skipped, unless required
 
 
 PROCESS: tuple[Step, ...] = (
+    Step("specify", "work", "tester"),
+    Step("approve", "user", "tester"),
     Step("code", "work", "coder", required=True),
     Step("check", "checks"),
     Step("verify", "review", "verifier"),
@@ -108,3 +111,17 @@ def retry(position: Position, answer: str) -> Position:
     """The user sends a stopped ticket on again, with a fresh set of attempts."""
     note = f"{position.note}\nThe user answers: {answer}" if answer else position.note
     return Position(position.step, 0, note)
+
+
+def waiting(process: Sequence[Step], position: Position) -> bool:
+    """Whether the ticket is at a step that is the user's own decision."""
+    kinds = {step.name: step.kind for step in process}
+    return position.stopped and kinds.get(position.step) == "user"
+
+
+def decide(
+    process: Sequence[Step], position: Position, approved: bool, reason: str, max_attempts: int
+) -> Position:
+    """The user's decision at a `user` step: on to the next step, or back with the reason."""
+    outcome: Outcome = Passed() if approved else Failed(reason)
+    return advance(process, replace(position, stopped=False), outcome, max_attempts)
