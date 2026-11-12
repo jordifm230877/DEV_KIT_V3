@@ -105,6 +105,12 @@ Each step ends with something usable.
 - `dk cancel` gives a ticket up wherever it is; any agent may run it. A job in progress is
   left to end and its result is ignored. The director removes the copy at the end of a run,
   never the command, so a copy is not removed under an agent working in it.
+- A ticket can say which tickets it follows (`dk add --after N`); it is not started until
+  they are merged, so its copy begins with their work. A cancelled ticket holds nobody back.
+  Tickets without it advance side by side. In the first real trial the Principal planned
+  four tickets in order and three stopped at once, each waiting for work it could not see.
+- The test-writer puts scenarios where the project's `AGENTS.md` says, and under `features/`
+  only when it says nothing: a fixed folder clashed with a Rust project's `tests/features/`.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

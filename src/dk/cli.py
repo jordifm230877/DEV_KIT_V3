@@ -20,24 +20,28 @@ from dk.workspace import Workspace
 HOME = ".devkit"
 
 
-def _line(ticket: Ticket) -> str:
+def _line(ticket: Ticket, steps: dict[int, str]) -> str:
     where = f"stopped at {ticket.step}" if ticket.stopped else ticket.step
     line = f"#{ticket.id} {where}  {ticket.title}"
     if ticket.attempts:
         line += f"  [{ticket.attempts} attempt{'s' if ticket.attempts > 1 else ''}]"
     if ticket.stopped:
         line += f"  {ticket.note.splitlines()[0]}"
+    held = process.held_by(ticket.follows, steps)
+    if held and ticket.step != process.CANCELLED:
+        line += "  waits for " + ", ".join(f"#{number}" for number in held)
     return line
 
 
 def _status(tickets: list[Ticket]) -> None:
     """Tickets without an epic first, then each epic with its tickets."""
+    steps = {ticket.id: ticket.step for ticket in tickets}
     for epic in sorted({ticket.epic for ticket in tickets}):
         if epic:
             print(epic)
         for ticket in tickets:
             if ticket.epic == epic:
-                print(("  " if epic else "") + _line(ticket))
+                print(("  " if epic else "") + _line(ticket, steps))
 
 
 def _retry(tickets: Tickets, number: int, answer: str) -> None:
@@ -80,7 +84,8 @@ def _decide(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
 def _show(tickets: Tickets, workspace: Workspace, number: int) -> None:
     ticket = tickets.get(number)
     epic = [f"Epic: {ticket.epic}"] if ticket.epic else []
-    print(_line(ticket), *epic, ticket.spec, *tickets.history(ticket.id), sep="\n")
+    steps = {other.id: other.step for other in tickets.all()}
+    print(_line(ticket, steps), *epic, ticket.spec, *tickets.history(ticket.id), sep="\n")
     position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
     if process.waiting(process.PROCESS, position):
         for name in sorted(ticket.protected):
@@ -95,6 +100,13 @@ def _parser() -> argparse.ArgumentParser:
     add.add_argument("title")
     add.add_argument("--spec", required=True, help="what is wanted and how to tell it is done")
     add.add_argument("--epic", default="", help="the larger piece of work this belongs to")
+    add.add_argument(
+        "--after",
+        type=int,
+        action="append",
+        default=[],
+        help="a ticket that must be merged before this one starts; may be repeated",
+    )
     for name, text in (
         ("run", "work on every unfinished ticket"),
         ("talk", "talk with the Principal while the work goes on"),
@@ -180,7 +192,7 @@ def _execute(args: argparse.Namespace) -> None:
     tickets = Tickets(home / "tickets.db")
     if args.command == "add":
         first = process.start(process.PROCESS).step
-        number = tickets.add(args.title, args.spec, first, args.epic)
+        number = tickets.add(args.title, args.spec, first, args.epic, args.after)
         print(f"#{number} written")
     elif args.command == "run":
         director = _director(project, home, tickets, print)

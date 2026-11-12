@@ -62,7 +62,7 @@ dk talk           # a conversation with the Principal; work goes on behind it un
 or use the commands yourself:
 
 ```bash
-dk add "Greeting" --spec "Create greeting.txt containing hello."   # optionally --epic NAME
+dk add "Greeting" --spec "Create greeting.txt containing hello."   # optionally --epic NAME, --after N
 dk run            # work on every unfinished ticket
 dk status         # one line per ticket
 dk show 1         # the ticket and everything that happened to it
@@ -78,7 +78,8 @@ argument) and must end its output with one line: `RESULT: done` (a coder or test
 `RESULT: rejected: <what must change>` (a reviewer), `RESULT: blocked: <why>` or
 `RESULT: question: <what>`.
 
-Behaviour tests are `.feature` files under `features/`. DevKit does not run them itself: add
+Behaviour tests are `.feature` files, kept where the project's `AGENTS.md` says (under
+`features/` if it says nothing). DevKit does not run them itself: add
 your project's own command for them (Cucumber, behave, ...) to `[checks]`.
 
 Started inside [Herdr](https://herdr.dev), `dk run` opens one tab per agent showing what it

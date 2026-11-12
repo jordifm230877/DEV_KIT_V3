@@ -56,7 +56,7 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     project.dk("talk")
 
     brief = (project.root / "brief.txt").read_text()
-    for word in ("add", "status", "show", "retry", "cancel", "acceptance", "approve"):
+    for word in ("add", "--after", "status", "show", "retry", "cancel", "acceptance", "approve"):
         assert word in brief
     assert len(brief.split()) < 300
 

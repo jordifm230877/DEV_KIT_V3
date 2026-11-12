@@ -5,7 +5,7 @@ Pure: no files, no programs, no clock. Changing the process means changing `PROC
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Literal
 
@@ -117,6 +117,12 @@ def retry(position: Position, answer: str) -> Position:
     """The user sends a stopped ticket on again, with a fresh set of attempts."""
     note = f"{position.note}\nThe user answers: {answer}" if answer else position.note
     return Position(position.step, 0, note)
+
+
+def held_by(follows: Sequence[int], steps: Mapping[int, str]) -> list[int]:
+    """Which of the tickets this one follows still hold it back; `steps` says where every
+    ticket is. A merged ticket no longer does, nor one that was given up."""
+    return [number for number in follows if steps[number] not in (DONE, CANCELLED)]
 
 
 def cancel(position: Position) -> Position:

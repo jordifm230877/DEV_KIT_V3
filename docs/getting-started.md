@@ -80,6 +80,8 @@ Things to know:
   Leave out the principal and you write tickets yourself with `dk add`. Leave out the
   tester, together with the `behaviour` check, and tickets go straight to the coder.
 - **The `behaviour` check** is `behave` for Python, your Cucumber command for Java.
+- **Commit everything agents must see.** Each ticket is worked on in a copy of what Git
+  holds; uncommitted files, `AGENTS.md` included, do not exist for the agents.
 - **More agents is more lines.** Add `coder-2` with `role = "coder"` and two tickets advance
   at once. The same works for verifiers and QA.
 - **Each agent can use a different model.** A smaller model for reviews, for example.
@@ -123,8 +125,9 @@ thrown away.
 ## 6. Behaviour tests
 
 With a tester in the configuration, every ticket starts with Gherkin scenarios
-(`features/*.feature`) that you approve before any code is written. Say in `AGENTS.md` where
-the code that connects the scenarios to your product goes (for `behave`, `features/steps/`).
+(`.feature` files) that you approve before any code is written. Say in `AGENTS.md` where
+the scenarios go and where the code that connects them to your product goes (for `behave`,
+`features/` and `features/steps/`). Without that, scenarios go under `features/`.
 
 When the scenarios are ready the ticket waits. **In a second terminal** in the project:
 
@@ -142,6 +145,7 @@ returned; a coder that thinks one is wrong stops and tells you why.
 
 ```bash
 dk add "Title" --spec "What is wanted and how to tell it is done" --epic "Optional group"
+dk add "Next" --spec "..." --after 1    # not started until ticket 1 is merged
 dk run            # work on every unfinished ticket, then exit
 dk status
 dk show 1

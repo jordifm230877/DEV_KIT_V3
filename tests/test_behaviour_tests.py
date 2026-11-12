@@ -140,3 +140,14 @@ def test_only_a_ticket_waiting_for_the_user_can_be_approved_or_rejected(project:
 
     assert "#1 is not waiting for your approval" in project.refused("approve", "1")
     assert "#1 is not waiting for your approval" in project.refused("reject", "1", "--note", "no")
+
+
+def test_the_test_writer_is_told_to_use_the_projects_own_folder(project: Project) -> None:
+    tester = "pathlib.Path(sys.argv[0]).with_name('brief.txt').write_text(prompt)\n" + TESTER
+    project.configure(coder=HELLO, tester=tester)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    brief = (project.root.parent / "tools" / "brief.txt").read_text()
+    assert "where this project keeps them" in brief and "AGENTS.md" in brief

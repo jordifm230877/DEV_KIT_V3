@@ -28,6 +28,7 @@ from dk.process import (
     Step,
     Stopped,
     advance,
+    held_by,
 )
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
@@ -79,11 +80,14 @@ class Director:
     def _take_up(self, together: ThreadPoolExecutor, active: dict[int, Future[None]]) -> None:
         """Start on tickets that can advance and are not being worked on; let go of those
         that have gone as far as they can."""
-        for ticket in self.tickets.all():
-            if ticket.id not in active and not _position(ticket).final:
-                active[ticket.id] = together.submit(self._drive, ticket)
         for number in [number for number, job in active.items() if job.done()]:
             active.pop(number).result()
+        tickets = self.tickets.all()
+        steps = {ticket.id: ticket.step for ticket in tickets}
+        for ticket in tickets:
+            waiting = _position(ticket).final or held_by(ticket.follows, steps)
+            if ticket.id not in active and not waiting:
+                active[ticket.id] = together.submit(self._drive, ticket)
 
     def _drive(self, ticket: Ticket) -> None:
         position = _position(ticket)
