@@ -48,6 +48,16 @@ class Workspace:
         ahead = self._must(self._project, "rev-list", "--count", f"HEAD..ticket/{ticket}")
         return ahead != "0"
 
+    def base(self, ticket: int) -> str:
+        """The commit the ticket's work started from; `git diff <base>` shows the work."""
+        return self._must(self._project, "merge-base", "HEAD", f"ticket/{ticket}")
+
+    def restore(self, ticket: int) -> None:
+        """Throw away anything not saved, such as what a reviewer changed or left behind."""
+        copy = self._copy(ticket)
+        self._must(copy, "reset", "-q", "--hard")
+        self._must(copy, "clean", "-qfd")
+
     def merge(self, ticket: int, title: str) -> str | None:
         """Bring the ticket into the project. Returns None, or why it could not be done."""
         message = f"Merge ticket #{ticket}: {title}"

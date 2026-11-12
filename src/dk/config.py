@@ -30,11 +30,8 @@ class Config:
     agent_minutes: float = 30
     check_minutes: float = 10
 
-    def with_role(self, role: str) -> Agent:
-        for agent in self.agents:
-            if agent.role == role:
-                return agent
-        raise ConfigError(f"{FILE} has no agent with the role '{role}'")
+    def with_role(self, role: str) -> tuple[Agent, ...]:
+        return tuple(agent for agent in self.agents if agent.role == role)
 
 
 def load(project: Path) -> Config:

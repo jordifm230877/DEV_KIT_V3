@@ -15,11 +15,12 @@ from pathlib import Path
 from typing import Literal
 
 INSTRUCTIONS = "{instructions}"
-Answer = Literal["done", "blocked", "question"]
-ANSWERS: tuple[Answer, ...] = ("done", "blocked", "question")
+Answer = Literal["done", "approved", "rejected", "blocked", "question"]
+ANSWERS: tuple[Answer, ...] = ("done", "approved", "rejected", "blocked", "question")
+_READ_ONLY = ("--tools", "read,bash,grep,find,ls")
 
 _PROGRAMS = {
-    "pi": ("pi", "-p", "--no-session", "--model", "{model}", "--", INSTRUCTIONS),
+    "pi": ("pi", "-p", "--no-session", "--model", "{model}"),
 }
 
 
@@ -29,19 +30,20 @@ class UnknownProgram(Exception):
 
 @dataclass(frozen=True)
 class Reply:
-    kind: Literal["done", "blocked", "question", "unclear"]
+    kind: Answer | Literal["unclear"]
     text: str = ""
 
 
-def command(program: str, model: str) -> tuple[str, ...]:
-    """The command line for a known agent program."""
+def command(program: str, model: str, writes: bool) -> tuple[str, ...]:
+    """The command line for a known agent program; a reviewer gets no tools that write."""
     if program not in _PROGRAMS:
         raise UnknownProgram(f"unknown agent program '{program}'; known: {', '.join(_PROGRAMS)}")
-    return tuple(part.replace("{model}", model) for part in _PROGRAMS[program])
+    base = tuple(part.replace("{model}", model) for part in _PROGRAMS[program])
+    return (*base, *(() if writes else _READ_ONLY), "--", INSTRUCTIONS)
 
 
 def read(output: str) -> Reply:
-    """The answer is the last non-empty line: `RESULT: done|blocked: why|question: what`."""
+    """The answer is the last non-empty line, `RESULT: <answer>` or `RESULT: <answer>: <text>`."""
     lines = [line.strip() for line in output.splitlines() if line.strip()]
     if not lines or not lines[-1].startswith("RESULT:"):
         return Reply("unclear")

@@ -11,8 +11,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dk import agents, briefs, checks
-from dk.config import Config
-from dk.process import PROCESS, Failed, Outcome, Passed, Position, Step, Stopped, advance
+from dk.config import Agent, Config, ConfigError
+from dk.process import PROCESS, Failed, Lost, Outcome, Passed, Position, Step, Stopped, advance
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 
@@ -28,46 +28,74 @@ class Director:
     def run(self) -> None:
         """Take every unfinished ticket, in order, as far as it can go."""
         for ticket in self.tickets.all():
-            position = Position(ticket.step, ticket.attempts, ticket.note)
+            position = Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
             while not position.final:
                 step = next(step for step in PROCESS if step.name == position.step)
                 outcome = self._perform(step, ticket, position)
                 position = advance(PROCESS, position, outcome, self.config.max_attempts)
-                self.tickets.move(ticket.id, position.step, position.attempts, position.note)
-                self._report(ticket, step, outcome, position)
-
-    def _report(self, ticket: Ticket, step: Step, outcome: Outcome, position: Position) -> None:
-        result = type(outcome).__name__.lower()
-        reason = "" if isinstance(outcome, Passed) else f": {outcome.reason}"
-        self.tickets.record(ticket.id, f"{step.name} {result}{reason}")
-        self.say(f"#{ticket.id} {step.name} {result} -> {position.step}")
+                self.tickets.move(ticket.id, *vars(position).values())
+                if not isinstance(outcome, Passed):
+                    self.tickets.record(ticket.id, f"{step.name}: {outcome.reason}")
+                self.say(f"#{ticket.id} {step.name} {type(outcome).__name__.lower()}")
 
     def _perform(self, step: Step, ticket: Ticket, position: Position) -> Outcome:
         logs = self.logs / f"ticket-{ticket.id}" / f"attempt-{position.attempts + 1}"
-        if step.kind == "agent":
-            return self._work(step, ticket, position, logs)
         if step.kind == "checks":
-            seconds = self.config.check_minutes * 60
-            failure = checks.run(
-                self.config.checks, self.workspace.prepare(ticket.id), logs, seconds
-            )
-            return Failed(failure) if failure else Passed()
-        trouble = self.workspace.merge(ticket.id, ticket.title)
-        return Stopped(trouble) if trouble else Passed()
+            return self._check(ticket, logs)
+        if step.kind == "merge":
+            trouble = self.workspace.merge(ticket.id, ticket.title)
+            return Stopped(trouble) if trouble else Passed()
+        agent = self._agent(step, ticket)
+        if agent is None:
+            return Passed()
+        if step.kind == "work":
+            return self._work(agent, ticket, position, logs)
+        return self._review(agent, ticket, logs)
 
-    def _work(self, step: Step, ticket: Ticket, position: Position, logs: Path) -> Outcome:
-        agent = self.config.with_role(step.role)
-        argv = agent.command or agents.command(agent.program, agent.model)
-        instructions = briefs.coder(ticket.id, ticket.title, ticket.spec, position.note)
+    def _check(self, ticket: Ticket, logs: Path) -> Outcome:
+        copy = self.workspace.prepare(ticket.id)
+        failure = checks.run(self.config.checks, copy, logs, self.config.check_minutes * 60)
+        return Failed(failure) if failure else Passed()
+
+    def _agent(self, step: Step, ticket: Ticket) -> Agent | None:
+        """Who does this step; nobody means the step is skipped, and the history says so."""
+        available = self.config.with_role(step.role)
+        if available:
+            return available[0]
+        if step.required:
+            raise ConfigError(f"no agent has the role '{step.role}'")
+        self.tickets.record(ticket.id, f"{step.name} skipped: no {step.role}")
+        return None
+
+    def _ask(
+        self, agent: Agent, writes: bool, brief: str, ticket: Ticket, logs: Path
+    ) -> agents.Reply:
+        argv = agent.command or agents.command(agent.program, agent.model, writes)
         copy = self.workspace.prepare(ticket.id)
         self.tickets.record(ticket.id, f"{agent.name} started")
-        reply = agents.ask(
-            argv, instructions, copy, logs / f"{agent.name}.log", self.config.agent_minutes * 60
-        )
-        if reply.kind == "unclear":
-            return Failed(f"{agent.name} ended without a clear answer")
-        if reply.kind != "done":
+        seconds = self.config.agent_minutes * 60
+        return agents.ask(argv, brief, copy, logs / f"{agent.name}.log", seconds)
+
+    def _work(self, agent: Agent, ticket: Ticket, position: Position, logs: Path) -> Outcome:
+        brief = briefs.coder(ticket.id, ticket.title, ticket.spec, position.note)
+        reply = self._ask(agent, True, brief, ticket, logs)
+        if reply.kind in ("blocked", "question"):
             return Stopped(f"{reply.kind}: {reply.text}")
+        if reply.kind != "done":
+            return Lost(f"{agent.name} ended without a clear answer")
         if not self.workspace.save(ticket.id, f"Ticket #{ticket.id}: {ticket.title}"):
             return Failed(f"{agent.name} said it was done but changed nothing")
+        return Passed()
+
+    def _review(self, agent: Agent, ticket: Ticket, logs: Path) -> Outcome:
+        base = self.workspace.base(ticket.id)
+        brief = briefs.reviewer(agent.role, ticket.id, ticket.title, ticket.spec, base)
+        reply = self._ask(agent, False, brief, ticket, logs)
+        self.workspace.restore(ticket.id)
+        if reply.kind in ("blocked", "question"):
+            return Stopped(f"{reply.kind}: {reply.text}")
+        if reply.kind == "rejected":
+            return Failed(f"{agent.name} rejected the work: {reply.text}")
+        if reply.kind != "approved":
+            return Lost(f"{agent.name} ended without a clear answer")
         return Passed()

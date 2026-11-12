@@ -11,10 +11,19 @@ from dk import agents
 
 
 def test_pi_is_started_for_one_job_with_the_chosen_model() -> None:
-    argv = agents.command("pi", "some/model")
+    argv = agents.command("pi", "some/model", writes=True)
 
     assert argv[0] == "pi" and "-p" in argv
     assert argv[argv.index("--model") + 1] == "some/model"
+    assert argv[-2:] == ("--", agents.INSTRUCTIONS)
+    assert "--tools" not in argv
+
+
+def test_a_pi_reviewer_gets_no_tools_that_write() -> None:
+    argv = agents.command("pi", "some/model", writes=False)
+
+    tools = argv[argv.index("--tools") + 1].split(",")
+    assert "read" in tools and not {"edit", "write"} & set(tools)
     assert argv[-2:] == ("--", agents.INSTRUCTIONS)
 
 
@@ -36,6 +45,8 @@ def test_instructions_can_be_handed_over_as_an_argument(tmp_path: Path) -> None:
         ("work\nRESULT: done\n\n", agents.Reply("done")),
         ("RESULT: blocked: no access: denied", agents.Reply("blocked", "no access: denied")),
         ("RESULT: question:  which one? ", agents.Reply("question", "which one?")),
+        ("RESULT: approved", agents.Reply("approved")),
+        ("RESULT: rejected: says hi", agents.Reply("rejected", "says hi")),
         ("RESULT: done\nand then more talk", agents.Reply("unclear")),
         ("RESULT: finished", agents.Reply("unclear")),
         ("", agents.Reply("unclear")),

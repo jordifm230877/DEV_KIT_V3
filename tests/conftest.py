@@ -24,20 +24,34 @@ class Project:
         return done.stdout.strip()
 
     def configure(
-        self, coder: str, check: str = "", max_attempts: int = 3, settings: str = ""
+        self,
+        coder: str,
+        check: str = "",
+        max_attempts: int = 3,
+        settings: str = "",
+        coders: int = 1,
+        **others: str,
     ) -> None:
-        """`coder` and `check` are Python bodies; the coder reads its instructions as `prompt`."""
+        """Each role is a Python body that reads its instructions as `prompt`.
+
+        `others` adds one agent per extra role, for example `verifier="..."`.
+        """
         tools = self.root.parent / "tools"
         tools.mkdir(exist_ok=True)
-        (tools / "coder.py").write_text(
-            f"import sys, pathlib\nprompt = sys.stdin.read()\n{coder}\n"
-        )
         (tools / "check.py").write_text(f"import sys, pathlib\n{check}\n")
-        command = json.dumps([sys.executable, str(tools / "coder.py")])
+        agents = ""
+        for role, body in {"coder": coder, **others}.items():
+            script = tools / f"{role}.py"
+            script.write_text(f"import sys, pathlib\nprompt = sys.stdin.read()\n{body}\n")
+            for number in range(1, (coders if role == "coder" else 1) + 1):
+                command = json.dumps([sys.executable, str(script)])
+                agents += (
+                    f'[[agents]]\nname = "{role}-{number}"\nrole = "{role}"\n'
+                    f"command = {command}\n\n"
+                )
         check_command = json.dumps([sys.executable, str(tools / "check.py")])
         (self.root / "devkit.toml").write_text(  # committed, as a real project would
-            f"max_attempts = {max_attempts}\n{settings}\n\n"
-            f'[[agents]]\nname = "coder-1"\nrole = "coder"\ncommand = {command}\n\n'
+            f"max_attempts = {max_attempts}\n{settings}\n\n{agents}"
             f"[checks]\nunit = {check_command}\n"
         )
         self.git("add", "devkit.toml")

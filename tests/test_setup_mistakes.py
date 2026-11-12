@@ -27,7 +27,7 @@ def test_a_project_without_a_coder_says_which_role_is_missing(project: Project) 
     (project.root / "devkit.toml").write_text("max_attempts = 2\n")
     project.dk("add", "Greet", "--spec", "x")
 
-    assert "no agent with the role 'coder'" in project.refused("run")
+    assert "no agent has the role 'coder'" in project.refused("run")
 
 
 def test_an_unknown_agent_program_is_named(project: Project) -> None:

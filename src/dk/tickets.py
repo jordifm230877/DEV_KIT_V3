@@ -12,7 +12,8 @@ from pathlib import Path
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS ticket (
     id INTEGER PRIMARY KEY, title TEXT NOT NULL, spec TEXT NOT NULL,
-    step TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, note TEXT NOT NULL DEFAULT ''
+    step TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, note TEXT NOT NULL DEFAULT '',
+    stopped INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS history (
     id INTEGER PRIMARY KEY, ticket INTEGER NOT NULL REFERENCES ticket(id),
@@ -29,6 +30,7 @@ class Ticket:
     step: str
     attempts: int
     note: str
+    stopped: bool
 
 
 class Tickets:
@@ -45,9 +47,12 @@ class Tickets:
 
     def all(self) -> list[Ticket]:
         rows = self._db.execute(
-            "SELECT id, title, spec, step, attempts, note FROM ticket ORDER BY id"
+            "SELECT id, title, spec, step, attempts, note, stopped FROM ticket ORDER BY id"
         )
-        return [Ticket(*row) for row in rows]
+        return [
+            Ticket(number, title, spec, step, attempts, note, bool(stopped))
+            for number, title, spec, step, attempts, note, stopped in rows
+        ]
 
     def get(self, ticket: int) -> Ticket:
         found = [candidate for candidate in self.all() if candidate.id == ticket]
@@ -55,10 +60,10 @@ class Tickets:
             raise LookupError(f"there is no ticket #{ticket}")
         return found[0]
 
-    def move(self, ticket: int, step: str, attempts: int, note: str) -> None:
+    def move(self, ticket: int, step: str, attempts: int, note: str, stopped: bool) -> None:
         self._db.execute(
-            "UPDATE ticket SET step = ?, attempts = ?, note = ? WHERE id = ?",
-            (step, attempts, note, ticket),
+            "UPDATE ticket SET step = ?, attempts = ?, note = ?, stopped = ? WHERE id = ?",
+            (step, attempts, note, stopped, ticket),
         )
 
     def record(self, ticket: int, what: str) -> None:
