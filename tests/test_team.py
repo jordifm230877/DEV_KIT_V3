@@ -90,3 +90,27 @@ def test_a_coder_resolves_a_clash_with_work_merged_meanwhile(project: Project) -
     status = project.dk("status")
     assert "#1 done" in status and "#2 done" in status
     assert project.git("status", "--porcelain") == ""
+
+
+def test_a_ticket_advances_whenever_the_agent_it_needs_is_free(project: Project) -> None:
+    coder = SETUP + (
+        "deadline = time.monotonic() + 3\n"
+        "while not (shared / 'tester-here').exists() and time.monotonic() < deadline:\n"
+        "    time.sleep(0.02)\n"
+        "met = (shared / 'tester-here').exists()\n"
+        "pathlib.Path('file.txt').write_text('together\\n' if met else 'alone\\n')\n"
+        "print('RESULT: done')"
+    )
+    tester = SETUP + (
+        "(shared / 'tester-here').touch()\n"
+        "pathlib.Path('features').mkdir(exist_ok=True)\n"
+        "pathlib.Path('features/two.feature').write_text('Feature: Two\\n')\n"
+        "print('RESULT: done')"
+    )
+    project.configure(coder=coder, tester=tester)
+    project.dk("add", "One", "--spec", "a", "--no-behaviour-tests")
+    project.dk("add", "Two", "--spec", "b")
+
+    project.dk("run")
+
+    assert project.merged("file.txt") == "together\n", "the one coder was busy, the tester free"

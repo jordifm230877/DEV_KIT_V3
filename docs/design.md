@@ -121,6 +121,10 @@ Each step ends with something usable.
   they are merged, so its copy begins with their work. A cancelled ticket holds nobody back.
   Tickets without it advance side by side. In the first real trial the Principal planned
   four tickets in order and three stopped at once, each waiting for work it could not see.
+- As many tickets are built at once (from `code` to `merge`) as there are coders, so with
+  one coder each ticket is built on the one before it. Preparing behaviour tests does not
+  count: in a real trial the test-writer sat idle on an answered ticket while the one coder
+  worked on another. The director hands the first agent to a ticket itself, in ticket order.
 - The test-writer puts scenarios where the project's `AGENTS.md` says, and under `features/`
   only when it says nothing: a fixed folder clashed with a Rust project's `tests/features/`.
 - Before a test-writer or coder starts, the ticket's copy takes in what the project gained

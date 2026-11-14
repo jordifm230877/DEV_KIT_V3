@@ -5,7 +5,7 @@ Pure: no files, no programs, no clock. Changing the process means changing `PROC
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Literal
 
@@ -137,6 +137,15 @@ def held_by(follows: Sequence[int], steps: Mapping[int, str]) -> list[int]:
     """Which of the tickets this one follows still hold it back; `steps` says where every
     ticket is. A merged ticket no longer does, nor one that was given up."""
     return [number for number in follows if steps[number] not in (DONE, CANCELLED)]
+
+
+def preparing(step: str, roles: Collection[str]) -> bool:
+    """Whether work from this step ends with the user's decision before anything is built;
+    `roles` are those somebody has, for a step whose role nobody has is skipped."""
+    names = [one.name for one in PROCESS]
+    ahead = PROCESS[names.index(step) :] if step in names else ()
+    decisive = (one for one in ahead if one.required or (one.kind == "user" and one.role in roles))
+    return any(one.kind == "user" for one in [*decisive][:1])
 
 
 def cancel(position: Position) -> Position:

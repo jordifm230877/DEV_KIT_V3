@@ -101,7 +101,8 @@ Things to know:
 - **Commit everything agents must see.** Each ticket is worked on in a copy of what Git
   holds; uncommitted files, `AGENTS.md` included, do not exist for the agents.
 - **More agents is more lines.** Add `coder-2` with `role = "coder"` and two tickets advance
-  at once. The same works for verifiers and QA.
+  at once. The same works for verifiers and QA. Behaviour tests for later tickets are
+  written while the coders are busy.
 - **Each agent can use a different model.** A smaller model for reviews, for example.
 - **Checks** are whatever proves your project works: tests, lint, a build. DevKit runs them
   itself in the ticket's copy of the code; it never takes an agent's word for it.

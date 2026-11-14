@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from queue import Queue
+from queue import Empty, Queue
 
 from dk import briefs, checks, principal
 from dk.config import Agent, Config, ConfigError
@@ -29,6 +29,7 @@ from dk.process import (
     advance,
     held_by,
     of,
+    preparing,
     retry,
 )
 from dk.tickets import Ticket, Tickets
@@ -61,14 +62,14 @@ class Director:
         return Jobs(self.config, self.tickets, self.workspace, self.logs, self.stop, self.command)
 
     def run(self, keep_going: bool = False) -> None:
-        """Take every unfinished ticket as far as it can go, as many at once as there are
-        coders. Each agent does one job at a time; merges happen one at a time.
+        """Take every unfinished ticket as far as it can go: as many are built at once as
+        there are coders, and behaviour tests are prepared meanwhile. Each agent does one job
+        at a time; merges happen one at a time.
 
         With `keep_going`, wait for tickets to be written or sent on, until `stop` is set."""
         for agent in self.config.agents:
             self._free.setdefault(agent.role, Queue()).put(agent)
-        coders = len(self.config.with_role("coder"))
-        with ThreadPoolExecutor(max(coders, 1)) as together:
+        with ThreadPoolExecutor(len(self.config.agents) + 1) as together:
             active: dict[int, Future[None]] = {}
             while not self.stop.is_set():
                 self._take_up(together, active)
@@ -85,19 +86,42 @@ class Director:
         for number in [number for number, job in active.items() if job.done()]:
             active.pop(number).result()
         tickets = self.tickets.all()
-        steps = {ticket.id: ticket.step for ticket in tickets}
         for ticket in tickets:
-            waiting = _position(ticket).final or held_by(ticket.follows, steps)
-            if ticket.id not in active and not waiting:
-                active[ticket.id] = together.submit(self._drive, ticket)
+            if self._may_start(ticket, tickets, active):
+                ready, agent = self._reserve(ticket)
+                if ready:
+                    active[ticket.id] = together.submit(self._drive, ticket, agent)
 
-    def _drive(self, ticket: Ticket) -> None:
+    def _may_start(self, ticket: Ticket, tickets: list[Ticket], active: Collection[int]) -> bool:
+        """As many tickets are built at once as there are coders, so that with one coder
+        each is built on the one before it; preparing behaviour tests does not count."""
+        steps = {other.id: other.step for other in tickets}
+        waiting = _position(ticket).final or held_by(ticket.follows, steps)
+        if ticket.id in active or waiting or len(active) > len(self.config.agents):
+            return False
+        roles = self._free.keys()
+        building = sum(not preparing(steps[number], roles) for number in active)
+        coders = max(len(self.config.with_role("coder")), 1)
+        return preparing(ticket.step, roles) or building < coders
+
+    def _reserve(self, ticket: Ticket) -> tuple[bool, Agent | None]:
+        """Whether the ticket's step can start now, and the agent taken for it if it needs
+        one. Taken here, in the order of the tickets, so that the earliest ticket goes first."""
+        step = next(step for step in of(ticket.step) if step.name == ticket.step)
+        if step.kind not in ("work", "review") or step.role not in self._free:
+            return True, None
+        try:
+            return True, self._free[step.role].get_nowait()
+        except Empty:
+            return False, None
+
+    def _drive(self, ticket: Ticket, agent: Agent | None) -> None:
         position = _position(ticket)
         helped = False  # the Principal answers a stop once; after that it is the user's
         while not position.final and not self.stop.is_set():
             steps = of(position.step)
             step = next(step for step in steps if step.name == position.step)
-            outcome = self._perform(step, ticket, position)
+            outcome, agent = self._perform(step, ticket, position, agent), None
             if self.stop.is_set() or self.tickets.get(ticket.id).step == CANCELLED:
                 return  # work cut short or no longer wanted is thrown away, not judged
             position = advance(steps, position, outcome, self.config.max_attempts)
@@ -142,7 +166,9 @@ class Director:
         self.tickets.move(number, *vars(position).values())
         return position
 
-    def _perform(self, step: Step, ticket: Ticket, position: Position) -> Outcome:
+    def _perform(
+        self, step: Step, ticket: Ticket, position: Position, agent: Agent | None
+    ) -> Outcome:
         logs = self.logs / f"ticket-{ticket.id}" / f"attempt-{position.attempts + 1}"
         if step.kind == "checks":
             return self._check(ticket, logs)
@@ -159,7 +185,7 @@ class Director:
         work = self.jobs
         jobs = {"specify": work.specify, "vet": work.vet, "code": work.code, "audit": work.audit}
         job = jobs.get(step.name, work.review)
-        agent = self._free[step.role].get()
+        agent = agent or self._free[step.role].get()
         try:
             return job(agent, self.tickets.get(ticket.id), position)
         finally:
