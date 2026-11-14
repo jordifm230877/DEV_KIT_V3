@@ -110,6 +110,9 @@ def _parser() -> argparse.ArgumentParser:
         command.add_argument("--no-tabs", action="store_true", help="do not open Herdr tabs")
     init = commands.add_parser("init", help="write a first devkit.toml and AGENTS.md")
     init.add_argument("--model", required=True, help="the model every agent starts with")
+    init.add_argument(
+        "--program", default="pi", choices=list(agents.PROGRAMS), help="their program"
+    )
     commands.add_parser("check", help="find what would stop the first ticket")
     status = commands.add_parser("status", help="list the tickets")
     status.add_argument("--watch", action="store_true", help="keep showing agents and tickets")
@@ -223,7 +226,7 @@ def _execute(args: argparse.Namespace) -> None:
     commands: dict[str, Callable[[], None]] = {
         "add": lambda: _add(args, tickets),
         "check": lambda: _check(project, home),
-        "init": lambda: print(*starter.write(project, args.model), sep="\n"),
+        "init": lambda: print(*starter.write(project, args.model, args.program), sep="\n"),
         "run": lambda: _run(args, project, home, tickets),
         "talk": lambda: _talk(project, home, tickets, args.no_tabs),
         "status": lambda: (

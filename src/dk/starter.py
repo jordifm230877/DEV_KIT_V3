@@ -65,12 +65,12 @@ work: DevKit takes care of those, and a rule here that disagrees with it stops t
 """
 
 
-def _configuration(kind: Kind, model: str) -> str:
+def _configuration(kind: Kind, model: str, program: str) -> str:
     text = "max_attempts = 3        # failed attempts before a ticket stops and waits for you\n"
     for role in TEAM:
         name = role if role == "principal" else f"{role}-1"
         text += (
-            f'\n[[agents]]\nname = "{name}"\nrole = "{role}"\nprogram = "pi"\n'
+            f'\n[[agents]]\nname = "{name}"\nrole = "{role}"\nprogram = "{program}"\n'
             f"model = {json.dumps(model)}\n"
         )
     if not kind.checks:
@@ -89,11 +89,14 @@ def _rules(kind: Kind) -> str:
     return _RULES.format(commands=commands, scenarios=kind.scenarios, steps=kind.steps)
 
 
-def write(project: Path, model: str) -> list[str]:
+def write(project: Path, model: str, program: str = "pi") -> list[str]:
     """Write whichever of the two files is missing. Returns what to tell the user."""
     kind = next((kind for marker, kind in _KINDS.items() if (project / marker).exists()), _UNKNOWN)
     told = []
-    for name, text in (("devkit.toml", _configuration(kind, model)), ("AGENTS.md", _rules(kind))):
+    for name, text in (
+        ("devkit.toml", _configuration(kind, model, program)),
+        ("AGENTS.md", _rules(kind)),
+    ):
         if (project / name).exists():
             told.append(f"{name} already exists; left as it is")
         else:

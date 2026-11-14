@@ -5,8 +5,8 @@ From nothing to a first ticket merged. About ten minutes.
 ## 1. What you need
 
 - Linux or macOS, Git, Python 3.14 and [uv](https://docs.astral.sh/uv/).
-- [Pi](https://pi.dev) on your `PATH`, already logged in to a model provider.
-  Check with `pi --list-models`.
+- An agent program on your `PATH`, already logged in: [Pi](https://pi.dev) (check with
+  `pi --list-models`), Claude Code (`claude`) or Codex (`codex`).
 - Optional: [Herdr](https://herdr.dev). Inside it you get one tab per agent.
 
 ## 2. Install the `dk` command
@@ -113,7 +113,11 @@ Things to know:
   `dryer` flag. Put `quality_rules = false` at the top of `devkit.toml` to leave both out.
 - **The verifier judges how the work is done; QA whether it works.** QA runs the product
   and goes through the ticket's acceptance criteria and the approved scenarios one by one.
-- If your project has an `AGENTS.md`, Pi reads it, so project conventions belong there.
+- If your project has an `AGENTS.md`, the agents read it, so project conventions belong
+  there. (Pi and Codex do by themselves; a Claude agent is told to. In the conversation a
+  Claude Principal reads `CLAUDE.md` only: put `@AGENTS.md` in it.)
+- `program` is `"pi"`, `"claude"` or `"codex"`, per agent, so a team can mix them. `model`
+  is whatever that program calls its models (`sonnet`, `gpt-5-codex`, `provider/name`...).
 
 ## 4. First ticket
 
@@ -211,8 +215,10 @@ Deleting `.devkit/` forgets all tickets; your code and merged work are not affec
 
 ## 9. Limits to keep in mind
 
-- Agents run as you, with your Pi settings and full access to your machine. DevKit guards
-  against mistakes, not against an agent that deliberately works around it.
+- Agents run as you, with your own settings for their program and full access to your
+  machine: Claude and Codex are started with their permission checks and sandbox off, as
+  Pi has none. DevKit guards against mistakes, not against an agent that deliberately
+  works around it.
 - Tried so far only on small throwaway projects with one model.
-- Only Pi is known as an agent program. Any other command-line agent can be plugged in with
-  `command = [...]` instead of `program`; see the README.
+- Pi, Claude Code and Codex are known as agent programs. Any other command-line agent can
+  be plugged in with `command = [...]` instead of `program`; see the README.

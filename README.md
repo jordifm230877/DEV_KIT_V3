@@ -20,7 +20,7 @@ with what was merged before it. Tried with a real model through Pi on small thro
 
 ## Use
 
-`dk init --model MODEL` writes a first `devkit.toml` and `AGENTS.md`, and `dk check` tells
+`dk init --model MODEL [--program pi|claude|codex]` writes a first `devkit.toml` and `AGENTS.md`, and `dk check` tells
 you whether the agents, the checks and the repository are ready. By hand, put a
 `devkit.toml` in your Git project and commit it:
 
@@ -31,7 +31,7 @@ max_attempts = 3            # failed attempts before a ticket stops and waits fo
 [[agents]]
 name = "coder-1"
 role = "coder"
-program = "pi"
+program = "pi"              # or "claude" or "codex"; each agent names its own
 model = "provider/model-name"
 
 [[agents]]                  # optional: the agent you talk to with `dk talk`

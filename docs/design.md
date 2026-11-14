@@ -88,7 +88,8 @@ Each step ends with something usable.
    step with its approval and read-only rule; epics as a label on tickets. *(done)*
 3. Herdr tabs. *(done)*
 4. Conversation with the Principal. *(done)*
-5. Later: Claude and Codex as agent programs, a second-opinion agent, web access.
+5. Claude and Codex as agent programs. *(done)*
+6. Later: a second-opinion agent, web access.
 
 ## Decisions taken while building
 
@@ -164,6 +165,13 @@ Each step ends with something usable.
   and two tabs said nearly the same. The lines are still kept in `.devkit/logs/tickets.log`.
 - During `dk talk` inside Herdr, the tab of the conversation is named `Principal` and gets
   its earlier name back at the end; the user could not tell it from the other tabs by "1".
+- Claude Code and Codex are agent programs beside Pi, for a job and for the conversation;
+  an agent names its own, so a team can mix them. Each is started for one job, printing one
+  event per line, which `agents` turns into the lines a person follows. They run with
+  their permission checks and sandbox switched off: the user chose the freedom Pi already
+  has over each program's own automatic gatekeeper, which could refuse a command a project
+  needs. A reviewing Claude gets no editing tools, as with Pi; Codex has no such list, and
+  the director throws away what a reviewer changes in any case.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

@@ -22,15 +22,42 @@ INSTRUCTIONS = "{instructions}"
 WHO = "DK_AGENT"  # set for every program an agent runs, so `dk` can tell it is not the user
 Answer = Literal["done", "approved", "rejected", "blocked", "question"]
 ANSWERS: tuple[Answer, ...] = ("done", "approved", "rejected", "blocked", "question")
-_READ_ONLY = ("--tools", "read,bash,grep,find,ls")
-
-_PROGRAMS = {
-    "pi": ("pi", "-p", "--no-session", "--mode", "json", "--model", "{model}"),
+_FREE = {
+    "claude": "--dangerously-skip-permissions",
+    "codex": "--dangerously-bypass-approvals-and-sandbox",
 }
+# Pi and Codex read a project's AGENTS.md by themselves; Claude reads only CLAUDE.md.
+_RULES = "If the current directory has an AGENTS.md, read it first: it holds this project's rules."
 
 
-_CONVERSATIONS = {
-    "pi": ("pi", "--model", "{model}", "--append-system-prompt", INSTRUCTIONS),
+@dataclass(frozen=True)
+class _Program:
+    """How one kind of agent program is started; `{model}` stands for the agent's model."""
+
+    job: tuple[str, ...]  # one job; the instructions follow as the last argument
+    reading: tuple[str, ...]  # added for a job that must not change files
+    talk: tuple[str, ...]  # a conversation with the user
+
+
+PROGRAMS = {
+    "pi": _Program(
+        ("pi", "-p", "--no-session", "--mode", "json", "--model", "{model}"),
+        ("--tools", "read,bash,grep,find,ls"),
+        ("pi", "--model", "{model}", "--append-system-prompt", INSTRUCTIONS),
+    ),
+    "claude": _Program(
+        ("claude", "-p", "--no-session-persistence", "--output-format", "stream-json")
+        + ("--verbose", "--model", "{model}", _FREE["claude"])
+        + ("--append-system-prompt", _RULES),
+        ("--tools", "Read,Bash,Grep,Glob"),
+        ("claude", "--model", "{model}", _FREE["claude"], "--append-system-prompt", INSTRUCTIONS),
+    ),
+    "codex": _Program(
+        ("codex", "exec", "--ephemeral", "--json", "--skip-git-repo-check")
+        + ("-m", "{model}", _FREE["codex"]),
+        (),  # Codex has no list of tools to narrow
+        ("codex", "-m", "{model}", _FREE["codex"], INSTRUCTIONS),
+    ),
 }
 
 
@@ -44,19 +71,22 @@ class Reply:
     text: str = ""
 
 
+def _known(program: str) -> _Program:
+    if program not in PROGRAMS:
+        raise UnknownProgram(f"unknown agent program '{program}'; known: {', '.join(PROGRAMS)}")
+    return PROGRAMS[program]
+
+
 def command(program: str, model: str, writes: bool) -> tuple[str, ...]:
     """The command line for a known agent program; a reviewer gets no tools that write."""
-    if program not in _PROGRAMS:
-        raise UnknownProgram(f"unknown agent program '{program}'; known: {', '.join(_PROGRAMS)}")
-    base = tuple(part.replace("{model}", model) for part in _PROGRAMS[program])
-    return (*base, *(() if writes else _READ_ONLY), "--", INSTRUCTIONS)
+    known = _known(program)
+    base = tuple(part.replace("{model}", model) for part in known.job)
+    return (*base, *(() if writes else known.reading), "--", INSTRUCTIONS)
 
 
 def conversation(program: str, model: str) -> tuple[str, ...]:
     """The command line that opens a known agent program for talking with the user."""
-    if program not in _CONVERSATIONS:
-        raise UnknownProgram(f"unknown agent program '{program}'; known: {', '.join(_PROGRAMS)}")
-    return tuple(part.replace("{model}", model) for part in _CONVERSATIONS[program])
+    return tuple(part.replace("{model}", model) for part in _known(program).talk)
 
 
 def read(output: str) -> Reply:
@@ -86,21 +116,61 @@ def _spoken(event: dict[str, Any]) -> str:
     return "".join(text.rstrip("\n") + "\n" for text in texts)
 
 
-def _pi(line: str) -> str:
-    """One line of Pi's detailed output as something a person can follow, or nothing."""
-    try:
-        event = json.loads(line)
-    except ValueError:
-        return line
-    if not isinstance(event, dict):
-        return line
+def _pi(event: dict[str, Any]) -> str:
     shows = {"tool_execution_start": _tool, "message_end": _spoken}
     return shows.get(event.get("type", ""), lambda _: "")(event)
 
 
+def _claude(event: dict[str, Any]) -> str:
+    if event.get("type") == "result" and event.get("is_error"):
+        return f"error: {event.get('result') or event.get('subtype')}\n"
+    if event.get("type") != "assistant":
+        return ""
+    return "".join(_part(part) for part in event.get("message", {}).get("content", []))
+
+
+def _part(part: dict[str, Any]) -> str:
+    """One piece of what Claude said: words, or the tool it reached for."""
+    if part.get("type") == "text":
+        return str(part["text"]).rstrip("\n") + "\n"
+    if part.get("type") != "tool_use":
+        return ""
+    given = part.get("input") or {}
+    what = next((given[key] for key in ("command", "file_path", "pattern") if key in given), "")
+    return f"> {part.get('name')} {what}\n"
+
+
+def _codex(event: dict[str, Any]) -> str:
+    item = event.get("item") or {}
+    step = (event.get("type"), item.get("type"))
+    if step == ("item.started", "command_execution"):
+        return f"> {item.get('command')}\n"
+    if step == ("item.completed", "agent_message"):
+        return str(item.get("text", "")).rstrip("\n") + "\n"
+    failure = event.get("message") or (event.get("error") or {}).get("message")
+    return f"error: {failure}\n" if step[0] in ("error", "turn.failed") and failure else ""
+
+
+_READERS = {"pi": _pi, "claude": _claude, "codex": _codex}
+
+
 def reader(program: str) -> Callable[[str], str]:
-    """How to turn each line a program prints into what is shown; by default, as it is."""
-    return {"pi": _pi}.get(program, str)
+    """How to turn each line a program prints into what is shown; by default, as it is.
+
+    The known programs print one event per line; a line that is not one is shown as it is.
+    """
+    if program not in _READERS:
+        return str
+    show = _READERS[program]
+
+    def plain(line: str) -> str:
+        try:
+            event = json.loads(line)
+        except ValueError:
+            return line
+        return show(event) if isinstance(event, dict) else line
+
+    return plain
 
 
 def ask(
