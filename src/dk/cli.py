@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import os
 import shlex
 import sys
@@ -49,6 +50,7 @@ def _parser() -> argparse.ArgumentParser:
     audit.add_argument("kind", choices=list(briefs.AUDITS))
     audit.add_argument("--note", default="", help="what to look at in particular")
     for name, text in (
+        ("night", "audit everything that changed, and go on with unfinished tickets"),
         ("run", "work on every unfinished ticket"),
         ("talk", "talk with the Principal while the work goes on"),
     ):
@@ -140,7 +142,7 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
     herdr = os.environ.get("HERDR_BIN_PATH", "herdr")
     mine = "" if no_tabs else os.environ.get("HERDR_TAB_ID", "")
     watching = _watching(project, director.shown(), no_tabs)
-    with watching, screen.named(herdr, mine, "Principal"):
+    with _alone(home, BUSY), watching, screen.named(herdr, mine, "Principal"):
         behind.start()
         try:
             agents.converse(argv, principal.conversation(director.command), project, agent.name)
@@ -161,10 +163,39 @@ def _check(project: Path, home: Path) -> None:
         raise LookupError(f"{wrong} thing{'s' if wrong > 1 else ''} to fix before starting")
 
 
+BUSY = "work is already going on in this project (`dk run`, `dk talk` or `dk night`)"
+
+
+@contextmanager
+def _alone(home: Path, or_else: str = "") -> Iterator[bool]:
+    """Hold the project's work for this program. Says whether it got it; when another
+    program has it, refuses with `or_else` if there is one."""
+    with (home / "running").open("w") as working:
+        try:
+            fcntl.flock(working, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            if or_else:
+                raise RuntimeError(or_else) from None
+            yield False
+        else:
+            yield True
+
+
 def _run(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets) -> None:
     director = _director(project, home, tickets, print)
-    with _watching(project, director.shown(), args.no_tabs):
+    with _alone(home, BUSY), _watching(project, director.shown(), args.no_tabs):
         director.run()
+
+
+def _night(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets) -> None:
+    director = _director(project, home, tickets, print)
+    with _alone(home) as free:
+        orders.night(project, tickets, director.workspace.changed_since)
+        if not free:
+            print(f"{BUSY}; it will carry these out")
+            return
+        with _watching(project, director.shown(), args.no_tabs):
+            director.run()
 
 
 def _execute(args: argparse.Namespace) -> None:
@@ -176,7 +207,8 @@ def _execute(args: argparse.Namespace) -> None:
     commands: dict[str, Callable[[], None]] = {
         "add": lambda: orders.add(args, tickets),
         "propose": lambda: orders.propose(args, tickets),
-        "audit": lambda: orders.audit(args, project, tickets),
+        "audit": lambda: orders.audit(args.kind, args.note, project, tickets),
+        "night": lambda: _night(args, project, home, tickets),
         "check": lambda: _check(project, home),
         "init": lambda: print(*starter.write(project, args.model, args.program), sep="\n"),
         "run": lambda: _run(args, project, home, tickets),

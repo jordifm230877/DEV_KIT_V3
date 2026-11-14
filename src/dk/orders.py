@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 from dk import agents, briefs, config, jobs, process
@@ -132,11 +133,33 @@ def add(args: argparse.Namespace, tickets: Tickets) -> None:
     print(f"#{number} written")
 
 
-def audit(args: argparse.Namespace, project: Path, tickets: Tickets) -> None:
+def audit(kind: str, note: str, project: Path, tickets: Tickets) -> None:
     role = process.AUDIT[0].role
     if not config.load(project).with_role(role):
         raise config.ConfigError(f"no agent has the role '{role}'")
-    title = f"{args.kind.capitalize()} audit"
-    spec = f"{briefs.AUDITS[args.kind]}\n{args.note}".strip()
+    title = _audit_title(kind)
+    spec = f"{briefs.AUDITS[kind]}\n{note}".strip()
     number = tickets.add(title, spec, process.AUDIT[0].name, "", [])
     print(f"#{number} written; its report will be {jobs.report(title)}")
+
+
+def _audit_title(kind: str) -> str:
+    return f"{kind.capitalize()} audit"
+
+
+def night(project: Path, tickets: Tickets, changed: Callable[[str], bool]) -> None:
+    """Write an audit of every kind, except one still unfinished or one whose last report
+    the project has not changed since; `changed` says so for a pattern of report files."""
+    for kind in briefs.AUDITS:
+        title = _audit_title(kind)
+        unfinished = [
+            ticket.id
+            for ticket in tickets.all()
+            if ticket.title == title and ticket.step not in (process.DONE, CANCELLED)
+        ]
+        if unfinished:
+            print(f"{title}: #{unfinished[0]} is still unfinished")
+        elif not changed(jobs.report(title, "*")):
+            print(f"{title}: nothing changed since its last report")
+        else:
+            audit(kind, "", project, tickets)

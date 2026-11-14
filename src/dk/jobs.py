@@ -41,9 +41,10 @@ def _unclear(agent: Agent, reply: agents.Reply) -> Lost:
     return Lost(f"{agent.name} ended without a clear answer{last}")
 
 
-def report(title: str) -> str:
-    """Where in the project the report of an audit with this title is written."""
-    return f"docs/audits/{date.today()}-{title.lower().replace(' ', '-')}.md"
+def report(title: str, day: object = None) -> str:
+    """Where in the project the report of an audit with this title is written; with `day`
+    "*", the pattern of every such report."""
+    return f"docs/audits/{day or date.today()}-{title.lower().replace(' ', '-')}.md"
 
 
 def label(agent: Agent) -> str:

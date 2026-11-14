@@ -55,6 +55,14 @@ class Workspace:
         """The commit the ticket's work started from; `git diff <base>` shows the work."""
         return self._must(self._project, "merge-base", "HEAD", f"ticket/{ticket}")
 
+    def changed_since(self, files: str) -> bool:
+        """Whether the project changed, apart from `files` themselves and the files beside
+        them, since the latest of `files` (a pattern) was written; true when there is none."""
+        last = self._must(self._project, "log", "-1", "--format=%H", "--", f":(glob){files}")
+        beside = f":(exclude){files.rpartition('/')[0]}"
+        unchanged = ("diff", "--quiet", last, "HEAD", "--", ".", beside)
+        return not last or self._git(self._project, *unchanged).returncode != 0
+
     def restore(self, ticket: int) -> None:
         """Throw away anything not saved, such as what a reviewer changed or left behind."""
         copy = self._copy(ticket)
