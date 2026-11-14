@@ -6,6 +6,7 @@ the work.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import subprocess
 from collections.abc import Iterator, Mapping, Sequence
@@ -41,6 +42,22 @@ def _open(herdr: str, workspace: str, name: str, shown: Path | Sequence[str]) ->
 def notify(herdr: str, title: str, body: str) -> None:
     """Tell the user, wherever they are in Herdr, that something needs them."""
     _herdr(herdr, "notification", "show", title, "--body", body, "--sound", "request")
+
+
+@contextmanager
+def named(herdr: str, tab: str, name: str) -> Iterator[None]:
+    """Give a tab a name while something goes on in it, and its own name back afterwards.
+    Without a tab, nothing."""
+    before = ""
+    if tab:
+        with contextlib.suppress(ValueError, KeyError, TypeError):
+            before = json.loads(_herdr(herdr, "tab", "get", tab) or "")["result"]["tab"]["label"]
+        _herdr(herdr, "tab", "rename", tab, name)
+    try:
+        yield
+    finally:
+        if before:
+            _herdr(herdr, "tab", "rename", tab, str(before))
 
 
 @contextmanager

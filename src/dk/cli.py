@@ -168,7 +168,10 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
             trouble.append(error)
 
     behind = threading.Thread(target=work)
-    with _watching(project, {"tickets": progress, **director.shown()}, no_tabs):
+    herdr = os.environ.get("HERDR_BIN_PATH", "herdr")
+    mine = "" if no_tabs else os.environ.get("HERDR_TAB_ID", "")
+    watching = _watching(project, {"tickets": progress, **director.shown()}, no_tabs)
+    with watching, screen.named(herdr, mine, "Principal"):
         behind.start()
         try:
             agents.converse(argv, briefs.principal(command), project, agent.name)

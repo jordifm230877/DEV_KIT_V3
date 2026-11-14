@@ -159,6 +159,8 @@ Each step ends with something usable.
   list then shows it as one line, and it takes no more tickets. It is the user's statement
   that the epic is finished: tickets all being done does not say that by itself. Asked for
   in the real trial when the first epic was finished and nothing could say so.
+- During `dk talk` inside Herdr, the tab of the conversation is named `Principal` and gets
+  its earlier name back at the end; the user could not tell it from the other tabs by "1".
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

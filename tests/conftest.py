@@ -103,6 +103,8 @@ with calls.open("a") as log:
     log.write(json.dumps(sys.argv[1:]) + "\\n")
 if pathlib.Path(__file__).with_name("herdr-broken").exists():
     sys.exit(1)
+if sys.argv[1:3] == ["tab", "get"]:
+    print(json.dumps({"result": {"tab": {"label": "1", "tab_id": sys.argv[3]}}}))
 if sys.argv[1:3] == ["tab", "create"]:
     n = before + 1
     made = {"tab": {"tab_id": f"w1:t{n}"}, "root_pane": {"pane_id": f"w1:p{n}"}}

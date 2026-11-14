@@ -161,3 +161,50 @@ def test_inside_herdr_the_user_is_told_when_a_ticket_needs_them(
     assert "which language?" in told[0][told[0].index("--body") + 1]
     labels = [call[call.index("--label") + 1] for call in calls if call[:2] == ["tab", "create"]]
     assert labels == ["status", "tickets", "coder-1"]
+
+
+def renames(herdr: Herdr) -> list[list[str]]:
+    return [call[2:] for call in herdr.calls() if call[:2] == ["tab", "rename"]]
+
+
+def test_inside_herdr_the_conversations_tab_is_named_and_gets_its_name_back(
+    project: Project, herdr: Herdr, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HERDR_TAB_ID", "w1:t0")
+    project.configure(coder=HELLO, principal="pass")
+
+    project.dk("talk")
+
+    assert renames(herdr) == [["w1:t0", "Principal"], ["w1:t0", "1"]]
+
+
+def test_the_conversations_tab_keeps_its_name_when_tabs_are_not_wanted(
+    project: Project, herdr: Herdr, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HERDR_TAB_ID", "w1:t0")
+    project.configure(coder=HELLO, principal="pass")
+
+    project.dk("talk", "--no-tabs")
+
+    assert renames(herdr) == []
+
+
+def test_a_herdr_that_cannot_name_the_tab_does_not_stop_the_conversation(
+    project: Project, herdr: Herdr, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HERDR_TAB_ID", "w1:t0")
+    herdr.breaks()
+    project.configure(coder=HELLO, principal="pathlib.Path('talked.txt').write_text('x')")
+
+    project.dk("talk")
+
+    assert (project.root / "talked.txt").exists()
+    assert renames(herdr) == [["w1:t0", "Principal"]], "no earlier name was learnt to give back"
+
+
+def test_outside_a_herdr_tab_nothing_is_asked_of_herdr(project: Project, herdr: Herdr) -> None:
+    project.configure(coder=HELLO, principal="pass")
+
+    project.dk("talk", "--no-tabs")
+
+    assert herdr.calls() == []
