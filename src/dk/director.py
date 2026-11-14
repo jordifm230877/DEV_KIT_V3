@@ -14,13 +14,13 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from queue import Queue
 
-from dk import agents, briefs, checks
+from dk import briefs, checks
 from dk.config import Agent, Config, ConfigError
+from dk.jobs import PRINCIPAL, Jobs, label
 from dk.process import (
     CANCELLED,
     PROCESS,
     Failed,
-    Lost,
     Outcome,
     Passed,
     Position,
@@ -34,21 +34,7 @@ from dk.process import (
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 
-BEHAVIOUR_TESTS = "*.feature"
-PRINCIPAL = "principal"  # the one role that talks with the user instead of taking jobs
-FORUM = "team_forum"  # where the Principal's look at stopped tickets is shown
-
-
 _LOOK_EVERY = 0.05
-
-
-def _unclear(agent: Agent, reply: agents.Reply) -> Lost:
-    last = f"; it last said: {reply.text}" if reply.text else ""
-    return Lost(f"{agent.name} ended without a clear answer{last}")
-
-
-def _label(agent: Agent) -> str:
-    return FORUM if agent.role == PRINCIPAL else agent.name
 
 
 def _position(ticket: Ticket) -> Position:
@@ -68,6 +54,10 @@ class Director:
 
     _free: dict[str, Queue[Agent]] = field(default_factory=dict)
     _merging: threading.Lock = field(default_factory=threading.Lock)
+
+    @property
+    def jobs(self) -> Jobs:
+        return Jobs(self.config, self.tickets, self.workspace, self.logs, self.stop)
 
     def run(self, keep_going: bool = False) -> None:
         """Take every unfinished ticket as far as it can go, as many at once as there are
@@ -136,7 +126,7 @@ class Director:
         )
         agent = self._free[PRINCIPAL].get()
         try:
-            reply = self._ask(agent, False, brief, ticket)
+            reply = self.jobs.ask(agent, False, brief, ticket)
         finally:
             self._free[PRINCIPAL].put(agent)
         self.workspace.restore(number)
@@ -164,8 +154,9 @@ class Director:
             return Skipped()
         if step.kind == "user":
             return Stopped(briefs.approval(ticket.id))
-        jobs = {"specify": self._specify, "vet": self._vet, "code": self._code}
-        job = jobs.get(step.name, self._review)
+        work = self.jobs
+        jobs = {"specify": work.specify, "vet": work.vet, "code": work.code}
+        job = jobs.get(step.name, work.review)
         agent = self._free[step.role].get()
         try:
             return job(agent, self.tickets.get(ticket.id), position)
@@ -192,94 +183,7 @@ class Director:
     def shown(self) -> dict[str, Path]:
         """For each agent that is given jobs, the file that fills with what it is doing."""
         return {
-            _label(agent): self.logs / f"{_label(agent)}.log"
+            label(agent): self.jobs.log(agent)
             for agent in self.config.agents
             if agent.role != PRINCIPAL or agent.program
         }
-
-    def _ask(self, agent: Agent, writes: bool, brief: str, ticket: Ticket) -> agents.Reply:
-        argv = agent.command or agents.command(agent.program, agent.model, writes)
-        copy = self.workspace.prepare(ticket.id)
-        self.tickets.record(ticket.id, f"{agent.name} started")
-        self.tickets.assign(ticket.id, agent.name)
-        try:
-            return agents.ask(
-                *(argv, brief, copy, self.shown()[_label(agent)]),
-                self.config.agent_minutes * 60,
-                title=f"#{ticket.id} {ticket.title} ({ticket.step})",
-                plain=agents.reader(agent.program),
-                stop=self.stop,
-                name=agent.name,
-            )
-        finally:
-            self.tickets.assign(ticket.id, "")
-
-    def _fresh(self, ticket: Ticket, note: str) -> str:
-        """Bring into the copy what the project gained since it was made. Returns the note
-        for whoever works next, with the files to resolve if the two collide."""
-        self.workspace.prepare(ticket.id)
-        _, clashes = self.workspace.update(ticket.id)
-        return f"{note}\n{briefs.clash(clashes)}".strip() if clashes else note
-
-    def _produce(self, agent: Agent, brief: str, ticket: Ticket) -> Outcome:
-        reply = self._ask(agent, True, brief, ticket)
-        if reply.kind in ("blocked", "question"):
-            return Stopped(f"{reply.kind}: {reply.text}")
-        if reply.kind != "done":
-            return _unclear(agent, reply)
-        if not self.workspace.save(ticket.id, f"Ticket #{ticket.id}: {ticket.title}"):
-            return Failed(f"{agent.name} said it was done but changed nothing")
-        return Passed()
-
-    def _specify(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
-        note = self._fresh(ticket, position.note)
-        earlier = sorted(ticket.protected)
-        brief = briefs.tester(ticket.id, ticket.title, ticket.spec, note, earlier)
-        outcome = self._produce(agent, brief, ticket)
-        if not isinstance(outcome, Passed):
-            return outcome
-        tests = self.workspace.fingerprints(ticket.id, BEHAVIOUR_TESTS)
-        if not tests:
-            return Failed(f"{agent.name} wrote no behaviour tests ({BEHAVIOUR_TESTS} files)")
-        self.tickets.protect(ticket.id, tests)
-        return Passed()
-
-    def _code(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
-        tests = ticket.protected
-        note = self._fresh(ticket, position.note)
-        brief = briefs.coder(
-            ticket.id, ticket.title, ticket.spec, note, sorted(tests), self.config.quality_rules
-        )
-        outcome = self._produce(agent, brief, ticket)
-        changed = self.workspace.tampered(ticket.id, tests) if tests else []
-        if isinstance(outcome, Passed) and changed:
-            self.workspace.put_back(ticket.id, tests, changed)
-            return Failed(briefs.tampering(changed))
-        return outcome
-
-    def _vet(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
-        """Have the behaviour tests looked over before the user is asked to approve them."""
-        if not ticket.protected:
-            return Skipped()
-        tests = sorted(ticket.protected)
-        brief = briefs.vetting(ticket.id, ticket.title, ticket.spec, tests)
-        return self._judge(agent, brief, ticket, "behaviour tests")
-
-    def _review(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
-        base = self.workspace.base(ticket.id)
-        brief = briefs.reviewer(
-            *(agent.role, ticket.id, ticket.title, ticket.spec, base),
-            *(bool(ticket.protected), self.config.quality_rules),
-        )
-        return self._judge(agent, brief, ticket, "work")
-
-    def _judge(self, agent: Agent, brief: str, ticket: Ticket, what: str) -> Outcome:
-        reply = self._ask(agent, False, brief, ticket)
-        self.workspace.restore(ticket.id)
-        if reply.kind in ("blocked", "question"):
-            return Stopped(f"{reply.kind}: {reply.text}")
-        if reply.kind == "rejected":
-            return Failed(f"{agent.name} rejected the {what}: {reply.text}")
-        if reply.kind != "approved":
-            return _unclear(agent, reply)
-        return Passed()

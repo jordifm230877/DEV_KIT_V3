@@ -9,6 +9,7 @@ SOURCE = Path(__file__).parent.parent / "src" / "dk"
 MAX_LINES = 300
 COMPOSERS = {
     "director",
+    "jobs",
     "preflight",
     "views",
     "cli",

@@ -46,6 +46,7 @@ request.
 | `tickets` | Stores tickets, where each one is and what happened | Decide anything |
 | `process` | The cycle as a list of steps and the rule for moving along it | Touch files or programs |
 | `director` | Carries out the step each ticket waits for; the only piece that decides | Talk to models or Git directly |
+| `jobs` | The jobs agents are given on a ticket: what each is told and what its answer means; a composer | Decide where a ticket goes next |
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
 | `briefs` | The short instructions each role receives | — |
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |

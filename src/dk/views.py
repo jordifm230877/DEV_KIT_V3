@@ -11,7 +11,7 @@ from collections.abc import Collection, Iterator, Sequence
 from pathlib import Path
 
 from dk import config, paint, process
-from dk.director import PRINCIPAL
+from dk.jobs import PRINCIPAL
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 

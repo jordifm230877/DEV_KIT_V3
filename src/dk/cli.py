@@ -13,7 +13,8 @@ from functools import partial
 from pathlib import Path
 
 from dk import agents, briefs, config, preflight, process, screen, starter, views
-from dk.director import PRINCIPAL, Director
+from dk.director import Director
+from dk.jobs import PRINCIPAL
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 
