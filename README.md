@@ -46,6 +46,12 @@ role = "verifier"
 program = "pi"
 model = "provider/model-name"
 
+[[agents]]                  # optional: carries out `dk audit`
+name = "auditor-1"
+role = "auditor"
+program = "pi"
+model = "provider/model-name"
+
 [[agents]]                  # optional: writes Gherkin behaviour tests before any code
 name = "tester-1"
 role = "tester"
@@ -73,6 +79,7 @@ dk retry 1 --note "an answer"   # send a stopped ticket on again
 dk cancel 1       # give a ticket up; its unmerged work is thrown away
 dk close "EPIC"   # mark an epic complete, once all its tickets are finished
 dk reopen "EPIC"  # open a closed epic again
+dk audit security # or performance: an `auditor` agent reports on the whole project in docs/audits/
 dk approve 1      # accept the behaviour tests shown by `dk show 1`; only you can, no agent
 dk reject 1 --note "what to change"
 ```

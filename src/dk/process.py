@@ -34,6 +34,16 @@ PROCESS: tuple[Step, ...] = (
     Step("qa", "review", "qa"),
     Step("merge", "merge"),
 )
+# An audit is carried like a ticket: an auditor writes a report, which joins the project.
+AUDIT: tuple[Step, ...] = (
+    Step("audit", "work", "auditor", required=True),
+    Step("report", "merge"),
+)
+
+
+def of(step: str) -> tuple[Step, ...]:
+    """The process that a ticket at this step is going through."""
+    return AUDIT if step in [known.name for known in AUDIT] else PROCESS
 
 
 @dataclass(frozen=True)

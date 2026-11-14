@@ -25,6 +25,8 @@
 - **Without behaviour tests** — a ticket written with `--no-behaviour-tests` because it changes nothing a user of the product can see; it starts at the coder.
 - **Protected** — a behaviour-test file the user approved; the program puts it back if a coder changes it.
 - **Waiting** — a ticket stopped at a step that is the user's own decision (`dk approve` / `dk reject`).
+- **Audit** — a look over the whole project for security or performance, asked for by the user; it leaves a report in `docs/audits/` and changes nothing else.
+- **Auditor** — the role of the agent that carries out audits.
 - **Director** — the piece that decides what happens next to each ticket.
 - **Clash** — a ticket's work collides with work merged while it was in progress; the coder gets the files to resolve.
 - **Board** — the view that redraws itself (`dk status --watch`, the `status` tab): what each agent is doing and the unfinished tickets.

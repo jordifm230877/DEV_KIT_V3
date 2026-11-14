@@ -47,6 +47,7 @@ request.
 | `process` | The cycle as a list of steps and the rule for moving along it | Touch files or programs |
 | `director` | Carries out the step each ticket waits for; the only piece that decides | Talk to models or Git directly |
 | `jobs` | The jobs agents are given on a ticket: what each is told and what its answer means; a composer | Decide where a ticket goes next |
+| `principal` | What the Principal is told, in the conversation and about a stopped ticket | Start anything |
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
 | `briefs` | The short instructions each role receives | — |
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
@@ -189,6 +190,16 @@ Each step ends with something usable.
 - The title of each job in an agent's log begins with the date and time it started, and the
   board says since when each working agent has been on its ticket, both in the user's own
   time: the user could not tell a job that had just begun from one stuck for an hour.
+- An audit (`dk audit security|performance`) looks at the whole project, on the user's
+  request only. It is carried like a ticket with a process of its own, `audit` then
+  `report`, so it shows on the board, has its tab, and stops and is explained like any
+  ticket. An agent with the role `auditor` works in a throwaway copy where it may build, run
+  and measure; of what it leaves only its report is kept, merged into `docs/audits/`. It
+  fixes nothing, and which findings become tickets is the user's choice. The user chose
+  this over a security or performance reviewer on every ticket: speed is measured on the
+  whole product, not read from one change, and known vulnerabilities are better found by
+  scanners in `[checks]`. Before closing an epic the Principal suggests an audit when what
+  the epic changed gives a reason; a `dk close` typed by the user reminds of nothing.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

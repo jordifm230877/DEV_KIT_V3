@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 from dk import agents, briefs
@@ -24,6 +25,11 @@ FORUM = "team_forum"  # where the Principal's look at stopped tickets is shown
 def _unclear(agent: Agent, reply: agents.Reply) -> Lost:
     last = f"; it last said: {reply.text}" if reply.text else ""
     return Lost(f"{agent.name} ended without a clear answer{last}")
+
+
+def report(title: str) -> str:
+    """Where in the project the report of an audit with this title is written."""
+    return f"docs/audits/{date.today()}-{title.lower().replace(' ', '-')}.md"
 
 
 def label(agent: Agent) -> str:
@@ -66,15 +72,25 @@ class Jobs:
         _, clashes = self.workspace.update(ticket.id)
         return f"{note}\n{briefs.clash(clashes)}".strip() if clashes else note
 
-    def _produce(self, agent: Agent, brief: str, ticket: Ticket) -> Outcome:
+    def _produce(self, agent: Agent, brief: str, ticket: Ticket, only: str = "") -> Outcome:
+        """Have the agent do work and save it; with `only`, nothing but that one file."""
         reply = self.ask(agent, True, brief, ticket)
+        if only:
+            self.workspace.keep_only(ticket.id, only)
         if reply.kind in ("blocked", "question"):
             return Stopped(f"{reply.kind}: {reply.text}")
         if reply.kind != "done":
             return _unclear(agent, reply)
         if not self.workspace.save(ticket.id, f"Ticket #{ticket.id}: {ticket.title}"):
-            return Failed(f"{agent.name} said it was done but changed nothing")
+            missing = f"wrote no report at {only}" if only else "changed nothing"
+            return Failed(f"{agent.name} said it was done but {missing}")
         return Passed()
+
+    def audit(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
+        """Have the project looked over; of what the auditor leaves, only its report is kept."""
+        where = report(ticket.title)
+        brief = briefs.auditor(ticket.id, ticket.title, ticket.spec, position.note, where)
+        return self._produce(agent, brief, ticket, where)
 
     def specify(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         note = self._fresh(ticket, position.note)

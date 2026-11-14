@@ -61,6 +61,15 @@ class Workspace:
         self._must(copy, "reset", "-q", "--hard")
         self._must(copy, "clean", "-qfd")
 
+    def keep_only(self, ticket: int, name: str) -> None:
+        """Throw away everything not saved in the copy, except this one file."""
+        kept = self._copy(ticket) / name
+        text = kept.read_text() if kept.is_file() else None
+        self.restore(ticket)
+        if text is not None:
+            kept.parent.mkdir(parents=True, exist_ok=True)
+            kept.write_text(text)
+
     def fingerprints(self, ticket: int, pattern: str) -> dict[str, str]:
         """The files this ticket wrote that match `pattern`, each with its content's identity."""
         copy = self._copy(ticket)

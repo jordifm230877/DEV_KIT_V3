@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 
-from dk import agents, briefs, config, preflight, process, screen, starter, views
+from dk import agents, briefs, config, jobs, preflight, principal, process, screen, starter, views
 from dk.director import Director
 from dk.jobs import PRINCIPAL
 from dk.tickets import Ticket, Tickets
@@ -108,6 +108,9 @@ def _parser() -> argparse.ArgumentParser:
         default=[],
         help="a ticket that must be merged before this one starts; may be repeated",
     )
+    audit = commands.add_parser("audit", help="have the whole project audited; leaves a report")
+    audit.add_argument("kind", choices=list(briefs.AUDITS))
+    audit.add_argument("--note", default="", help="what to look at in particular")
     for name, text in (
         ("run", "work on every unfinished ticket"),
         ("talk", "talk with the Principal while the work goes on"),
@@ -194,7 +197,7 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
     with watching, screen.named(herdr, mine, "Principal"):
         behind.start()
         try:
-            agents.converse(argv, briefs.principal(command), project, agent.name)
+            agents.converse(argv, principal.conversation(command), project, agent.name)
         finally:
             director.stop.set()
             behind.join()
@@ -222,6 +225,16 @@ def _add(args: argparse.Namespace, tickets: Tickets) -> None:
     print(f"#{number} written")
 
 
+def _audit(args: argparse.Namespace, project: Path, tickets: Tickets) -> None:
+    role = process.AUDIT[0].role
+    if not config.load(project).with_role(role):
+        raise config.ConfigError(f"no agent has the role '{role}'")
+    title = f"{args.kind.capitalize()} audit"
+    spec = f"{briefs.AUDITS[args.kind]}\n{args.note}".strip()
+    number = tickets.add(title, spec, process.AUDIT[0].name, "", [])
+    print(f"#{number} written; its report will be {jobs.report(title)}")
+
+
 def _run(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets) -> None:
     director = _director(project, home, tickets, print)
     with _watching(project, director.shown(), args.no_tabs):
@@ -236,6 +249,7 @@ def _execute(args: argparse.Namespace) -> None:
     tickets = Tickets(home / "tickets.db")
     commands: dict[str, Callable[[], None]] = {
         "add": lambda: _add(args, tickets),
+        "audit": lambda: _audit(args, project, tickets),
         "check": lambda: _check(project, home),
         "init": lambda: print(*starter.write(project, args.model, args.program), sep="\n"),
         "run": lambda: _run(args, project, home, tickets),

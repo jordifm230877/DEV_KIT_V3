@@ -191,7 +191,31 @@ Only you can approve: `dk` refuses this to any agent, the Principal included. Af
 approval the scenarios are read-only. A coder that changes one has it put back and the work
 returned; a coder that thinks one is wrong stops and tells you why.
 
-## 7. Without the conversation
+## 7. Audits
+
+To have the whole project looked over for security or for performance, ask the Principal,
+or run `dk audit security` or `dk audit performance` (add `--note "..."` to say what to look
+at in particular). It needs an agent with the role `auditor` in `devkit.toml`:
+
+```toml
+[[agents]]
+name = "auditor-1"
+role = "auditor"
+program = "pi"
+model = "provider/model-name"
+```
+
+The audit is carried out like a ticket: you see it in `dk status` and in the auditor's tab.
+The auditor works in a throwaway copy, where it may build, run and measure, and uses the
+scanners and profilers it finds installed (`cargo audit`, `trivy`, ...). It fixes nothing.
+Its report arrives in `docs/audits/`, with the severity, the evidence and a proposed ticket
+for each finding; which of them become tickets is your decision. When you ask the Principal
+to close an epic, it suggests an audit if what the epic changed gives a reason.
+
+Known vulnerabilities in dependencies and container images are better caught on every
+ticket by a scanner under `[checks]` than by an audit now and then.
+
+## 8. Without the conversation
 
 ```bash
 dk add "Title" --spec "What is wanted and how to tell it is done" --epic "Optional group"
@@ -203,7 +227,7 @@ dk show 1
 dk cancel 1       # give a ticket up
 ```
 
-## 8. Where things are
+## 9. Where things are
 
 Everything DevKit keeps is in `.devkit/` inside the project; Git ignores it.
 
@@ -215,7 +239,7 @@ Everything DevKit keeps is in `.devkit/` inside the project; Git ignores it.
 
 Deleting `.devkit/` forgets all tickets; your code and merged work are not affected.
 
-## 9. Limits to keep in mind
+## 10. Limits to keep in mind
 
 - Agents run as you, with your own settings for their program and full access to your
   machine: Claude and Codex are started with their permission checks and sandbox off, as

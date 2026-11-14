@@ -14,12 +14,11 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from queue import Queue
 
-from dk import briefs, checks
+from dk import briefs, checks, principal
 from dk.config import Agent, Config, ConfigError
 from dk.jobs import PRINCIPAL, Jobs, label
 from dk.process import (
     CANCELLED,
-    PROCESS,
     Failed,
     Outcome,
     Passed,
@@ -29,6 +28,7 @@ from dk.process import (
     Stopped,
     advance,
     held_by,
+    of,
     retry,
 )
 from dk.tickets import Ticket, Tickets
@@ -94,11 +94,12 @@ class Director:
         position = _position(ticket)
         helped = False  # the Principal answers a stop once; after that it is the user's
         while not position.final and not self.stop.is_set():
-            step = next(step for step in PROCESS if step.name == position.step)
+            steps = of(position.step)
+            step = next(step for step in steps if step.name == position.step)
             outcome = self._perform(step, ticket, position)
             if self.stop.is_set() or self.tickets.get(ticket.id).step == CANCELLED:
                 return  # work cut short or no longer wanted is thrown away, not judged
-            position = advance(PROCESS, position, outcome, self.config.max_attempts)
+            position = advance(steps, position, outcome, self.config.max_attempts)
             self.tickets.move(ticket.id, *vars(position).values())
             if not isinstance(outcome, Passed):
                 self.tickets.record(ticket.id, f"{step.name}: {outcome.reason}")
@@ -121,7 +122,7 @@ class Director:
         if not able:
             return position
         ticket = self.tickets.get(number)
-        brief = briefs.stopped(
+        brief = principal.stopped(
             number, ticket.title, ticket.spec, self.tickets.history(number)[-12:], position.note
         )
         agent = self._free[PRINCIPAL].get()
@@ -155,7 +156,7 @@ class Director:
         if step.kind == "user":
             return Stopped(briefs.approval(ticket.id))
         work = self.jobs
-        jobs = {"specify": work.specify, "vet": work.vet, "code": work.code}
+        jobs = {"specify": work.specify, "vet": work.vet, "code": work.code, "audit": work.audit}
         job = jobs.get(step.name, work.review)
         agent = self._free[step.role].get()
         try:

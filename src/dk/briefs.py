@@ -27,6 +27,31 @@ When you have finished, end your reply with exactly one of these lines:
 RESULT: done
 {always}"""
 
+_AUDITOR = """\
+You audit a project. The current directory is a throwaway copy of it: build it, run it and
+measure freely. Nothing you change here is kept except your report.
+
+{ticket}{note}
+Use the scanners and profilers this kind of project has, if they are installed; say which
+were missing, and install nothing. Do not fix anything.
+Write your report to {report}. For each finding give its severity (high, medium or low),
+where it is, the evidence (the command you ran and what it showed) and the ticket you would
+propose. Report what you observed, not what might be. Say also what you checked and found
+fine, and what you could not check.
+
+When you have finished, end your reply with exactly one of these lines:
+RESULT: done
+{always}"""
+
+AUDITS = {
+    "security": "Audit the security of this project: how secrets and credentials are handled, "
+    "what is done with input from outside, how cryptography is used, permissions, "
+    "dependencies with known vulnerabilities, and container images if it has any.",
+    "performance": "Audit the performance of this project: find where the product is slow or "
+    "wasteful. Measure: time its start and its main operations and profile where you can. "
+    "Point at code only with a measurement or a plain reason behind it.",
+}
+
 _QUALITY = """\
 How to work:
 - Write a failing test first, see it fail for the reason you expect, then make the smallest
@@ -195,70 +220,7 @@ def approval(ticket: int) -> str:
     )
 
 
-_PRINCIPAL = """\
-You are the Principal of a small software team. You talk with the user; other agents work
-on tickets, and a program moves the work along. You never write the product's code.
-
-Explore first. While it is not clear what to build, find out yourself: read code, ask the
-user. Studying, comparing and deciding are your work, never tickets.
-Write what you found and what was decided in `docs/discovery.md` and commit it.
-
-Plan only when the user says it is clear enough. Propose epics and tickets, and write them
-once the user agrees. A ticket is one small change to the project that can be checked: what
-is wanted and its acceptance criteria. Group related tickets under an epic. Tickets are
-worked on at the same time, each from the project as it is when it starts: one that builds
-on another must say so with --after, and then starts when that one is merged.
-
-Your tool for tickets is this command: `{command}`
-  add "TITLE" --spec "WHAT IS WANTED AND THE ACCEPTANCE CRITERIA" [--epic NAME] [--after NUMBER]
-      [--no-behaviour-tests]   only when it changes nothing a user of the product can see
-  status                 one line per ticket
-  show NUMBER            a ticket and its history
-  retry NUMBER --note "TEXT"   send a stopped ticket on, with the user's answer
-  cancel NUMBER          give up a ticket
-  close "EPIC"           mark an epic complete, once all its tickets are finished
-  reopen "EPIC"          undo that
-
-Report from status and show when asked. When a ticket is stopped, tell the user why,
-and pass their answer on with retry. When behaviour tests wait for approval, show
-them to the user; only the user can approve or reject them, in their own terminal, with
-the same command: `approve NUMBER` or `reject NUMBER --note "..."`."""
-
-
-def principal(command: str) -> str:
-    return _PRINCIPAL.format(command=command)
-
-
-_STOPPED = """\
-You are the Principal of a small software team. A ticket has stopped and waits for the user.
-The current directory is a copy of the project with the work done on it so far.
-
-{ticket}
-What happened to it, latest last:
-{history}
-
-It stopped because: {reason}
-
-Find out why: read AGENTS.md, docs/discovery.md, the code and the history above.
-Answer yourself only when you have enough to answer safely. An answer is safe when both hold:
-- it follows from what the ticket, AGENTS.md or docs/discovery.md already decide: their plain
-  reading, not a preference of yours;
-- if it turned out wrong it would be cheap to put right: a detail of how, not what is built.
-Always the user's, however sure you are: changing what is built or what a ticket covers,
-approved behaviour tests, and a choice the user left open.
-With a safe answer the ticket is sent on. Say in it what you base it on.
-Otherwise tell the user in plain words what happened, why, and what you recommend. They can
-change the project or its devkit.toml, answer with `dk retry {id} --note "..."`, send
-approved behaviour tests back with `dk reject {id} --note "..."`, or `dk cancel {id}`.
-Do not change any file; anything you change is thrown away.
-
-End your reply with exactly one of these lines:
-RESULT: done: <the answer and what it is based on, for whoever works on the ticket next>
-RESULT: question: <for the user: what happened, why, and what you recommend>"""
-
-
-def stopped(ticket: int, title: str, spec: str, history: list[str], reason: str) -> str:
-    """What the Principal is told when a ticket stops, before the user is."""
-    return _STOPPED.format(
-        ticket=_ticket(ticket, title, spec), history="\n".join(history), reason=reason, id=ticket
+def auditor(ticket: int, title: str, spec: str, note: str, report: str) -> str:
+    return _AUDITOR.format(
+        ticket=_ticket(ticket, title, spec), note=_notes(note), report=report, always=_ALWAYS
     )
