@@ -88,3 +88,13 @@ def test_checking_leaves_the_project_as_it_was(project: Project) -> None:
     project.dk("check")
 
     assert project.git("status", "--porcelain") == ""
+
+
+def test_audit_tools_the_project_lists_but_are_not_installed_are_named(project: Project) -> None:
+    project.configure(coder=ANSWERS, settings='[audit]\ntools = ["git", "no-such-scanner"]\n')
+
+    said = project.refused("check")
+
+    assert "ok       audit tool 'git'" in said
+    assert "PROBLEM  audit tool 'no-such-scanner' is not installed" in said
+    assert "1 thing to fix" in said

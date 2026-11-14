@@ -200,6 +200,10 @@ Each step ends with something usable.
   whole product, not read from one change, and known vulnerabilities are better found by
   scanners in `[checks]`. Before closing an epic the Principal suggests an audit when what
   the epic changed gives a reason; a `dk close` typed by the user reminds of nothing.
+- Which tools an audit should have is listed by the project (`[audit] tools`), not known to
+  DevKit: a table of tools per language inside the program would go stale. The auditor ends
+  its report with the tools it recommends after looking on the web; the user installs and
+  lists those wanted; `dk check` names the listed ones that are not installed.
 - Every agent may look things up on the web, reviewers too, unless the project says
   `web = false`: models do not know what was released after they were trained. Claude and
   Codex search by themselves; Pi does through an extension (`pi-codex-search`, or any tool

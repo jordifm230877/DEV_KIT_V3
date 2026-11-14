@@ -101,3 +101,25 @@ def test_tickets_go_on_as_before_beside_an_audit(project: Project) -> None:
 
     assert project.merged("greeting.txt") == "hello\n"
     assert project.merged(report("security")) is not None
+
+
+TOOLS = '[audit]\ntools = ["cargo-audit", "gitleaks"]\n'
+
+
+def test_an_auditor_is_told_which_tools_the_project_expects(project: Project) -> None:
+    seen = "pathlib.Path(sys.argv[0]).with_name('brief.txt').write_text(prompt)\n"
+    project.configure(coder=HELLO, auditor=seen + AUDITS, settings=TOOLS)
+    project.dk("audit", "security")
+
+    project.dk("run")
+
+    told = (project.root.parent / "tools" / "brief.txt").read_text()
+    assert "cargo-audit, gitleaks" in told and len(told.split()) < 300
+
+
+def test_an_auditor_recommends_the_tools_this_project_should_have(project: Project) -> None:
+    told = brief(project, "security")
+
+    assert "recommend" in told and "on the web" in told and "how to install" in told
+    assert "[audit]" in told, "where the user would list them"
+    assert "expects" not in told, "no tools were listed for this project"

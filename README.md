@@ -59,6 +59,9 @@ role = "tester"
 program = "pi"
 model = "provider/model-name"
 
+[audit]                     # optional: what an audit should have; `dk check` names the missing ones
+tools = ["cargo-audit", "gitleaks"]
+
 [checks]                    # run by the program in the ticket's copy; all must exit 0
 unit = ["pytest", "-q"]
 ```

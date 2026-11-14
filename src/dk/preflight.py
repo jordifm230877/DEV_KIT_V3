@@ -67,6 +67,12 @@ def _checks(settings: Config, project: Path, logs: Path) -> Iterator[Finding]:
         )
 
 
+def _audit_tools(settings: Config) -> Iterator[Finding]:
+    for tool in settings.audit_tools:
+        installed = shutil.which(tool) is not None
+        yield installed, f"audit tool '{tool}'" + ("" if installed else " is not installed")
+
+
 def run(
     settings: Config, project: Path, workspace: Workspace, logs: Path, conversing: str
 ) -> list[Finding]:
@@ -81,4 +87,5 @@ def run(
         committed,
         *_team(settings, conversing, logs / "check.log"),
         *_checks(settings, project, logs / "check"),
+        *_audit_tools(settings),
     ]

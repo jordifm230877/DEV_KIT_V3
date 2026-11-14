@@ -89,7 +89,8 @@ class Jobs:
     def audit(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         """Have the project looked over; of what the auditor leaves, only its report is kept."""
         where = report(ticket.title)
-        brief = briefs.auditor(ticket.id, ticket.title, ticket.spec, position.note, where)
+        tools = self.config.audit_tools
+        brief = briefs.auditor(ticket.id, ticket.title, ticket.spec, position.note, where, tools)
         return self._produce(agent, brief, ticket, where)
 
     def specify(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:

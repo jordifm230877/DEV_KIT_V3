@@ -32,12 +32,15 @@ You audit a project. The current directory is a throwaway copy of it: build it, 
 measure freely. Nothing you change here is kept except your report.
 
 {ticket}{note}
-Use the scanners and profilers this kind of project has, if they are installed; say which
+{tools}Use the scanners and profilers this kind of project has, if they are installed; say which
 were missing, and install nothing. Do not fix anything.
 Write your report to {report}. For each finding give its severity (high, medium or low),
 where it is, the evidence (the command you ran and what it showed) and the ticket you would
 propose. Report what you observed, not what might be. Say also what you checked and found
 fine, and what you could not check.
+End the report with the tools you recommend for auditing this project, after looking
+on the web for current ones: what each is for and how to install it, and the line to put
+under `[audit]` in devkit.toml, `tools = [...]`, naming their commands.
 
 When you have finished, end your reply with exactly one of these lines:
 RESULT: done
@@ -220,7 +223,14 @@ def approval(ticket: int) -> str:
     )
 
 
-def auditor(ticket: int, title: str, spec: str, note: str, report: str) -> str:
+def auditor(
+    ticket: int, title: str, spec: str, note: str, report: str, tools: tuple[str, ...]
+) -> str:
+    expected = f"The project expects these tools: {', '.join(tools)}.\n" if tools else ""
     return _AUDITOR.format(
-        ticket=_ticket(ticket, title, spec), note=_notes(note), report=report, always=_ALWAYS
+        ticket=_ticket(ticket, title, spec),
+        note=_notes(note),
+        tools=expected,
+        report=report,
+        always=_ALWAYS,
     )

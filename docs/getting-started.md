@@ -212,7 +212,19 @@ The audit is carried out like a ticket: you see it in `dk status` and in the aud
 The auditor works in a throwaway copy, where it may build, run and measure, and uses the
 scanners and profilers it finds installed (`cargo audit`, `trivy`, ...). It fixes nothing.
 Its report arrives in `docs/audits/`, with the severity, the evidence and a proposed ticket
-for each finding; which of them become tickets is your decision. When you ask the Principal
+for each finding; which of them become tickets is your decision.
+
+The report ends with the tools the auditor recommends for this project, after looking on
+the web for current ones, and how to install each. Install those you want and list their
+commands in `devkit.toml`:
+
+```toml
+[audit]
+tools = ["cargo-audit", "gitleaks"]
+```
+
+The auditor is then told to use them, and `dk check` names those that are not installed.
+DevKit installs nothing itself. When you ask the Principal
 to close an epic, it suggests an audit if what the epic changed gives a reason.
 
 Known vulnerabilities in dependencies and container images are better caught on every

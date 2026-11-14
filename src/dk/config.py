@@ -31,6 +31,7 @@ class Config:
     check_minutes: float = 10
     quality_rules: bool = True  # tell coders how to work well; a project may turn it off
     web: bool = True  # agents may look things up on the web; a project may turn it off
+    audit_tools: tuple[str, ...] = ()  # the scanners and profilers an audit should have
 
     def with_role(self, role: str) -> tuple[Agent, ...]:
         return tuple(agent for agent in self.agents if agent.role == role)
@@ -47,6 +48,7 @@ def load(project: Path) -> Config:
             for entry in raw.pop("agents", [])
         )
         checks = {name: tuple(argv) for name, argv in raw.pop("checks", {}).items()}
-        return Config(agents, checks, **raw)
+        tools = tuple(raw.pop("audit", {}).get("tools", ()))
+        return Config(agents, checks, audit_tools=tools, **raw)
     except (tomllib.TOMLDecodeError, TypeError) as error:
         raise ConfigError(f"{path}: {error}") from error
