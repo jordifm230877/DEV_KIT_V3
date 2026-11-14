@@ -26,6 +26,7 @@ you whether the agents, the checks and the repository are ready. By hand, put a
 
 ```toml
 max_attempts = 3            # failed attempts before a ticket stops and waits for you
+# quality_rules = false     # coders are told how to work well (tests first, crapper, dryer, mutator); this leaves it out
 
 [[agents]]
 name = "coder-1"

@@ -21,11 +21,21 @@ You are a coder. Work only inside the current directory, which is your own copy 
 
 {ticket}{note}
 Make the changes the ticket asks for, with tests where the project has them.
-{tests}Do not commit and do not change anything outside this directory.
+{quality}{tests}Do not commit and do not change anything outside this directory.
 
 When you have finished, end your reply with exactly one of these lines:
 RESULT: done
 {always}"""
+
+_QUALITY = """\
+How to work:
+- Write a failing test first, see it fail for the reason you expect, then make the smallest
+  change that passes it. Fix causes, not symptoms.
+- Test what a user of the code sees, never its internals.
+- Before you finish, run these on the files you changed, where they are installed: `crapper`
+  (split or test any function scoring 10 or more), `dryer` (remove duplication it ranks 0.8
+  or more) and `mutator` (kill the mutants that survive, or say why one cannot matter).
+"""
 
 _PROTECTED = """\
 These behaviour tests are approved by the user and read-only: {files}.
@@ -130,10 +140,16 @@ def tester(ticket: int, title: str, spec: str, note: str, earlier: list[str]) ->
     )
 
 
-def coder(ticket: int, title: str, spec: str, note: str, protected: list[str]) -> str:
+def coder(
+    ticket: int, title: str, spec: str, note: str, protected: list[str], quality: bool
+) -> str:
     tests = _PROTECTED.format(files=", ".join(protected)) if protected else ""
     return _CODER.format(
-        ticket=_ticket(ticket, title, spec), note=_notes(note), tests=tests, always=_ALWAYS
+        ticket=_ticket(ticket, title, spec),
+        note=_notes(note),
+        quality=_QUALITY if quality else "",
+        tests=tests,
+        always=_ALWAYS,
     )
 
 

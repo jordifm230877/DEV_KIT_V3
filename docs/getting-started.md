@@ -107,6 +107,9 @@ Things to know:
   itself in the ticket's copy of the code; it never takes an agent's word for it.
 - **DevKit makes the commits**, one per step, with the ticket's title as the message. Agents
   are told not to commit, so do not ask in `AGENTS.md` for anything in commit messages.
+- **Coders are told how to work well**: failing test first, smallest change, fix causes,
+  and to run `crapper`, `dryer` and `mutator` on what they changed where those are
+  installed. Put `quality_rules = false` at the top of `devkit.toml` to leave that out.
 - If your project has an `AGENTS.md`, Pi reads it, so project conventions belong there.
 
 ## 4. First ticket

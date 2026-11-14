@@ -141,6 +141,11 @@ Each step ends with something usable.
   trial every stop reached the user as one raw line, and somebody outside DevKit had to
   read the history to say what it meant. Only a Principal set up with `program` is asked;
   a custom `command` is a conversation and cannot take a job.
+- The coder's brief carries a short set of quality rules by default (failing test first,
+  smallest change, causes not symptoms, and the `crapper`, `dryer` and `mutator` tools where
+  installed); `quality_rules = false` leaves them out. The user asked for it: it is the way
+  of working they already use by hand. The program does not enforce them; a project that
+  wants that adds the tools to `[checks]`.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

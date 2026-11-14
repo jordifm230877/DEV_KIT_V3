@@ -24,7 +24,8 @@ def test_finished_work_that_passes_the_checks_reaches_the_main_branch(project: P
 
 
 def test_the_coder_is_told_the_ticket_and_nothing_about_the_process(project: Project) -> None:
-    project.configure(coder="pathlib.Path('seen.txt').write_text(prompt)\nprint('RESULT: done')")
+    keeps = "pathlib.Path('seen.txt').write_text(prompt)\nprint('RESULT: done')"
+    project.configure(coder=keeps, settings="quality_rules = false")  # the bare brief
     project.dk("add", "Greet", "--spec", "Create greeting.txt saying hello.")
 
     project.dk("run")

@@ -76,7 +76,7 @@ def test_a_coder_cannot_change_approved_behaviour_tests(project: Project, tamper
 
 def test_the_coder_is_told_the_behaviour_tests_are_read_only(project: Project) -> None:
     keeps = "pathlib.Path('seen.txt').write_text(prompt)\nprint('RESULT: done')"
-    project.configure(coder=keeps, tester=TESTER)
+    project.configure(coder=keeps, tester=TESTER, settings="quality_rules = false")
     project.dk("add", "Greet", "--spec", "Say hello.")
     project.dk("run")
     project.dk("approve", "1")

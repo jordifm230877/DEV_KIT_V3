@@ -241,7 +241,9 @@ class Director:
     def _code(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         tests = ticket.protected
         note = self._fresh(ticket, position.note)
-        brief = briefs.coder(ticket.id, ticket.title, ticket.spec, note, sorted(tests))
+        brief = briefs.coder(
+            ticket.id, ticket.title, ticket.spec, note, sorted(tests), self.config.quality_rules
+        )
         outcome = self._produce(agent, brief, ticket)
         changed = self.workspace.tampered(ticket.id, tests) if tests else []
         if isinstance(outcome, Passed) and changed:
