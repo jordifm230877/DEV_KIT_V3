@@ -27,9 +27,10 @@ one page, the design has grown too much.
    to the product.
 6. The program runs the project's checks: behaviour tests, unit tests and whatever quality
    tools the project lists (complexity, duplication, mutation).
-7. A verifier reads the code: cheating, work outside the ticket, poor quality, and whether
-   the connecting code really exercises the product.
-8. QA tries the product as a user would, against the acceptance criteria.
+7. A verifier reads the code and judges how the work is done: cheating, work outside the
+   ticket, poor quality, and whether the connecting code really exercises the product.
+8. QA runs the product as a user would and goes through the acceptance criteria, and the
+   approved behaviour tests, one by one.
 9. The program merges. Rejected work goes back to the coder with the reason. After the
    configured number of failed attempts the ticket stops and the user is told.
 
@@ -146,7 +147,8 @@ Each step ends with something usable.
 - The coder's brief carries a short set of quality rules by default (failing test first,
   smallest change, causes not symptoms, and the `crapper`, `dryer` and `mutator` tools where
   installed); `quality_rules = false` leaves them out. The user asked for it: it is the way
-  of working they already use by hand. The program does not enforce them; a project that
+  of working they already use by hand. The verifier is told to reject work that has no test for new behaviour or that
+  `crapper` or `dryer` flag; the program itself does not enforce them, and a project that
   wants that adds the tools to `[checks]`.
 - `dk status --watch` is a board that redraws itself: which agent is on which ticket, the
   tickets not finished, a count of the rest. Inside Herdr it has a `status` tab. The ticket

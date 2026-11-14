@@ -268,7 +268,8 @@ class Director:
     def _review(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         base = self.workspace.base(ticket.id)
         brief = briefs.reviewer(
-            agent.role, ticket.id, ticket.title, ticket.spec, base, bool(ticket.protected)
+            *(agent.role, ticket.id, ticket.title, ticket.spec, base),
+            *(bool(ticket.protected), self.config.quality_rules),
         )
         return self._judge(agent, brief, ticket, "work")
 

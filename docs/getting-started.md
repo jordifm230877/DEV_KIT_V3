@@ -109,7 +109,10 @@ Things to know:
   are told not to commit, so do not ask in `AGENTS.md` for anything in commit messages.
 - **Coders are told how to work well**: failing test first, smallest change, fix causes,
   and to run `crapper`, `dryer` and `mutator` on what they changed where those are
-  installed. Put `quality_rules = false` at the top of `devkit.toml` to leave that out.
+  installed. The verifier rejects work with no test for new behaviour or that `crapper` or
+  `dryer` flag. Put `quality_rules = false` at the top of `devkit.toml` to leave both out.
+- **The verifier judges how the work is done; QA whether it works.** QA runs the product
+  and goes through the ticket's acceptance criteria and the approved scenarios one by one.
 - If your project has an `AGENTS.md`, Pi reads it, so project conventions belong there.
 
 ## 4. First ticket

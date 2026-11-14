@@ -82,16 +82,22 @@ RESULT: rejected: <what must change, concretely>
 _TASKS = {
     "verifier": (
         "a verifier",
-        "Read the changes. Reject work that does not do what the ticket asks, that cheats "
-        "(for example code written only to satisfy a test), that changes things the ticket "
-        "did not ask for, or that is carelessly written.",
+        "Read the changes and judge how the work is done. Reject work that cheats (for "
+        "example code written only to satisfy a test), that changes things the ticket did "
+        "not ask for, that is carelessly written, or that is not what the ticket asks for.",
         " Check too that the code connecting the behaviour tests (.feature files) to the "
         "product really exercises the product.",
+        " Reject it as well if new behaviour has no test, or if `crapper` or `dryer`, run on "
+        "the changed files where they are installed, show a function scoring 10 or more or "
+        "duplication ranked 0.8 or more.",
     ),
     "qa": (
         "a QA tester",
-        "Try the result the way a user would: run it and check each thing the ticket asks "
-        "for. Reject it if anything the ticket asks for does not actually work.",
+        "Try the result the way a user would: run it. Go through the acceptance criteria in "
+        "the ticket one by one and check each against the running product. Reject it if any "
+        "of them does not actually work, and say which.",
+        " Do the same with the approved behaviour tests (.feature files): each scenario "
+        "must hold when you try it yourself.",
         "",
     ),
 }
@@ -153,14 +159,14 @@ def coder(
     )
 
 
-def reviewer(role: str, ticket: int, title: str, spec: str, base: str, behaviour: bool) -> str:
-    who, task, with_behaviour_tests = _TASKS[role]
+def reviewer(
+    role: str, ticket: int, title: str, spec: str, base: str, behaviour: bool, quality: bool
+) -> str:
+    who, task, with_behaviour_tests, with_quality_rules = _TASKS[role]
+    task += with_behaviour_tests if behaviour else ""
+    task += with_quality_rules if quality else ""
     return _REVIEWER.format(
-        who=who,
-        ticket=_ticket(ticket, title, spec),
-        base=base,
-        task=task + (with_behaviour_tests if behaviour else ""),
-        always=_ALWAYS,
+        who=who, ticket=_ticket(ticket, title, spec), base=base, task=task, always=_ALWAYS
     )
 
 
