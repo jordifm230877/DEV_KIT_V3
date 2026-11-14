@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from conftest import Project
+from conftest import Herdr, Project
 
 PRINCIPAL = '[[agents]]\nname = "principal"\nrole = "principal"\nprogram = "pi"\nmodel = "m"\n'
 ASKS = (
@@ -170,3 +170,19 @@ def test_the_principal_cannot_change_the_tickets_work(project: Project, pi: Path
 
     assert "#1 done" in project.dk("status")
     assert project.merged("scribble.txt") is None
+
+
+def test_what_the_principal_makes_of_stops_is_shown_in_a_tab_of_its_own(
+    project: Project, pi: Path, herdr: Herdr
+) -> None:
+    says(pi, "print('the colour was never decided')\nprint('RESULT: question: choose one')")
+    project.configure(coder=ALWAYS_ASKS, settings=PRINCIPAL)
+    project.dk("add", "Paint", "--spec", "Paint it.")
+
+    project.dk("run")
+
+    calls = herdr.calls()
+    labels = [call[call.index("--label") + 1] for call in calls if call[:2] == ["tab", "create"]]
+    assert "team_forum" in labels and "principal" not in labels
+    shown = (project.root / ".devkit" / "logs" / "team_forum.log").read_text()
+    assert "#1 Paint" in shown and "the colour was never decided" in shown

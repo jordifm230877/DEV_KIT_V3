@@ -36,6 +36,7 @@ from dk.workspace import Workspace
 
 BEHAVIOUR_TESTS = "*.feature"
 PRINCIPAL = "principal"  # the one role that talks with the user instead of taking jobs
+FORUM = "team_forum"  # where the Principal's look at stopped tickets is shown
 
 
 _LOOK_EVERY = 0.05
@@ -44,6 +45,10 @@ _LOOK_EVERY = 0.05
 def _unclear(agent: Agent, reply: agents.Reply) -> Lost:
     last = f"; it last said: {reply.text}" if reply.text else ""
     return Lost(f"{agent.name} ended without a clear answer{last}")
+
+
+def _label(agent: Agent) -> str:
+    return FORUM if agent.role == PRINCIPAL else agent.name
 
 
 def _position(ticket: Ticket) -> Position:
@@ -187,7 +192,7 @@ class Director:
     def shown(self) -> dict[str, Path]:
         """For each agent that is given jobs, the file that fills with what it is doing."""
         return {
-            agent.name: self.logs / f"{agent.name}.log"
+            _label(agent): self.logs / f"{_label(agent)}.log"
             for agent in self.config.agents
             if agent.role != PRINCIPAL or agent.program
         }
@@ -200,7 +205,7 @@ class Director:
             argv,
             brief,
             copy,
-            self.shown()[agent.name],
+            self.shown()[_label(agent)],
             self.config.agent_minutes * 60,
             title=f"#{ticket.id} {ticket.title} ({ticket.step})",
             plain=agents.reader(agent.program),
