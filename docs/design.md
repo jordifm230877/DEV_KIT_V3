@@ -49,7 +49,7 @@ request.
 | `briefs` | The short instructions each role receives | — |
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
 | `checks` | Runs the project's check commands | Interpret results |
-| `screen` | One Herdr tab per agent, showing what it is doing; watch-only | Affect the run |
+| `screen` | One Herdr tab per agent, showing what it is doing, and one for the board; watch-only | Affect the run |
 | `starter` | Writes a first `devkit.toml` and `AGENTS.md` (`dk init`) | Overwrite anything |
 | `preflight` | Finds what would stop the first ticket (`dk check`); a composer | Change anything |
 | `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
@@ -146,6 +146,10 @@ Each step ends with something usable.
   installed); `quality_rules = false` leaves them out. The user asked for it: it is the way
   of working they already use by hand. The program does not enforce them; a project that
   wants that adds the tools to `[checks]`.
+- `dk status --watch` is a board that redraws itself: which agent is on which ticket, the
+  tickets not finished, a count of the rest. Inside Herdr it has a `status` tab. The ticket
+  list records who is working on a ticket right now, because the board runs as a separate
+  program and cannot see inside the director. The user missed the status tab of V1 and V2.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

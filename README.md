@@ -67,7 +67,7 @@ or use the commands yourself:
 ```bash
 dk add "Greeting" --spec "Create greeting.txt containing hello."   # optionally --epic NAME, --after N
 dk run            # work on every unfinished ticket
-dk status         # one line per ticket
+dk status         # one line per ticket; --watch keeps showing agents and unfinished tickets
 dk show 1         # the ticket and everything that happened to it
 dk retry 1 --note "an answer"   # send a stopped ticket on again
 dk cancel 1       # give a ticket up; its unmerged work is thrown away
@@ -88,7 +88,7 @@ Behaviour tests are `.feature` files, kept where the project's `AGENTS.md` says 
 `features/` if it says nothing). DevKit does not run them itself: add
 your project's own command for them (Cucumber, behave, ...) to `[checks]`.
 
-Started inside [Herdr](https://herdr.dev), `dk run` opens one tab per agent showing what it
+Started inside [Herdr](https://herdr.dev), `dk run` opens a `status` tab and one tab per agent showing what it
 is doing, and closes them when the run ends (`--no-tabs` to skip). The same text stays in
 `.devkit/logs/<agent>.log`.
 

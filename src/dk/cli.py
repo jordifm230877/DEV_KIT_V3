@@ -7,6 +7,7 @@ import os
 import shlex
 import sys
 import threading
+import time
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from functools import partial
@@ -33,15 +34,43 @@ def _line(ticket: Ticket, steps: dict[int, str]) -> str:
     return line
 
 
-def _status(tickets: list[Ticket]) -> None:
-    """Tickets without an epic first, then each epic with its tickets."""
+def _status(tickets: list[Ticket], hidden: Sequence[str] = ()) -> None:
+    """Tickets without an epic first, then each epic with its tickets; none at a hidden step."""
     steps = {ticket.id: ticket.step for ticket in tickets}
-    for epic in sorted({ticket.epic for ticket in tickets}):
+    listed = [ticket for ticket in tickets if ticket.step not in hidden]
+    for epic in sorted({ticket.epic for ticket in listed}):
         if epic:
             print(epic)
-        for ticket in tickets:
+        for ticket in listed:
             if ticket.epic == epic:
                 print(("  " if epic else "") + _line(ticket, steps))
+
+
+def _board(team: Sequence[config.Agent], tickets: list[Ticket]) -> None:
+    """What each agent is doing, the tickets not yet finished, and a count of the rest."""
+    busy = {ticket.worker: ticket for ticket in tickets if ticket.worker}
+    print("Agents")
+    for agent in team:
+        on = busy.get(agent.name)
+        doing = f"#{on.id} {on.title} ({on.step})" if on else "free"
+        if on or agent.role != PRINCIPAL:  # the Principal is in the conversation otherwise
+            print(f"  {agent.name:<12} {doing}")
+    print("Tickets")
+    _status(tickets, (process.DONE, process.CANCELLED))
+    steps = [ticket.step for ticket in tickets]
+    print(f"{steps.count(process.DONE)} finished, {steps.count(process.CANCELLED)} cancelled")
+
+
+def _watch(project: Path, tickets: Tickets) -> None:
+    """Show the board again every two seconds, until interrupted."""
+    try:
+        while True:
+            print("\033[2J\033[H", end="")
+            _board(config.load(project).agents, tickets.all())
+            sys.stdout.flush()
+            time.sleep(2)
+    except KeyboardInterrupt:
+        return
 
 
 def _stopped(tickets: Tickets, number: int) -> tuple[Ticket, process.Position]:
@@ -127,7 +156,8 @@ def _parser() -> argparse.ArgumentParser:
     init = commands.add_parser("init", help="write a first devkit.toml and AGENTS.md")
     init.add_argument("--model", required=True, help="the model every agent starts with")
     commands.add_parser("check", help="find what would stop the first ticket")
-    commands.add_parser("status", help="list the tickets")
+    status = commands.add_parser("status", help="list the tickets")
+    status.add_argument("--watch", action="store_true", help="keep showing agents and tickets")
     show = commands.add_parser("show", help="one ticket and everything that happened to it")
     show.add_argument("ticket", type=int)
     retry = commands.add_parser("retry", help="send a stopped ticket on again")
@@ -154,10 +184,12 @@ def _director(project: Path, home: Path, tickets: Tickets, say: Callable[[str], 
 
 
 @contextmanager
-def _watching(shown: dict[str, Path], no_tabs: bool) -> Iterator[None]:
-    """Inside Herdr, a tab for each of these files while the work goes on."""
+def _watching(project: Path, shown: dict[str, Path], no_tabs: bool) -> Iterator[None]:
+    """Inside Herdr, a tab for the board and one for each of these files, while the work goes on."""
     inside = os.environ.get("HERDR_WORKSPACE_ID", "")
-    watched = shown if inside and not no_tabs else {}
+    board = (sys.executable, "-m", "dk", "--project", str(project), "status", "--watch")
+    everything: dict[str, Path | Sequence[str]] = {"status": board, **shown}
+    watched = everything if inside and not no_tabs else {}
     with screen.tabs(os.environ.get("HERDR_BIN_PATH", "herdr"), inside, watched):
         yield
 
@@ -187,7 +219,7 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
             trouble.append(error)
 
     behind = threading.Thread(target=work)
-    with _watching({"tickets": progress, **director.shown()}, no_tabs):
+    with _watching(project, {"tickets": progress, **director.shown()}, no_tabs):
         behind.start()
         try:
             agents.converse(argv, briefs.principal(command), project, agent.name)
@@ -216,7 +248,7 @@ def _add(args: argparse.Namespace, tickets: Tickets) -> None:
 
 def _run(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets) -> None:
     director = _director(project, home, tickets, print)
-    with _watching(director.shown(), args.no_tabs):
+    with _watching(project, director.shown(), args.no_tabs):
         director.run()
 
 
@@ -232,7 +264,7 @@ def _execute(args: argparse.Namespace) -> None:
         "init": lambda: print(*starter.write(project, args.model), sep="\n"),
         "run": lambda: _run(args, project, home, tickets),
         "talk": lambda: _talk(project, home, tickets, args.no_tabs),
-        "status": lambda: _status(tickets.all()),
+        "status": lambda: _watch(project, tickets) if args.watch else _status(tickets.all()),
         "show": lambda: _show(tickets, Workspace(project, home / "work"), args.ticket),
         "retry": lambda: _retry(tickets, args.ticket, args.note),
         "cancel": lambda: _cancel(tickets, args.ticket),

@@ -201,17 +201,18 @@ class Director:
         argv = agent.command or agents.command(agent.program, agent.model, writes)
         copy = self.workspace.prepare(ticket.id)
         self.tickets.record(ticket.id, f"{agent.name} started")
-        return agents.ask(
-            argv,
-            brief,
-            copy,
-            self.shown()[_label(agent)],
-            self.config.agent_minutes * 60,
-            title=f"#{ticket.id} {ticket.title} ({ticket.step})",
-            plain=agents.reader(agent.program),
-            stop=self.stop,
-            name=agent.name,
-        )
+        self.tickets.assign(ticket.id, agent.name)
+        try:
+            return agents.ask(
+                *(argv, brief, copy, self.shown()[_label(agent)]),
+                self.config.agent_minutes * 60,
+                title=f"#{ticket.id} {ticket.title} ({ticket.step})",
+                plain=agents.reader(agent.program),
+                stop=self.stop,
+                name=agent.name,
+            )
+        finally:
+            self.tickets.assign(ticket.id, "")
 
     def _fresh(self, ticket: Ticket, note: str) -> str:
         """Bring into the copy what the project gained since it was made. Returns the note

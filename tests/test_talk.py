@@ -160,4 +160,4 @@ def test_inside_herdr_the_user_is_told_when_a_ticket_needs_them(
     assert len(told) == 1 and "#1 Vague" in told[0][2]
     assert "which language?" in told[0][told[0].index("--body") + 1]
     labels = [call[call.index("--label") + 1] for call in calls if call[:2] == ["tab", "create"]]
-    assert labels == ["tickets", "coder-1"]
+    assert labels == ["status", "tickets", "coder-1"]

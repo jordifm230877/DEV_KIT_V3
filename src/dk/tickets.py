@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS ticket (
     id INTEGER PRIMARY KEY, title TEXT NOT NULL, spec TEXT NOT NULL,
     step TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, note TEXT NOT NULL DEFAULT '',
     stopped INTEGER NOT NULL DEFAULT 0, protected TEXT NOT NULL DEFAULT '{}',
-    epic TEXT NOT NULL DEFAULT '', follows TEXT NOT NULL DEFAULT '[]'
+    epic TEXT NOT NULL DEFAULT '', follows TEXT NOT NULL DEFAULT '[]',
+    worker TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS history (
     id INTEGER PRIMARY KEY, ticket INTEGER NOT NULL REFERENCES ticket(id),
@@ -39,6 +40,7 @@ class Ticket:
     protected: dict[str, str]  # read-only files and the fingerprint of their content
     epic: str
     follows: list[int]  # tickets that must be finished before this one starts
+    worker: str  # the agent doing a job on it right now, if any
 
 
 class Tickets:
@@ -46,8 +48,9 @@ class Tickets:
         self._db = sqlite3.connect(path, autocommit=True, check_same_thread=False)
         self._db.executescript(_SCHEMA)
         columns = [row[1] for row in self._db.execute("PRAGMA table_info(ticket)")]
-        if "follows" not in columns:  # a list written before tickets had an order
-            self._db.execute("ALTER TABLE ticket ADD COLUMN follows TEXT NOT NULL DEFAULT '[]'")
+        for added in ("follows TEXT NOT NULL DEFAULT '[]'", "worker TEXT NOT NULL DEFAULT ''"):
+            if added.split()[0] not in columns:  # a list written before tickets had this
+                self._db.execute(f"ALTER TABLE ticket ADD COLUMN {added}")
         self._one_at_a_time = threading.Lock()
 
     def _run(self, statement: str, *values: object) -> tuple[list[tuple[Any, ...]], int | None]:
@@ -68,15 +71,15 @@ class Tickets:
 
     def all(self) -> list[Ticket]:
         rows, _ = self._run(
-            "SELECT id, title, spec, step, attempts, note, stopped, protected, epic, follows"
-            " FROM ticket ORDER BY id"
+            "SELECT id, title, spec, step, attempts, note, stopped, protected, epic, follows,"
+            " worker FROM ticket ORDER BY id"
         )
         return [
             Ticket(
-                *(number, title, spec, step, attempts, note, bool(stop)),
-                *(json.loads(files), epic, json.loads(follows)),
+                *(number, title, spec, step, tries, note, bool(stop)),
+                *(json.loads(files), epic, json.loads(follows), worker),
             )
-            for number, title, spec, step, attempts, note, stop, files, epic, follows in rows
+            for number, title, spec, step, tries, note, stop, files, epic, follows, worker in rows
         ]
 
     def get(self, ticket: int) -> Ticket:
@@ -97,6 +100,10 @@ class Tickets:
 
     def protect(self, ticket: int, files: dict[str, str]) -> None:
         self._run("UPDATE ticket SET protected = ? WHERE id = ?", json.dumps(files), ticket)
+
+    def assign(self, ticket: int, worker: str) -> None:
+        """Say which agent is doing a job on the ticket right now; nobody, with ""."""
+        self._run("UPDATE ticket SET worker = ? WHERE id = ?", worker, ticket)
 
     def record(self, ticket: int, what: str) -> None:
         self._run("INSERT INTO history (ticket, what) VALUES (?, ?)", ticket, what)

@@ -124,8 +124,10 @@ Tell the Principal what you want. While it is not yet clear what to build, it ex
 with you: it reads code, asks, and writes what was found and decided in
 `docs/discovery.md`. No ticket is written in that phase. When you say it is clear enough, it
 proposes epics and tickets, writes them once you agree, and the work starts behind the
-conversation. In Herdr you will see a `tickets` tab with overall progress
-and one tab per agent showing what it is doing. Ask the Principal how things are going
+conversation. In Herdr you will see a `status` tab that says which agent is on which
+ticket and lists the unfinished tickets, a `tickets` tab with progress as it happens,
+and one tab per agent showing what it is doing. Outside Herdr, `dk status --watch` in
+another terminal shows the same board. Ask the Principal how things are going
 whenever you like. Leaving the conversation (Ctrl-D) stops the work; whatever was half done
 is redone next time.
 

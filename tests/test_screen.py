@@ -19,14 +19,19 @@ def test_each_agent_gets_a_tab_showing_its_work_and_the_tabs_close_at_the_end(
 
     calls = herdr.calls()
     created = [call for call in calls if call[:2] == ["tab", "create"]]
-    assert [call[call.index("--label") + 1] for call in created] == ["coder-1", "verifier-1"]
+    assert [call[call.index("--label") + 1] for call in created] == [
+        "status",
+        "coder-1",
+        "verifier-1",
+    ]
     assert all(
         "--no-focus" in call and call[call.index("--workspace") + 1] == "w1" for call in created
     )
     shown = [call for call in calls if call[:2] == ["pane", "run"]]
-    assert [call[2] for call in shown] == ["w1:p1", "w1:p3"]
-    assert shown[0][-1].endswith(".devkit/logs/coder-1.log")
-    assert [call[2] for call in calls if call[:2] == ["tab", "close"]] == ["w1:t1", "w1:t3"]
+    assert [call[2] for call in shown] == ["w1:p1", "w1:p3", "w1:p5"]
+    assert shown[1][-1].endswith(".devkit/logs/coder-1.log")
+    closed = [call[2] for call in calls if call[:2] == ["tab", "close"]]
+    assert closed == ["w1:t1", "w1:t3", "w1:t5"]
     assert project.merged("greeting.txt") == "hello\n"
 
 
@@ -50,7 +55,7 @@ def test_the_tabs_close_even_when_the_run_cannot_go_on(project: Project, herdr: 
     project.refused("run")
 
     calls = herdr.calls()
-    assert [call[2] for call in calls if call[:2] == ["tab", "close"]] == ["w1:t1"]
+    assert [call[2] for call in calls if call[:2] == ["tab", "close"]] == ["w1:t1", "w1:t3"]
 
 
 def test_trouble_with_herdr_does_not_stop_the_work(project: Project, herdr: Herdr) -> None:
