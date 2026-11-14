@@ -30,6 +30,7 @@ class Config:
     agent_minutes: float = 30
     check_minutes: float = 10
     quality_rules: bool = True  # tell coders how to work well; a project may turn it off
+    web: bool = True  # agents may look things up on the web; a project may turn it off
 
     def with_role(self, role: str) -> tuple[Agent, ...]:
         return tuple(agent for agent in self.agents if agent.role == role)

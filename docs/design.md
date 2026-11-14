@@ -200,6 +200,11 @@ Each step ends with something usable.
   whole product, not read from one change, and known vulnerabilities are better found by
   scanners in `[checks]`. Before closing an epic the Principal suggests an audit when what
   the epic changed gives a reason; a `dk close` typed by the user reminds of nothing.
+- Every agent may look things up on the web, reviewers too, unless the project says
+  `web = false`: models do not know what was released after they were trained. Claude and
+  Codex search by themselves; Pi does through an extension (`pi-codex-search`, or any tool
+  with `web` in its name), which DevKit does not install. Agents could already reach the
+  network with shell commands, so this opens nothing new.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

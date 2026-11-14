@@ -36,27 +36,34 @@ class _Program:
     """How one kind of agent program is started; `{model}` stands for the agent's model."""
 
     job: tuple[str, ...]  # one job; the instructions follow as the last argument
-    reading: tuple[str, ...]  # added for a job that must not change files
+    reading: str  # the tools of a job that must not change files; none if it has no such list
+    web: str  # the tools that reach the web, which such a job keeps
+    offline: tuple[str, ...]  # what takes the web away
     talk: tuple[str, ...]  # a conversation with the user
 
 
 PROGRAMS = {
     "pi": _Program(
         ("pi", "-p", "--no-session", "--mode", "json", "--model", "{model}"),
-        ("--tools", "read,bash,grep,find,ls"),
+        "read,bash,grep,find,ls",
+        "codex_search,*web*",  # Pi reaches the web through an extension, if one is installed
+        ("--exclude-tools", "codex_search,*web*"),
         ("pi", "--model", "{model}", "--append-system-prompt", INSTRUCTIONS),
     ),
     "claude": _Program(
         ("claude", "-p", "--no-session-persistence", "--output-format", "stream-json")
         + ("--verbose", "--model", "{model}", _FREE["claude"])
         + ("--append-system-prompt", _RULES),
-        ("--tools", "Read,Bash,Grep,Glob"),
+        "Read,Bash,Grep,Glob",
+        "WebSearch,WebFetch",
+        ("--disallowedTools", "WebSearch,WebFetch"),
         ("claude", "--model", "{model}", _FREE["claude"], "--append-system-prompt", INSTRUCTIONS),
     ),
     "codex": _Program(
         ("codex", "exec", "--ephemeral", "--json", "--skip-git-repo-check")
         + ("-m", "{model}", _FREE["codex"]),
-        (),  # Codex has no list of tools to narrow
+        *("", ""),  # Codex has no list of tools to narrow, and searches the web as it comes
+        ("-c", 'web_search="disabled"'),
         ("codex", "-m", "{model}", _FREE["codex"], INSTRUCTIONS),
     ),
 }
@@ -78,16 +85,20 @@ def _known(program: str) -> _Program:
     return PROGRAMS[program]
 
 
-def command(program: str, model: str, writes: bool) -> tuple[str, ...]:
+def command(program: str, model: str, writes: bool, web: bool = True) -> tuple[str, ...]:
     """The command line for a known agent program; a reviewer gets no tools that write."""
     known = _known(program)
     base = tuple(part.replace("{model}", model) for part in known.job)
-    return (*base, *(() if writes else known.reading), "--", INSTRUCTIONS)
+    tools = ",".join(filter(None, (known.reading, known.web if web else "")))
+    narrowed = () if writes or not known.reading else ("--tools", tools)
+    return (*base, *narrowed, *(() if web else known.offline), "--", INSTRUCTIONS)
 
 
-def conversation(program: str, model: str) -> tuple[str, ...]:
+def conversation(program: str, model: str, web: bool = True) -> tuple[str, ...]:
     """The command line that opens a known agent program for talking with the user."""
-    return tuple(part.replace("{model}", model) for part in _known(program).talk)
+    known = _known(program)
+    talk = (known.talk[0], *(() if web else known.offline), *known.talk[1:])
+    return tuple(part.replace("{model}", model) for part in talk)
 
 
 def read(output: str) -> Reply:
@@ -130,6 +141,9 @@ def _claude(event: dict[str, Any]) -> str:
     return "".join(_part(part) for part in event.get("message", {}).get("content", []))
 
 
+_SHOWN = ("command", "file_path", "pattern", "query", "url")  # what says most about a tool's use
+
+
 def _part(part: dict[str, Any]) -> str:
     """One piece of what Claude said: words, or the tool it reached for."""
     if part.get("type") == "text":
@@ -137,7 +151,7 @@ def _part(part: dict[str, Any]) -> str:
     if part.get("type") != "tool_use":
         return ""
     given = part.get("input") or {}
-    what = next((given[key] for key in ("command", "file_path", "pattern") if key in given), "")
+    what = next((given[key] for key in _SHOWN if key in given), "")
     return f"> {part.get('name')} {what}\n"
 
 
@@ -146,10 +160,16 @@ def _codex(event: dict[str, Any]) -> str:
     step = (event.get("type"), item.get("type"))
     if step == ("item.started", "command_execution"):
         return f"> {item.get('command')}\n"
+    if step == ("item.completed", "web_search") and item.get("query"):
+        return f"> web search {item['query']}\n"
     if step == ("item.completed", "agent_message"):
         return str(item.get("text", "")).rstrip("\n") + "\n"
+    return _failure(event) if step[0] in ("error", "turn.failed") else ""
+
+
+def _failure(event: dict[str, Any]) -> str:
     failure = event.get("message") or (event.get("error") or {}).get("message")
-    return f"error: {failure}\n" if step[0] in ("error", "turn.failed") and failure else ""
+    return f"error: {failure}\n" if failure else ""
 
 
 _READERS = {"pi": _pi, "claude": _claude, "codex": _codex}

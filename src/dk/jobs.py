@@ -49,7 +49,7 @@ class Jobs:
         return self.logs / f"{label(agent)}.log"
 
     def ask(self, agent: Agent, writes: bool, brief: str, ticket: Ticket) -> agents.Reply:
-        argv = agent.command or agents.command(agent.program, agent.model, writes)
+        argv = agent.command or agents.command(agent.program, agent.model, writes, self.config.web)
         copy = self.workspace.prepare(ticket.id)
         self.tickets.record(ticket.id, f"{agent.name} started")
         self.tickets.assign(ticket.id, agent.name)

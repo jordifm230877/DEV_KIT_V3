@@ -75,8 +75,8 @@ def programs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Programs:
     return Programs(folder)
 
 
-def team(project: Project, program: str, *roles: str) -> None:
-    agents = "".join(
+def team(project: Project, program: str, *roles: str, settings: str = "") -> None:
+    agents = settings + "".join(
         f'[[agents]]\nname = "{role}-1"\nrole = "{role}"\nprogram = "{program}"\n'
         f'model = "some-model"\n\n'
         for role in roles
@@ -181,6 +181,7 @@ def test_a_claude_reviewer_is_given_no_tools_that_edit_files(
     assert "--tools" not in coder
     allowed = verifier[verifier.index("--tools") + 1].split(",")
     assert "Read" in allowed and "Bash" in allowed
+    assert {"WebSearch", "WebFetch"} < set(allowed), "a reviewer may look things up"
     assert not {"Edit", "Write", "NotebookEdit"} & set(allowed)
     assert "#1 done" in project.dk("status")
 
@@ -218,6 +219,114 @@ def test_the_conversation_can_be_with_either_program(
     assert call[call.index("some-model") - 1] in ("--model", "-m")
     brief = next(part for part in call if "Your tool for tickets" in part)
     assert "retry NUMBER" in brief
+
+
+PI_WORKS = "\npathlib.Path('greeting.txt').write_text('hello\\n')\nprint('RESULT: done')"
+PI_REVIEWS = (
+    f"if '--tools' not in sys.argv:{indent(PI_WORKS)}\nelse:\n    print('RESULT: approved')"
+)
+REVIEWS = {
+    "pi": PI_REVIEWS,
+    "claude": f"if '--tools' not in sys.argv:{indent(CLAUDE_WORKS)}\nelse:\n"
+    f"    {APPROVES['claude']}",
+    "codex": f"if prompt.startswith('You are a coder'):{indent(CODEX_WORKS)}\nelse:\n"
+    f"    {APPROVES['codex']}",
+}
+NO_WEB = {
+    "pi": ["--exclude-tools", "codex_search,*web*"],
+    "claude": ["--disallowedTools", "WebSearch,WebFetch"],
+    "codex": ["-c", 'web_search="disabled"'],
+}
+
+
+def test_a_pi_reviewer_keeps_the_tools_that_reach_the_web(
+    project: Project, programs: Programs
+) -> None:
+    """Pi reaches the web through an extension, which a list of tools would leave out."""
+    programs.does("pi", PI_REVIEWS)
+    team(project, "pi", "coder", "verifier")
+    project.dk("add", "Greet", "--spec", "Create greeting.txt containing hello.")
+
+    project.dk("run")
+
+    _, verifier = programs.calls("pi")
+    allowed = verifier[verifier.index("--tools") + 1].split(",")
+    assert "codex_search" in allowed and "*web*" in allowed
+    assert not {"edit", "write"} & set(allowed)
+
+
+def judged(project: Project, programs: Programs, program: str, settings: str) -> list[list[str]]:
+    """How the coder and then the verifier of one ticket were started."""
+    programs.does(program, REVIEWS[program])
+    team(project, program, "coder", "verifier", settings=settings)
+    project.dk("add", "Greet", "--spec", "Create greeting.txt containing hello.")
+    project.dk("run")
+    assert "#1 done" in project.dk("status")
+    return programs.calls(program)
+
+
+@pytest.mark.parametrize("program", ["pi", "claude", "codex"])
+def test_the_web_is_within_reach_when_the_project_says_nothing(
+    project: Project, programs: Programs, program: str
+) -> None:
+    flag, value = NO_WEB[program]
+
+    for call in judged(project, programs, program, ""):
+        assert flag not in call or call[call.index(flag) + 1] != value
+
+
+@pytest.mark.parametrize("program", ["pi", "claude", "codex"])
+def test_a_project_can_turn_the_web_off_for_its_agents(
+    project: Project, programs: Programs, program: str
+) -> None:
+    flag, value = NO_WEB[program]
+
+    coder, verifier = judged(project, programs, program, "web = false\n")
+
+    for call in (coder, verifier):
+        assert call[call.index(flag) + 1] == value
+        assert call[-2] == "--", "the instructions still come last"
+    tools = verifier[verifier.index("--tools") + 1] if program != "codex" else ""
+    assert "web" not in tools.lower() and "search" not in tools
+
+
+@pytest.mark.parametrize("program", ["pi", "claude", "codex"])
+def test_a_conversation_has_no_web_either_when_the_project_turns_it_off(
+    project: Project, programs: Programs, program: str
+) -> None:
+    programs.does(program, "")
+    team(project, program, "coder", "principal", settings="web = false\n")
+
+    project.dk("talk", "--no-tabs")
+
+    (call,) = programs.calls(program)
+    flag, value = NO_WEB[program]
+    assert call[call.index(flag) + 1] == value
+    assert any("Your tool for tickets" in part for part in call), "it is still given its brief"
+
+
+SEARCHES = {
+    "claude": 'claude_says({"type": "tool_use", "name": "WebSearch", '
+    '"input": {"query": "cargo-audit latest"}})' + CLAUDE_WORKS,
+    "codex": 'emit(type="item.completed", item={"type": "web_search", "query": ""})\n'
+    'emit(type="item.completed", item={"type": "web_search", "query": "cargo-audit latest"})'
+    + CODEX_WORKS,
+}
+
+
+@pytest.mark.parametrize("program", ["claude", "codex"])
+def test_what_an_agent_looks_up_on_the_web_can_be_followed(
+    project: Project, programs: Programs, program: str
+) -> None:
+    programs.does(program, SEARCHES[program])
+    team(project, program, "coder")
+    project.dk("add", "Greet", "--spec", "Create greeting.txt containing hello.")
+
+    project.dk("run")
+
+    looked = [line for line in log(project, "coder-1").splitlines() if "cargo-audit" in line]
+    assert looked in (["> WebSearch cargo-audit latest"], ["> web search cargo-audit latest"])
+    assert "> web search \n" not in log(project, "coder-1"), "an empty search says nothing"
 
 
 def test_a_first_configuration_can_name_the_program(project: Project) -> None:

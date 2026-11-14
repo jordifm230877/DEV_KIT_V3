@@ -180,7 +180,7 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
     if not principals:
         raise config.ConfigError(f"no agent has the role '{PRINCIPAL}'")
     agent = principals[0]
-    argv = agent.command or agents.conversation(agent.program, agent.model)
+    argv = agent.command or agents.conversation(agent.program, agent.model, director.config.web)
     command = shlex.join([sys.executable, "-m", "dk", "--project", str(project)])
     trouble: list[Exception] = []
 

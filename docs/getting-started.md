@@ -111,6 +111,9 @@ Things to know:
   and to run `crapper`, `dryer` and `mutator` on what they changed where those are
   installed. The verifier rejects work with no test for new behaviour or that `crapper` or
   `dryer` flag. Put `quality_rules = false` at the top of `devkit.toml` to leave both out.
+- **Agents may look things up on the web.** Claude and Codex search by themselves; Pi needs
+  an extension for it (`pi install npm:pi-codex-search`). Put `web = false` at the top of
+  `devkit.toml` to take the web away from all of them.
 - **The verifier judges how the work is done; QA whether it works.** QA runs the product
   and goes through the ticket's acceptance criteria and the approved scenarios one by one.
 - If your project has an `AGENTS.md`, the agents read it, so project conventions belong
