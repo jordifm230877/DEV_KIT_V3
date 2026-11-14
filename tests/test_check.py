@@ -98,3 +98,12 @@ def test_audit_tools_the_project_lists_but_are_not_installed_are_named(project: 
     assert "ok       audit tool 'git'" in said
     assert "PROBLEM  audit tool 'no-such-scanner' is not installed" in said
     assert "1 thing to fix" in said
+
+
+def test_a_committed_file_changed_since_is_named_whole(project: Project) -> None:
+    project.configure(coder=ANSWERS)
+    (project.root / "devkit.toml").open("a").write("\n")
+
+    said = project.refused("check")
+
+    assert "will not see them: devkit.toml" in said
