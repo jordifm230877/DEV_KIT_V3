@@ -13,7 +13,7 @@ TESTER = (
     "pathlib.Path('features/greet.feature').write_text('Feature: Greeting\\n')\n"
     "print('RESULT: done')"
 )
-QUALITY = ("has no test", "crapper", "dryer")
+QUALITY = ("has no test", "crapper --no-coverage", "dryer --threshold 0.8", "never read their code")
 
 
 def told(project: Project, role: str) -> str:

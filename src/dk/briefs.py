@@ -124,9 +124,10 @@ _TASKS = {
         "not ask for, that is carelessly written, or that is not what the ticket asks for.",
         " Check too that the code connecting the behaviour tests (.feature files) to the "
         "product really exercises the product.",
-        " Reject it as well if new behaviour has no test, or if `crapper` or `dryer`, run on "
-        "the changed files where they are installed, show a function scoring 10 or more or "
-        "duplication ranked 0.8 or more.",
+        " Reject it as well if new behaviour has no test, or if `crapper --no-coverage FILES` "
+        "or `dryer --threshold 0.8 FILES`, run on the changed files where they are installed, "
+        "show a function scoring 10 or more or duplication ranked 0.8 or more. Go by what "
+        "they print; never read their code.",
     ),
     "qa": (
         "a QA tester",
