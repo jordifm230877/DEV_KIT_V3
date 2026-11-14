@@ -65,6 +65,13 @@ def _close(tickets: Tickets, epic: str) -> None:
     print(f"{epic} closed")
 
 
+def _reopen(tickets: Tickets, epic: str) -> None:
+    if epic not in tickets.closed():
+        raise LookupError(f"epic '{epic}' is not closed")
+    tickets.reopen(epic)
+    print(f"{epic} open again")
+
+
 def _decide(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
     if os.environ.get(agents.WHO):
         raise LookupError("only the user can approve or reject; ask them to run this themselves")
@@ -115,6 +122,7 @@ def _parser() -> argparse.ArgumentParser:
         "ticket", type=int
     )
     commands.add_parser("close", help="mark an epic as complete").add_argument("epic")
+    commands.add_parser("reopen", help="open a closed epic again").add_argument("epic")
     commands.add_parser("approve", help="accept what waits for you").add_argument(
         "ticket", type=int
     )
@@ -170,7 +178,7 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
     behind = threading.Thread(target=work)
     herdr = os.environ.get("HERDR_BIN_PATH", "herdr")
     mine = "" if no_tabs else os.environ.get("HERDR_TAB_ID", "")
-    watching = _watching(project, {"tickets": progress, **director.shown()}, no_tabs)
+    watching = _watching(project, director.shown(), no_tabs)
     with watching, screen.named(herdr, mine, "Principal"):
         behind.start()
         try:
@@ -227,6 +235,7 @@ def _execute(args: argparse.Namespace) -> None:
         "retry": lambda: _retry(tickets, args.ticket, args.note),
         "cancel": lambda: _cancel(tickets, args.ticket),
         "close": lambda: _close(tickets, args.epic),
+        "reopen": lambda: _reopen(tickets, args.epic),
         "approve": lambda: _decide(tickets, args.ticket, True, ""),
         "reject": lambda: _decide(tickets, args.ticket, False, args.note),
     }

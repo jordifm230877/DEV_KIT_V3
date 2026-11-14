@@ -217,6 +217,7 @@ Your tool for tickets is this command: `{command}`
   retry NUMBER --note "TEXT"   send a stopped ticket on, with the user's answer
   cancel NUMBER          give up a ticket the user no longer wants
   close "EPIC"           mark an epic complete, once all its tickets are finished
+  reopen "EPIC"          undo that
 
 Report from status and show when asked. When a ticket is stopped, tell the user why,
 and pass their answer on with retry. When behaviour tests wait for approval, show

@@ -74,3 +74,21 @@ def test_a_closed_epic_takes_no_more_tickets(project: Project) -> None:
 
     assert "epic 'Accounts' is closed" in refused
     assert "Reset password" not in project.dk("status")
+
+
+def test_a_closed_epic_can_be_opened_again(project: Project) -> None:
+    finished_epic(project)
+    project.dk("close", "Accounts")
+
+    said = project.dk("reopen", "Accounts")
+
+    assert "Accounts" in said and "open" in said
+    assert "closed" not in project.dk("status")
+    project.dk("add", "Reset password", "--spec", "d", "--epic", "Accounts")
+    assert "Reset password" in project.dk("status")
+
+
+def test_only_a_closed_epic_can_be_opened_again(project: Project) -> None:
+    finished_epic(project)
+
+    assert "epic 'Polish' is not closed" in project.refused("reopen", "Polish")

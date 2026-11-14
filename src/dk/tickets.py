@@ -110,6 +110,9 @@ class Tickets:
         """Mark an epic as complete."""
         self._run("INSERT OR IGNORE INTO closed (epic) VALUES (?)", epic)
 
+    def reopen(self, epic: str) -> None:
+        self._run("DELETE FROM closed WHERE epic = ?", epic)
+
     def closed(self) -> set[str]:
         rows, _ = self._run("SELECT epic FROM closed")
         return {epic for (epic,) in rows}

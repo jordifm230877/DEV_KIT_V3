@@ -56,7 +56,17 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     project.dk("talk")
 
     brief = (project.root / "brief.txt").read_text()
-    for word in ("add", "--after", "status", "show", "retry", "cancel", "close", "acceptance"):
+    for word in (
+        "add",
+        "--after",
+        "status",
+        "show",
+        "retry",
+        "cancel",
+        "close",
+        "reopen",
+        "acceptance",
+    ):
         assert word in brief
     assert len(brief.split()) < 300
 
@@ -160,7 +170,9 @@ def test_inside_herdr_the_user_is_told_when_a_ticket_needs_them(
     assert len(told) == 1 and "#1 Vague" in told[0][2]
     assert "which language?" in told[0][told[0].index("--body") + 1]
     labels = [call[call.index("--label") + 1] for call in calls if call[:2] == ["tab", "create"]]
-    assert labels == ["status", "tickets", "coder-1"]
+    assert labels == ["status", "coder-1"], "the board already lists the tickets"
+    progress = (project.root / ".devkit" / "logs" / "tickets.log").read_text()
+    assert "#1" in progress, "what happened is still kept in a file"
 
 
 def renames(herdr: Herdr) -> list[list[str]]:

@@ -158,7 +158,10 @@ Each step ends with something usable.
 - `dk close EPIC` marks an epic as complete once all its tickets are merged or given up; the
   list then shows it as one line, and it takes no more tickets. It is the user's statement
   that the epic is finished: tickets all being done does not say that by itself. Asked for
-  in the real trial when the first epic was finished and nothing could say so.
+  in the real trial when the first epic was finished and nothing could say so. `dk reopen`
+  undoes it, so that a mistaken closing can be put right.
+- `dk talk` opens no tab for the progress lines: the `status` tab already lists the tickets,
+  and two tabs said nearly the same. The lines are still kept in `.devkit/logs/tickets.log`.
 - During `dk talk` inside Herdr, the tab of the conversation is named `Principal` and gets
   its earlier name back at the end; the user could not tell it from the other tabs by "1".
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it

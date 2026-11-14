@@ -129,7 +129,7 @@ with you: it reads code, asks, and writes what was found and decided in
 proposes epics and tickets, writes them once you agree, and the work starts behind the
 conversation. In Herdr the tab you are talking in is named `Principal` for as long as the conversation
 lasts, and you will see a `status` tab that says which agent is on which
-ticket and lists the unfinished tickets, a `tickets` tab with progress as it happens,
+ticket and lists the unfinished tickets,
 and one tab per agent showing what it is doing. Outside Herdr, `dk status --watch` in
 another terminal shows the same board. Ask the Principal how things are going
 whenever you like. Leaving the conversation (Ctrl-D) stops the work; whatever was half done
@@ -163,7 +163,8 @@ A ticket you no longer want: `dk cancel N`, or tell the Principal. Its unmerged 
 thrown away.
 
 An epic whose tickets are all finished: `dk close "EPIC NAME"`, or tell the Principal. It
-then takes one line in `dk status` and accepts no more tickets.
+then takes one line in `dk status` and accepts no more tickets. `dk reopen "EPIC NAME"`
+undoes it.
 
 ## 6. Behaviour tests
 
