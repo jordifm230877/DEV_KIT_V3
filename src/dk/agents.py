@@ -200,6 +200,9 @@ def reader(program: str) -> Callable[[str], str]:
     return plain
 
 
+_ENDED = ("ended", "stopped")  # how a job that was not cut off for time is closed
+
+
 def ask(
     argv: Sequence[str],
     instructions: str,
@@ -230,9 +233,10 @@ def ask(
 
         feed = None if by_argument else instructions
         code = child.run(argv, cwd, show, seconds, stop, feed, {WHO: name})
-    if code is None and not (stop and stop.is_set()):
-        return Reply("unclear", f"cut off after {seconds / 60:g} minutes", late=True)
-    return _heard("".join(said), code)
+        late = code is None and not (stop and stop.is_set())
+        how = f"cut off after {seconds / 60:g} minutes" if late else _ENDED[code is None]
+        shown.write(f"{datetime.now():%Y-%m-%d %H:%M}  === {how} ===\n" if title else "")
+    return Reply("unclear", how, late=True) if late else _heard("".join(said), code)
 
 
 def _heard(said: str, code: int | None) -> Reply:

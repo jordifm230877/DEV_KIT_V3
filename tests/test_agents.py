@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import re
 import sys
+import threading
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -156,3 +159,41 @@ def test_an_error_pi_got_from_the_model_is_shown_and_reported(tmp_path: Path) ->
         "unclear", "error: 400: this model is not available in your region"
     )
     assert "error: 400: this model is not available in your region" in log.read_text()
+
+
+SLOW = [sys.executable, "-c", "import time; print('working', flush=True); time.sleep(60)"]
+
+
+def test_a_job_ends_with_a_line_that_says_it_is_over(tmp_path: Path) -> None:
+    log = tmp_path / "agent.log"
+
+    agents.ask([sys.executable, "-c", "print('RESULT: done')"], "x", tmp_path, log, 30, title="#1")
+
+    assert re.fullmatch(
+        r"\d{4}-\d\d-\d\d \d\d:\d\d  === ended ===", log.read_text().splitlines()[-1]
+    )
+
+
+def test_a_job_cut_off_for_time_says_so_where_its_work_is_shown(tmp_path: Path) -> None:
+    log = tmp_path / "agent.log"
+
+    agents.ask(SLOW, "x", tmp_path, log, 0.6, title="#1")
+
+    assert log.read_text().splitlines()[-2:] == [
+        "working",
+        _at("=== cut off after 0.01 minutes ==="),
+    ]
+
+
+def test_a_job_stopped_with_the_conversation_says_so(tmp_path: Path) -> None:
+    log = tmp_path / "agent.log"
+    stop = threading.Event()
+    stop.set()
+
+    agents.ask(SLOW, "x", tmp_path, log, 30, title="#1", stop=stop)
+
+    assert log.read_text().splitlines()[-1] == _at("=== stopped ===")
+
+
+def _at(words: str) -> str:
+    return f"{datetime.now():%Y-%m-%d %H:%M}  {words}"

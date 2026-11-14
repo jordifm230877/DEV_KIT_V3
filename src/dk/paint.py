@@ -33,6 +33,7 @@ _BOARD = {  # the kinds of line on the board; any other kind is left as it is
     **dict.fromkeys(("free", "held", "closed", "count"), _DIM),
 }
 _TITLE = re.compile(r"(\d{4}-\d\d-\d\d \d\d:\d\d  )?=== ")  # a job, with when it started
+_END = re.compile(r"=== (ended|stopped|cut off .*) ===$")  # how a job was closed
 _STRONG = re.compile(r"\*\*(\S(?:.*?\S)?)\*\*")
 _CODE = re.compile(r"`([^`]+)`")
 
@@ -43,7 +44,9 @@ def line(text: str) -> str:
         answer = text.removeprefix("RESULT:").partition(":")[0].strip()
         return f"{_BOLD}{_ANSWERS.get(answer, _YELLOW)}{text}{_OFF}"
     if _TITLE.match(text):
-        return f"{_BOLD}{_CYAN}{text}{_OFF}"
+        end = _END.search(text)
+        cut = end is not None and end[1].startswith("cut")
+        return f"{_BOLD + _YELLOW if cut else _DIM if end else _BOLD + _CYAN}{text}{_OFF}"
     for start, colour in _WHOLE:
         if text.startswith(start):
             return f"{colour}{text}{_OFF}"

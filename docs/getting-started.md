@@ -114,6 +114,9 @@ Things to know:
 - **A job that takes over 90 minutes is cut off** and done again; what the agent had done
   is kept. Put `agent_minutes = 120` at the top of `devkit.toml` for another limit, or
   `minutes = 120` under one agent for a limit of its own.
+  An agent's tab closes each job with a line that says how it ended: `=== ended ===`,
+  `=== cut off after 90 minutes ===` or `=== stopped ===`, so an old command is not
+  taken for work still going on.
 - **Agents may look things up on the web.** Claude and Codex search by themselves; Pi needs
   an extension for it (`pi install npm:pi-codex-search`). Put `web = false` at the top of
   `devkit.toml` to take the web away from all of them.

@@ -133,3 +133,21 @@ def test_the_tabs_show_colour_and_the_files_stay_plain(project: Project, herdr: 
     assert shown[1][-2:] == ["follow", str(log)]
     assert "\033" not in log.read_text() and "**wrote** it" in log.read_text()
     assert f"{BOLD}wrote{PLAIN} it" in followed(log)
+
+
+def test_how_a_job_ended_stands_apart_and_a_cut_off_stands_out(tmp_path: Path) -> None:
+    log = tmp_path / "coder-1.log"
+    log.write_text(
+        "2026-11-14 20:06  === ended ===\n"
+        "2026-11-14 20:06  === stopped ===\n"
+        "```\n"
+        "2026-11-14 20:06  === cut off after 30 minutes ===\n"
+        "Later words.\n"
+    )
+
+    ended, stopped, _, cut, words = followed(log)
+
+    assert ended == f"{DIM}2026-11-14 20:06  === ended ==={OFF}"
+    assert stopped == f"{DIM}2026-11-14 20:06  === stopped ==={OFF}"
+    assert cut == f"{BOLD}{YELLOW}2026-11-14 20:06  === cut off after 30 minutes ==={OFF}"
+    assert words == "Later words.", "an open block of code ends with the job"
