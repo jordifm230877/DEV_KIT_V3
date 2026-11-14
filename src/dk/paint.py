@@ -1,4 +1,4 @@
-"""Colour for one line of an agent's work or of the board, as a terminal shows it.
+"""Colour for the lines of an agent's work or of the board, as a terminal shows them.
 
 Only for the eye: the files that keep the work stay plain text, and this piece knows nothing
 about agents or tickets beyond how their lines begin.
@@ -7,6 +7,7 @@ about agents or tickets beyond how their lines begin.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 _OFF = "\033[0m"
 _BOLD, _PLAIN, _DIM = "\033[1m", "\033[22m", "\033[2m"
@@ -48,6 +49,24 @@ def line(text: str) -> str:
             return f"{colour}{text}{_OFF}"
     text = _STRONG.sub(rf"{_BOLD}\1{_PLAIN}", text)
     return _CODE.sub(rf"{_CYAN}\1{_NO_COLOUR}", text)
+
+
+def work() -> Callable[[str], str]:
+    """Colours an agent's work line by line, remembering whether a block of code (between
+    two ``` lines) is open; a block left open ends where the next job begins."""
+    inside = False
+
+    def painted(text: str) -> str:
+        nonlocal inside
+        fence = text.lstrip().startswith("```")
+        if fence:
+            inside = not inside
+            return f"{_DIM}{text}{_OFF}"
+        if _TITLE.match(text):
+            inside = False
+        return f"{_CYAN}{text}{_OFF}" if inside else line(text)
+
+    return painted
 
 
 def part(kind: str, text: str) -> str:

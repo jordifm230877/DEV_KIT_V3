@@ -66,6 +66,30 @@ def test_emphasis_an_agent_writes_is_shown_and_its_marks_are_not(tmp_path: Path)
     assert untouched == "2 * 3 * 4 and a `lone tick"
 
 
+def test_a_block_of_code_an_agent_writes_is_coloured_to_its_end(tmp_path: Path) -> None:
+    log = tmp_path / "coder-1.log"
+    log.write_text("Like this:\n```rust\nfn main() {}\n# not a heading\n```\nThat is **all**.\n")
+
+    words, opens, code, comment, closes, after = followed(log)
+
+    assert words == "Like this:"
+    assert opens == f"{DIM}```rust{OFF}" and closes == f"{DIM}```{OFF}"
+    assert code == f"{CYAN}fn main() {{}}{OFF}"
+    assert comment == f"{CYAN}# not a heading{OFF}"
+    assert after == f"That is {BOLD}all{PLAIN}."
+
+
+def test_a_block_of_code_left_open_ends_with_the_job(tmp_path: Path) -> None:
+    log = tmp_path / "coder-1.log"
+    log.write_text("```\nhalf a block\n=== #2 Next (code) ===\nNew words.\n")
+
+    _, code, title, words = followed(log)
+
+    assert code == f"{CYAN}half a block{OFF}"
+    assert title == f"{BOLD}{CYAN}=== #2 Next (code) ==={OFF}"
+    assert words == "New words."
+
+
 def test_the_answer_is_coloured_by_what_it_means(tmp_path: Path) -> None:
     log = tmp_path / "coder-1.log"
     log.write_text(

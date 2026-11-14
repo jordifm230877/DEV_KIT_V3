@@ -99,12 +99,13 @@ def follow(log: Path) -> None:
     try:
         while not log.exists():
             time.sleep(_LOOK_EVERY)
+        painted = paint.work()
         with log.open() as work:
             pending = ""
             while True:
                 pending += work.readline()
                 if pending.endswith("\n"):
-                    print(paint.line(pending[:-1]), flush=True)
+                    print(painted(pending[:-1]), flush=True)
                     pending = ""
                 else:
                     time.sleep(_LOOK_EVERY)

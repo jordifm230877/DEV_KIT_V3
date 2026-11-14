@@ -185,6 +185,9 @@ Each step ends with something usable.
   tools it uses, errors, its answer, and the bold and code marks it writes. The colour is
   added when the file is shown; the file stays plain text, because agents and the user's
   own tools read it too. The user asked for the look the agent programs have by themselves.
+  A block of code the agent writes between two ``` lines is coloured to its end, and every
+  line of a script an agent runs is written to the file marked as part of the command
+  (`>   `), because the lines of a script looked like the agent's own words.
   The board is coloured the same way, so that a stopped ticket and a working agent stand
   out; the plain `dk status` list has no colour, because the Principal reads it.
 - The title of each job in an agent's log begins with the date and time it started, and the

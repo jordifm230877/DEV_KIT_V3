@@ -114,9 +114,14 @@ def read(output: str) -> Reply:
     return Reply("unclear")
 
 
+def _did(what: object) -> str:
+    """A tool's use as shown; each further line of a script it ran is marked as part of it."""
+    return "> " + str(what).replace("\n", "\n>   ") + "\n"
+
+
 def _tool(event: dict[str, Any]) -> str:
     details = event.get("args") or {}
-    return f"> {event.get('toolName')} {details.get('command') or details.get('path') or ''}\n"
+    return _did(f"{event.get('toolName')} {details.get('command') or details.get('path') or ''}")
 
 
 def _spoken(event: dict[str, Any]) -> str:
@@ -153,14 +158,14 @@ def _part(part: dict[str, Any]) -> str:
         return ""
     given = part.get("input") or {}
     what = next((given[key] for key in _SHOWN if key in given), "")
-    return f"> {part.get('name')} {what}\n"
+    return _did(f"{part.get('name')} {what}")
 
 
 def _codex(event: dict[str, Any]) -> str:
     item = event.get("item") or {}
     step = (event.get("type"), item.get("type"))
     if step == ("item.started", "command_execution"):
-        return f"> {item.get('command')}\n"
+        return _did(item.get("command"))
     if step == ("item.completed", "web_search") and item.get("query"):
         return f"> web search {item['query']}\n"
     if step == ("item.completed", "agent_message"):

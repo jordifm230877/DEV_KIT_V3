@@ -329,6 +329,32 @@ def test_what_an_agent_looks_up_on_the_web_can_be_followed(
     assert "> web search \n" not in log(project, "coder-1"), "an empty search says nothing"
 
 
+SCRIPT = "python - <<'PY'\\nimport json\\n    print(json)\\nPY"
+RUNS_A_SCRIPT = {
+    "pi": f'emit(type="tool_execution_start", toolName="bash", args={{"command": "{SCRIPT}"}})'
+    + PI_WORKS,
+    "claude": 'claude_says({"type": "tool_use", "name": "Bash", '
+    f'"input": {{"command": "{SCRIPT}"}}}})' + CLAUDE_WORKS,
+    "codex": 'emit(type="item.started", '
+    f'item={{"type": "command_execution", "command": "{SCRIPT}"}})' + CODEX_WORKS,
+}
+
+
+@pytest.mark.parametrize("program", ["pi", "claude", "codex"])
+def test_every_line_of_a_command_an_agent_runs_is_marked_as_the_command(
+    project: Project, programs: Programs, program: str
+) -> None:
+    """Otherwise the lines of a script look like the agent's own words."""
+    programs.does(program, RUNS_A_SCRIPT[program])
+    team(project, program, "coder")
+    project.dk("add", "Greet", "--spec", "Create greeting.txt containing hello.")
+
+    project.dk("run")
+
+    shown = log(project, "coder-1")
+    assert "python - <<'PY'\n>   import json\n>       print(json)\n>   PY\n" in shown
+
+
 def test_a_first_configuration_can_name_the_program(project: Project) -> None:
     project.dk("init", "--model", "sonnet", "--program", "claude")
 
