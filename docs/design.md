@@ -54,7 +54,7 @@ request.
 | `starter` | Writes a first `devkit.toml` and `AGENTS.md` (`dk init`) | Overwrite anything |
 | `preflight` | Finds what would stop the first ticket (`dk check`); a composer | Change anything |
 | `views` | What the user is shown: the ticket list, the board, one ticket, an agent's work as it happens; a composer | Change anything |
-| `paint` | Colour for one line of an agent's work | Know agents or tickets |
+| `paint` | Colour for one line of an agent's work or of the board | Know agents or tickets |
 | `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
 | conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve, finish tickets or skip steps |
 | stop review | A ticket that stops goes to the Principal as a job: it answers from what the project already says, or explains the stop to the user | Decide for the user, change files |
@@ -183,6 +183,8 @@ Each step ends with something usable.
   tools it uses, errors, its answer, and the bold and code marks it writes. The colour is
   added when the file is shown; the file stays plain text, because agents and the user's
   own tools read it too. The user asked for the look the agent programs have by themselves.
+  The board is coloured the same way, so that a stopped ticket and a working agent stand
+  out; the plain `dk status` list has no colour, because the Principal reads it.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

@@ -99,3 +99,47 @@ def test_the_view_has_a_tab_of_its_own(project: Project, herdr: Herdr) -> None:
     shown = [call for call in calls if call[:2] == ["pane", "run"]]
     assert shown[0][-2:] == ["status", "--watch"] and str(project.root) in shown[0]
     assert Path(shown[0][3]).name.startswith("python")
+
+
+BOLD, DIM, OFF = "\033[1m", "\033[2m", "\033[0m"
+GREEN, YELLOW, CYAN = "\033[32m", "\033[33m", "\033[36m"
+
+
+def test_the_view_uses_colour_to_tell_what_needs_the_user(project: Project) -> None:
+    project.configure(coder="print('RESULT: question: which colour?')")
+    project.dk("add", "Paint", "--spec", "Paint it.", "--epic", "Walls")
+    project.dk("run")
+    project.dk("add", "Frame", "--spec", "Frame it.", "--epic", "Walls", "--after", "1")
+    project.dk("add", "Sweep", "--spec", "Sweep.")
+
+    seen = watch(project).splitlines()
+
+    def shown(part: str) -> str:
+        return next(line for line in seen if part in line)
+
+    assert shown("Agents").endswith(f"{BOLD}{CYAN}Agents{OFF}")
+    assert shown("Tickets") == f"{BOLD}{CYAN}Tickets{OFF}"
+    assert shown("coder-1").startswith(DIM) and "free" in shown("coder-1")
+    assert shown("Walls") == f"{BOLD}Walls{OFF}"
+    assert shown("#1 stopped").startswith(f"{BOLD}{YELLOW}  #1 stopped at code")
+    assert shown("#2").startswith(f"{DIM}  #2 specify") and "waits for #1" in shown("#2")
+    assert shown("#3") == "#3 specify  Sweep"
+    assert shown("finished") == f"{DIM}0 finished, 0 cancelled{OFF}"
+
+
+def test_the_view_shows_a_working_agent_in_green(project: Project) -> None:
+    project.configure(coder=LOOKS.format(root=str(project.root)))
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    working = next(line for line in board(project).splitlines() if "coder-1" in line)
+    assert working.startswith(GREEN) and working.endswith(OFF)
+
+
+def test_the_plain_list_has_no_colour(project: Project) -> None:
+    project.configure(coder="print('RESULT: question: which colour?')")
+    project.dk("add", "Paint", "--spec", "Paint it.", "--epic", "Walls")
+    project.dk("run")
+
+    assert "\033" not in project.dk("status")

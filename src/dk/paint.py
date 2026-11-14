@@ -1,4 +1,4 @@
-"""Colour for one line of an agent's work, as a terminal shows it.
+"""Colour for one line of an agent's work or of the board, as a terminal shows it.
 
 Only for the eye: the files that keep the work stay plain text, and this piece knows nothing
 about agents or tickets beyond how their lines begin.
@@ -25,6 +25,13 @@ _WHOLE = (  # how a line begins, and the colour of all of it
     ("error:", _RED),
     ("#", _BOLD),
 )
+_BOARD = {  # the kinds of line on the board; any other kind is left as it is
+    "heading": _BOLD + _CYAN,
+    "epic": _BOLD,
+    "busy": _GREEN,
+    "stopped": _BOLD + _YELLOW,
+    **dict.fromkeys(("free", "held", "closed", "count"), _DIM),
+}
 _STRONG = re.compile(r"\*\*(\S(?:.*?\S)?)\*\*")
 _CODE = re.compile(r"`([^`]+)`")
 
@@ -39,3 +46,8 @@ def line(text: str) -> str:
             return f"{colour}{text}{_OFF}"
     text = _STRONG.sub(rf"{_BOLD}\1{_PLAIN}", text)
     return _CODE.sub(rf"{_CYAN}\1{_NO_COLOUR}", text)
+
+
+def part(kind: str, text: str) -> str:
+    """A line of the board with the colour of its kind."""
+    return f"{_BOARD[kind]}{text}{_OFF}" if kind in _BOARD else text

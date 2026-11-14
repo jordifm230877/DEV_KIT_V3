@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import sys
 import time
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Iterator, Sequence
 from pathlib import Path
 
 from dk import config, paint, process
@@ -16,6 +16,7 @@ from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 
 _LOOK_EVERY = 0.1
+Row = tuple[str, str]  # what kind of line it is, and its words
 
 
 def line(ticket: Ticket, steps: dict[int, str]) -> str:
@@ -36,35 +37,49 @@ def _counted(tickets: list[Ticket]) -> str:
     return f"{steps.count(process.DONE)} done, {steps.count(process.CANCELLED)} cancelled"
 
 
-def status(tickets: list[Ticket], hidden: Sequence[str] = (), closed: Collection[str] = ()) -> None:
-    """Tickets without an epic first, then each epic with its tickets; none at a hidden step.
-    A closed epic takes one line."""
+def _kind(ticket: Ticket, steps: dict[int, str]) -> str:
+    if ticket.stopped:
+        return "stopped"
+    return "held" if process.held_by(ticket.follows, steps) else "ticket"
+
+
+def _rows(tickets: list[Ticket], hidden: Sequence[str], closed: Collection[str]) -> Iterator[Row]:
     steps = {ticket.id: ticket.step for ticket in tickets}
     listed = [ticket for ticket in tickets if ticket.step not in hidden]
     for epic in sorted({ticket.epic for ticket in listed}):
         inside = [ticket for ticket in listed if ticket.epic == epic]
         if epic in closed:
-            print(f"{epic}  closed: {_counted(inside)}")
+            yield "closed", f"{epic}  closed: {_counted(inside)}"
             continue
         if epic:
-            print(epic)
+            yield "epic", epic
         for ticket in inside:
-            print(("  " if epic else "") + line(ticket, steps))
+            yield _kind(ticket, steps), ("  " if epic else "") + line(ticket, steps)
+
+
+def status(tickets: list[Ticket], hidden: Sequence[str] = (), closed: Collection[str] = ()) -> None:
+    """Tickets without an epic first, then each epic with its tickets; none at a hidden step.
+    A closed epic takes one line."""
+    for _, text in _rows(tickets, hidden, closed):
+        print(text)
 
 
 def board(team: Sequence[config.Agent], tickets: list[Ticket]) -> None:
-    """What each agent is doing, the tickets not yet finished, and a count of the rest."""
+    """What each agent is doing, the tickets not yet finished, and a count of the rest; in
+    colour, so that what needs the user stands out."""
     busy = {ticket.worker: ticket for ticket in tickets if ticket.worker}
-    print("Agents")
+    rows: list[Row] = [("heading", "Agents")]
     for agent in team:
         on = busy.get(agent.name)
         doing = f"#{on.id} {on.title} ({on.step})" if on else "free"
         if on or agent.role != PRINCIPAL:  # the Principal is in the conversation otherwise
-            print(f"  {agent.name:<12} {doing}")
-    print("Tickets")
-    status(tickets, (process.DONE, process.CANCELLED))
+            rows.append(("busy" if on else "free", f"  {agent.name:<12} {doing}"))
+    rows += [("heading", "Tickets"), *_rows(tickets, (process.DONE, process.CANCELLED), ())]
     steps = [ticket.step for ticket in tickets]
-    print(f"{steps.count(process.DONE)} finished, {steps.count(process.CANCELLED)} cancelled")
+    done, cancelled = steps.count(process.DONE), steps.count(process.CANCELLED)
+    rows.append(("count", f"{done} finished, {cancelled} cancelled"))
+    for kind, text in rows:
+        print(paint.part(kind, text))
 
 
 def watch(project: Path, tickets: Tickets) -> None:
