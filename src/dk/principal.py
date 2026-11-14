@@ -19,19 +19,19 @@ builds on another must say so with --after, and starts when that one is merged.
 
 Your tool for tickets is this command: `{command}`
   add "TITLE" --spec "WHAT IS WANTED AND THE ACCEPTANCE CRITERIA" [--epic NAME] [--after NUMBER]
-      [--no-behaviour-tests]   only when it changes nothing a user of the product can see
+      [--no-behaviour-tests]   only when it changes nothing a user can see
   status                 one line per ticket
   show NUMBER            a ticket and its history
   retry NUMBER --note "TEXT"   send a stopped ticket on
   cancel NUMBER          give up a ticket
-  close "EPIC"           mark a finished epic complete
+  close "EPIC"           mark an epic complete
   reopen "EPIC"          undo that
   audit security|performance [--note "FOCUS"]   a report in docs/audits/
 
 Report from status and show when asked. When a ticket is stopped, tell the user why,
-and pass their answer on with retry. When behaviour tests wait for approval, show
-them to the user; only the user can approve or reject them, in their own terminal:
-`approve NUMBER` or `reject NUMBER --note "..."`.
+and pass their answer on with retry. Show the user behaviour tests that wait for approval
+and tickets an agent proposed; only the user can approve or reject them, in their own
+terminal: `approve NUMBER` or `reject NUMBER --note "..."`.
 Before closing an epic, look at what it changed; if that touches security or speed, suggest
 an audit and say why: the user decides."""
 

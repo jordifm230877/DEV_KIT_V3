@@ -41,6 +41,10 @@ def _parser() -> argparse.ArgumentParser:
         default=[],
         help="a ticket that must be merged before this one starts; may be repeated",
     )
+    propose = commands.add_parser("propose", help="suggest a ticket; the user decides on it")
+    propose.add_argument("title")
+    propose.add_argument("--spec", required=True, help="what is wanted and why")
+    propose.add_argument("--epic", default="", help="the larger piece of work this belongs to")
     audit = commands.add_parser("audit", help="have the whole project audited; leaves a report")
     audit.add_argument("kind", choices=list(briefs.AUDITS))
     audit.add_argument("--note", default="", help="what to look at in particular")
@@ -70,8 +74,10 @@ def _parser() -> argparse.ArgumentParser:
     follow.add_argument("log", type=Path)
     commands.add_parser("close", help="mark an epic as complete").add_argument("epic")
     commands.add_parser("reopen", help="open a closed epic again").add_argument("epic")
-    commands.add_parser("approve", help="accept what waits for you").add_argument(
-        "ticket", type=int
+    approve = commands.add_parser("approve", help="accept what waits for you")
+    approve.add_argument("ticket", type=int)
+    approve.add_argument(
+        "--no-behaviour-tests", action="store_true", help="for a proposed ticket you accept"
     )
     reject = commands.add_parser("reject", help="send back what waits for you")
     reject.add_argument("ticket", type=int)
@@ -162,6 +168,7 @@ def _execute(args: argparse.Namespace) -> None:
     tickets = Tickets(home / "tickets.db")
     commands: dict[str, Callable[[], None]] = {
         "add": lambda: orders.add(args, tickets),
+        "propose": lambda: orders.propose(args, tickets),
         "audit": lambda: orders.audit(args, project, tickets),
         "check": lambda: _check(project, home),
         "init": lambda: print(*starter.write(project, args.model, args.program), sep="\n"),
@@ -178,7 +185,9 @@ def _execute(args: argparse.Namespace) -> None:
         "cancel": lambda: orders.cancel(tickets, args.ticket),
         "close": lambda: orders.close(tickets, args.epic),
         "reopen": lambda: orders.reopen(tickets, args.epic),
-        "approve": lambda: orders.decide(tickets, args.ticket, True, ""),
+        "approve": lambda: orders.decide(
+            tickets, args.ticket, True, "", not args.no_behaviour_tests
+        ),
         "reject": lambda: orders.decide(tickets, args.ticket, False, args.note),
     }
     commands[args.command]()

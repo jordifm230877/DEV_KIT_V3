@@ -11,6 +11,7 @@ from typing import Literal
 
 DONE = "done"
 CANCELLED = "cancelled"  # the user no longer wants the ticket
+PROPOSED = "proposed"  # an agent suggests the ticket; nothing happens until the user accepts
 
 
 @dataclass(frozen=True)
@@ -92,7 +93,7 @@ class Position:
 
     @property
     def final(self) -> bool:
-        return self.stopped or self.step in (DONE, CANCELLED)
+        return self.stopped or self.step in (DONE, CANCELLED, PROPOSED)
 
 
 def start(process: Sequence[Step], behaviour_tests: bool = True) -> Position:

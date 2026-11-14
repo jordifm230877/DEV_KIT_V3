@@ -38,8 +38,8 @@ def _counted(tickets: list[Ticket]) -> str:
 
 
 def _kind(ticket: Ticket, steps: dict[int, str]) -> str:
-    if ticket.stopped:
-        return "stopped"
+    if ticket.stopped or ticket.step == process.PROPOSED:
+        return "stopped" if ticket.stopped else "proposed"
     return "held" if process.held_by(ticket.follows, steps) else "ticket"
 
 

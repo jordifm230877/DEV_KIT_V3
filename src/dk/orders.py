@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 
 from dk import agents, briefs, config, jobs, process
+from dk.process import CANCELLED
 from dk.tickets import Ticket, Tickets
 
 
@@ -66,9 +67,32 @@ def reopen(tickets: Tickets, epic: str) -> None:
     print(f"{epic} open again")
 
 
-def decide(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
+def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: bool) -> None:
+    """The user's word on a proposed ticket: it becomes a ticket like any other, or is given up."""
+    first = process.start(process.PROCESS, tests) if accepted else process.Position(CANCELLED)
+    tickets.move(number, *vars(first).values())
+    if not accepted:
+        tickets.record(number, f"turned down by the user: {reason}")
+        print(f"#{number} turned down")
+        return
+    tickets.record(number, "accepted by the user")
+    if not tests:
+        tickets.record(number, "no behaviour tests: decided when the ticket was accepted")
+    print(f"#{number} accepted; it will start at {first.step} on the next run")
+
+
+def decide(tickets: Tickets, number: int, approved: bool, reason: str, tests: bool = True) -> None:
     if os.environ.get(agents.WHO):
         raise LookupError("only the user can approve or reject; ask them to run this themselves")
+    if tickets.get(number).step == process.PROPOSED:
+        return _answer(tickets, number, approved, reason, tests)
+    if not tests:
+        raise LookupError(f"#{number} is not a proposal; --no-behaviour-tests is for accepting one")
+    _behaviour_tests(tickets, number, approved, reason)
+
+
+def _behaviour_tests(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
+    """The user's word on behaviour tests: they are approved, or go back to their writer."""
     ticket, position = _stopped(tickets, number)
     if approved and not process.waiting(process.PROCESS, position):
         raise LookupError(f"#{number} is not waiting for your approval")
@@ -81,9 +105,27 @@ def decide(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
     print(f"#{number} will continue at {decided.step} on the next run")
 
 
+def _open(tickets: Tickets, epic: str) -> None:
+    if epic in tickets.closed():
+        raise LookupError(f"epic '{epic}' is closed; put the ticket in another epic")
+
+
+def propose(args: argparse.Namespace, tickets: Tickets) -> None:
+    """Suggest a ticket; whoever does is named, with the ticket they were on when they did."""
+    _open(tickets, args.epic)
+    who = os.environ.get(agents.WHO, "")
+    on = [
+        f" while on #{ticket.id} {ticket.title}"
+        for ticket in tickets.all()
+        if who and ticket.worker == who
+    ]
+    number = tickets.add(args.title, args.spec, process.PROPOSED, args.epic, [])
+    tickets.record(number, f"proposed by {who or 'the user'}{''.join(on)}")
+    print(f"#{number} proposed; it waits for the user to accept it or turn it down")
+
+
 def add(args: argparse.Namespace, tickets: Tickets) -> None:
-    if args.epic in tickets.closed():
-        raise LookupError(f"epic '{args.epic}' is closed; put the ticket in another epic")
+    _open(tickets, args.epic)
     first = process.start(process.PROCESS, not args.no_behaviour_tests).step
     number = tickets.add(args.title, args.spec, first, args.epic, args.after)
     if args.no_behaviour_tests:

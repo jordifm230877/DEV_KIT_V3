@@ -88,6 +88,7 @@ dk reopen "EPIC"  # open a closed epic again
 dk audit security # or performance: an `auditor` agent reports on the whole project in docs/audits/
 dk approve 1      # accept the behaviour tests shown by `dk show 1`; only you can, no agent
 dk reject 1 --note "what to change"
+dk propose "Title" --spec "..."   # an agent suggests a ticket; it waits until you `dk approve N` or `dk reject N`
 ```
 
 A ticket that stops is looked at by the Principal first: it sends the ticket on with an answer

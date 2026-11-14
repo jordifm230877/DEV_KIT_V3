@@ -12,6 +12,7 @@
 - **Stopped** — a ticket that waits at its step for the user: out of attempts, blocked, a question, or a merge that could not be done. `dk retry` sends it on.
 - **Stop review** — the Principal's look at a ticket that has just stopped: it sends it on once with an answer that is safe to give (it follows from what is decided and is cheap to put right), or explains the stop to the user. Shown in the `team_forum` tab.
 - **Cancelled** — a ticket given up with `dk cancel`; nobody works on it again and its unmerged work is thrown away.
+- **Proposed** — a ticket an agent suggested (`dk propose`) for work nobody asked for; nothing happens to it until the user accepts it (`dk approve`) or turns it down (`dk reject`).
 - **Exploring** — finding out what to build, done by the Principal in the conversation and written in `docs/discovery.md`; never a ticket.
 - **Follows** — a ticket that builds on another (`--after`) and is not started until that one is merged or cancelled.
 - **Vetting** — the look a reviewer takes at new behaviour tests before the user is asked to approve them (step `vet`).

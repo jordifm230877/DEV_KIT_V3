@@ -30,6 +30,7 @@ _BOARD = {  # the kinds of line on the board; any other kind is left as it is
     "epic": _BOLD,
     "busy": _GREEN,
     "stopped": _BOLD + _YELLOW,
+    "proposed": _YELLOW,
     **dict.fromkeys(("free", "held", "closed", "count"), _DIM),
 }
 _TITLE = re.compile(r"(\d{4}-\d\d-\d\d \d\d:\d\d  )?=== ")  # a job, with when it started
