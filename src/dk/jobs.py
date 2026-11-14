@@ -13,7 +13,18 @@ from pathlib import Path
 
 from dk import agents, briefs
 from dk.config import Agent, Config
-from dk.process import Failed, Lost, Outcome, Passed, Position, Skipped, Stopped
+from dk.process import (
+    DONE,
+    PROCESS,
+    Failed,
+    Lost,
+    Outcome,
+    Passed,
+    Position,
+    Skipped,
+    Stopped,
+    of,
+)
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 
@@ -95,8 +106,15 @@ class Jobs:
     def audit(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         """Have the project looked over; of what the auditor leaves, only its report is kept."""
         where = report(ticket.title)
-        tools = self.config.audit_tools
-        brief = briefs.auditor(ticket.id, ticket.title, ticket.spec, position.note, where, tools)
+        known = [
+            other.title
+            for other in self.tickets.all()
+            if other.step != DONE and of(other.step) is PROCESS
+        ]
+        brief = briefs.auditor(
+            *(ticket.id, ticket.title, ticket.spec, position.note, where),
+            *(self.config.audit_tools, self.command, known),
+        )
         return self._produce(agent, brief, ticket, where)
 
     def specify(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:

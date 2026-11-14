@@ -26,7 +26,7 @@ Your tool for tickets is this command: `{command}`
   cancel NUMBER          give up a ticket
   close "EPIC"           mark an epic complete
   reopen "EPIC"          undo that
-  audit security|performance [--note "FOCUS"]   a report in docs/audits/
+  audit security|performance|tests [--note "FOCUS"]   a report in docs/audits/
 
 Report from status and show when asked. When a ticket is stopped, tell the user why,
 and pass their answer on with retry. Show the user behaviour tests that wait for approval

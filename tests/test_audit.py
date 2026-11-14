@@ -123,3 +123,36 @@ def test_an_auditor_recommends_the_tools_this_project_should_have(project: Proje
     assert "recommend" in told and "on the web" in told and "how to install" in told
     assert "[audit]" in told, "where the user would list them"
     assert "expects" not in told, "no tools were listed for this project"
+
+
+def test_an_audit_of_the_tests_breaks_the_code_to_see_whether_they_notice(project: Project) -> None:
+    told = brief(project, "tests")
+
+    assert "Break the code on purpose" in told and "no test notices" in told
+    assert "secrets" not in told and report("tests") in told
+    assert len(told.split()) < 300
+
+
+def test_an_auditor_proposes_tickets_for_what_matters_most(project: Project) -> None:
+    told = brief(project, "security")
+
+    assert f"--project {project.root} propose" in told
+    assert "five at most" in told and "the user decides" in told
+
+
+def test_an_auditor_is_told_what_is_already_asked_for_or_was_turned_down(project: Project) -> None:
+    seen = "pathlib.Path(sys.argv[0]).with_name('brief.txt').write_text(prompt)\n"
+    project.configure(coder=HELLO, auditor=seen + AUDITS)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+    project.dk("propose", "Rotate the key", "--spec", "a")
+    project.dk("propose", "Hide the log", "--spec", "b")
+    project.dk("reject", "3", "--note", "no")
+    project.dk("audit", "security")
+
+    project.dk("run")
+
+    told = (project.root.parent / "tools" / "brief.txt").read_text()
+    assert "Rotate the key; Hide the log" in told
+    assert "Greet" not in told, "what is merged can be found wanting again"
+    assert "Security audit;" not in told and "; Security audit" not in told
