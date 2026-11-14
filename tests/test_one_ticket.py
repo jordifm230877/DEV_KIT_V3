@@ -260,3 +260,14 @@ def test_a_coder_that_ends_without_an_answer_is_reported_with_what_it_last_said(
 
     status = project.dk("status")
     assert "without a clear answer; it last said: the model refused the request" in status
+
+
+def test_work_already_checked_is_not_checked_again_before_merging(project: Project) -> None:
+    counted = project.root.parent / "checked.txt"
+    project.configure(coder=WRITES_GREETING, check=f"open({str(counted)!r}, 'a').write('x')")
+    project.dk("add", "Greet", "--spec", "Create greeting.txt.")
+
+    project.dk("run")
+
+    assert "#1 done" in project.dk("status")
+    assert counted.read_text() == "x", "the project gained nothing meanwhile"
