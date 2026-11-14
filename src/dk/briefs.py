@@ -232,17 +232,20 @@ What happened to it, latest last:
 It stopped because: {reason}
 
 Find out why: read AGENTS.md, docs/discovery.md, the code and the history above.
-If the ticket, AGENTS.md or docs/discovery.md already say what the team needs in order to
-go on, give that answer, and the ticket is sent on with it. Decide nothing the user has not
-decided: what to build, a choice between options and approved behaviour tests are the
-user's. If in doubt, it is the user's.
+Answer yourself only when you have enough to answer safely. An answer is safe when both hold:
+- it follows from what the ticket, AGENTS.md or docs/discovery.md already decide: their plain
+  reading, not a preference of yours;
+- if it turned out wrong it would be cheap to put right: a detail of how, not what is built.
+Always the user's, however sure you are: changing what is built or what a ticket covers,
+approved behaviour tests, and a choice the user left open.
+With a safe answer the ticket is sent on. Say in it what you base it on.
 Otherwise tell the user in plain words what happened, why, and what you recommend. They can
 change the project or its devkit.toml, answer with `dk retry {id} --note "..."`, send
 approved behaviour tests back with `dk reject {id} --note "..."`, or `dk cancel {id}`.
 Do not change any file; anything you change is thrown away.
 
 End your reply with exactly one of these lines:
-RESULT: done: <the answer, for whoever works on the ticket next>
+RESULT: done: <the answer and what it is based on, for whoever works on the ticket next>
 RESULT: question: <for the user: what happened, why, and what you recommend>"""
 
 

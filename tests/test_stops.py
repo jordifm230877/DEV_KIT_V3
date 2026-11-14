@@ -186,3 +186,19 @@ def test_what_the_principal_makes_of_stops_is_shown_in_a_tab_of_its_own(
     assert "team_forum" in labels and "principal" not in labels
     shown = (project.root / ".devkit" / "logs" / "team_forum.log").read_text()
     assert "#1 Paint" in shown and "the colour was never decided" in shown
+
+
+def test_the_principal_is_told_when_an_answer_of_its_own_is_safe(
+    project: Project, pi: Path
+) -> None:
+    says(pi, "print('RESULT: question: choose one')")
+    project.configure(coder=ASKS, settings=PRINCIPAL)
+    project.dk("add", "Paint", "--spec", "Paint it.")
+
+    project.dk("run")
+
+    (brief,) = seen(pi)
+    for part in ("follows from", "cheap to put right", "what you base it on"):
+        assert part in brief
+    for the_users in ("what is built", "approved behaviour tests", "left open"):
+        assert the_users in brief

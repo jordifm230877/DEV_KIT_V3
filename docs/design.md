@@ -136,8 +136,10 @@ Each step ends with something usable.
   lines in `cli`.
 - A ticket that stops is handed to the Principal before the user (not the wait for approval,
   which is no problem to explain). It is a separate read-only job, not the open conversation:
-  a program cannot speak into that. It may send the ticket on once with an answer the ticket,
-  `AGENTS.md` or `docs/discovery.md` already hold; a second stop is the user's. In the real
+  a program cannot speak into that. It may send the ticket on once with an answer of its own when that is safe: the answer
+  follows from what the ticket, `AGENTS.md` or `docs/discovery.md` decide, and would be cheap
+  to put right if wrong. What is built, approved behaviour tests and choices left open stay
+  the user's, and it says what the answer is based on. A second stop is the user's. In the real
   trial every stop reached the user as one raw line, and somebody outside DevKit had to
   read the history to say what it meant. Only a Principal set up with `program` is asked;
   a custom `command` is a conversation and cannot take a job.
