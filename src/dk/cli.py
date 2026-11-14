@@ -129,6 +129,8 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("cancel", help="give a ticket up and throw its work away").add_argument(
         "ticket", type=int
     )
+    follow = commands.add_parser("follow", help="show a file of an agent's work, in colour")
+    follow.add_argument("log", type=Path)
     commands.add_parser("close", help="mark an epic as complete").add_argument("epic")
     commands.add_parser("reopen", help="open a closed epic again").add_argument("epic")
     commands.add_parser("approve", help="accept what waits for you").add_argument(
@@ -152,8 +154,9 @@ def _director(project: Path, home: Path, tickets: Tickets, say: Callable[[str], 
 def _watching(project: Path, shown: dict[str, Path], no_tabs: bool) -> Iterator[None]:
     """Inside Herdr, a tab for the board and one for each of these files, while the work goes on."""
     inside = os.environ.get("HERDR_WORKSPACE_ID", "")
-    board = (sys.executable, "-m", "dk", "--project", str(project), "status", "--watch")
-    everything: dict[str, Path | Sequence[str]] = {"status": board, **shown}
+    dk = (sys.executable, "-m", "dk", "--project", str(project))
+    follows = {name: (*dk, "follow", str(log)) for name, log in shown.items()}
+    everything = {"status": (*dk, "status", "--watch"), **follows}
     watched = everything if inside and not no_tabs else {}
     with screen.tabs(os.environ.get("HERDR_BIN_PATH", "herdr"), inside, watched):
         yield
@@ -241,6 +244,7 @@ def _execute(args: argparse.Namespace) -> None:
             if args.watch
             else views.status(tickets.all(), closed=tickets.closed())
         ),
+        "follow": lambda: views.follow(args.log),
         "show": lambda: views.show(tickets, Workspace(project, home / "work"), args.ticket),
         "retry": lambda: _retry(tickets, args.ticket, args.note),
         "cancel": lambda: _cancel(tickets, args.ticket),

@@ -208,6 +208,7 @@ dk cancel 1       # give a ticket up
 Everything DevKit keeps is in `.devkit/` inside the project; Git ignores it.
 
 - `.devkit/logs/<agent>.log` — everything each agent did, newest at the bottom.
+  `dk follow FILE` shows one in colour as it grows, as the agent tabs do.
 - `.devkit/logs/tickets.log` — progress during `dk talk`.
 - `.devkit/logs/ticket-N/attempt-M/check-<name>.log` — full output of each check.
 - `.devkit/work/ticket-N/` — the ticket's copy of the code while it is in progress.

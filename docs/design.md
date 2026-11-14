@@ -53,7 +53,8 @@ request.
 | `screen` | One Herdr tab per agent, showing what it is doing, and one for the board; watch-only | Affect the run |
 | `starter` | Writes a first `devkit.toml` and `AGENTS.md` (`dk init`) | Overwrite anything |
 | `preflight` | Finds what would stop the first ticket (`dk check`); a composer | Change anything |
-| `views` | What the user is shown: the ticket list, the board, one ticket; a composer | Change anything |
+| `views` | What the user is shown: the ticket list, the board, one ticket, an agent's work as it happens; a composer | Change anything |
+| `paint` | Colour for one line of an agent's work | Know agents or tickets |
 | `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
 | conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve, finish tickets or skip steps |
 | stop review | A ticket that stops goes to the Principal as a job: it answers from what the project already says, or explains the stop to the user | Decide for the user, change files |
@@ -178,6 +179,10 @@ Each step ends with something usable.
   real trial such a ticket went to the test-writer, whose scenarios the verifier rightly
   refused, and the user was asked to approve an empty file. It is still checked, verified
   and tried by QA against its acceptance criteria.
+- An agent's tab shows its work in colour (`dk follow FILE`): the title of each job, the
+  tools it uses, errors, its answer, and the bold and code marks it writes. The colour is
+  added when the file is shown; the file stays plain text, because agents and the user's
+  own tools read it too. The user asked for the look the agent programs have by themselves.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

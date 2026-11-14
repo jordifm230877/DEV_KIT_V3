@@ -10,10 +10,12 @@ import time
 from collections.abc import Collection, Sequence
 from pathlib import Path
 
-from dk import config, process
+from dk import config, paint, process
 from dk.director import PRINCIPAL
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
+
+_LOOK_EVERY = 0.1
 
 
 def line(ticket: Ticket, steps: dict[int, str]) -> str:
@@ -73,6 +75,24 @@ def watch(project: Path, tickets: Tickets) -> None:
             board(config.load(project).agents, tickets.all())
             sys.stdout.flush()
             time.sleep(2)
+    except KeyboardInterrupt:
+        return
+
+
+def follow(log: Path) -> None:
+    """Show a file of an agent's work in colour, and what is added to it, until interrupted."""
+    try:
+        while not log.exists():
+            time.sleep(_LOOK_EVERY)
+        with log.open() as work:
+            pending = ""
+            while True:
+                pending += work.readline()
+                if pending.endswith("\n"):
+                    print(paint.line(pending[:-1]), flush=True)
+                    pending = ""
+                else:
+                    time.sleep(_LOOK_EVERY)
     except KeyboardInterrupt:
         return
 

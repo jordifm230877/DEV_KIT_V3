@@ -92,7 +92,7 @@ your project's own command for them (Cucumber, behave, ...) to `[checks]`.
 
 Started inside [Herdr](https://herdr.dev), `dk run` opens a `status` tab and one tab per agent showing what it
 is doing, and closes them when the run ends (`--no-tabs` to skip). The same text stays in
-`.devkit/logs/<agent>.log`.
+`.devkit/logs/<agent>.log` as plain text; the tabs show it in colour.
 
 DevKit keeps its own files in `.devkit/` inside the project (ticket list, working copies,
 logs); it ignores itself in Git.
