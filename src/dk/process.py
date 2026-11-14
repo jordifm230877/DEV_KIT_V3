@@ -85,8 +85,11 @@ class Position:
         return self.stopped or self.step in (DONE, CANCELLED)
 
 
-def start(process: Sequence[Step]) -> Position:
-    return Position(process[0].name)
+def start(process: Sequence[Step], behaviour_tests: bool = True) -> Position:
+    """Where a new ticket begins: at the first step, or past the user's approval when it
+    was written as one that needs no behaviour tests."""
+    asks = [index for index, step in enumerate(process) if step.kind == "user"]
+    return Position(process[0 if behaviour_tests or not asks else asks[-1] + 1].name)
 
 
 def _rework(process: Sequence[Step], step: str) -> str:

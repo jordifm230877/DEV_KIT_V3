@@ -196,6 +196,7 @@ returned; a coder that thinks one is wrong stops and tells you why.
 ```bash
 dk add "Title" --spec "What is wanted and how to tell it is done" --epic "Optional group"
 dk add "Next" --spec "..." --after 1    # not started until ticket 1 is merged
+dk add "Test server" --spec "..." --no-behaviour-tests   # changes nothing a user can see
 dk run            # work on every unfinished ticket, then exit
 dk status
 dk show 1

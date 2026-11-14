@@ -172,6 +172,12 @@ Each step ends with something usable.
   has over each program's own automatic gatekeeper, which could refuse a command a project
   needs. A reviewing Claude gets no editing tools, as with Pi; Codex has no such list, and
   the director throws away what a reviewer changes in any case.
+- A ticket that changes nothing a user of the product can see (a test fixture, a build
+  script) is written with `--no-behaviour-tests` and starts at the coder; whoever writes the
+  ticket decides, which was the user's choice over letting the test-writer decide. In the
+  real trial such a ticket went to the test-writer, whose scenarios the verifier rightly
+  refused, and the user was asked to approve an empty file. It is still checked, verified
+  and tried by QA against its acceptance criteria.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

@@ -65,7 +65,7 @@ dk talk           # a conversation with the Principal; work goes on behind it un
 or use the commands yourself:
 
 ```bash
-dk add "Greeting" --spec "Create greeting.txt containing hello."   # optionally --epic NAME, --after N
+dk add "Greeting" --spec "Create greeting.txt containing hello."   # optionally --epic NAME, --after N, --no-behaviour-tests
 dk run            # work on every unfinished ticket
 dk status         # one line per ticket; --watch keeps showing agents and unfinished tickets
 dk show 1         # the ticket and everything that happened to it

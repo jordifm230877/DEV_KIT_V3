@@ -66,6 +66,7 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
         "close",
         "reopen",
         "acceptance",
+        "--no-behaviour-tests",
     ):
         assert word in brief
     assert len(brief.split()) < 300

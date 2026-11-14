@@ -96,6 +96,11 @@ def _parser() -> argparse.ArgumentParser:
     add.add_argument("--spec", required=True, help="what is wanted and how to tell it is done")
     add.add_argument("--epic", default="", help="the larger piece of work this belongs to")
     add.add_argument(
+        "--no-behaviour-tests",
+        action="store_true",
+        help="for a ticket that changes nothing a user of the product can see",
+    )
+    add.add_argument(
         "--after",
         type=int,
         action="append",
@@ -206,8 +211,10 @@ def _check(project: Path, home: Path) -> None:
 def _add(args: argparse.Namespace, tickets: Tickets) -> None:
     if args.epic in tickets.closed():
         raise LookupError(f"epic '{args.epic}' is closed; put the ticket in another epic")
-    first = process.start(process.PROCESS).step
+    first = process.start(process.PROCESS, not args.no_behaviour_tests).step
     number = tickets.add(args.title, args.spec, first, args.epic, args.after)
+    if args.no_behaviour_tests:
+        tickets.record(number, "no behaviour tests: decided when the ticket was written")
     print(f"#{number} written")
 
 

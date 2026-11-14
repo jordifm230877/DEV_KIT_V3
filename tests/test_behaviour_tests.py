@@ -215,3 +215,21 @@ def test_a_test_writer_asked_again_is_told_its_earlier_scenarios_are_its_to_rewr
     again = (project.root.parent / "tools" / "brief.txt").read_text()
     assert "yours to rewrite" not in first
     assert "features/greet.feature" in again and "yours to rewrite" in again
+
+
+def test_a_ticket_written_without_behaviour_tests_goes_straight_to_the_coder(
+    project: Project,
+) -> None:
+    """A ticket that changes nothing a user of the product sees: in a real trial the
+    test-writer, with nothing to describe, left an empty file for the user to approve."""
+    project.configure(coder=HELLO, tester=TESTER)
+    project.dk("add", "Test server", "--spec", "A fixture.", "--no-behaviour-tests")
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    shown = project.dk("show", "1")
+    assert "#1 done" in shown and "tester-1 started" not in shown
+    assert "no behaviour tests: decided when the ticket was written" in shown
+    assert project.merged("features/greet.feature") is None
+    assert "#2 stopped at approve" in project.dk("status"), "other tickets still get theirs"
