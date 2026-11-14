@@ -77,6 +77,7 @@ class UnknownProgram(Exception):
 class Reply:
     kind: Answer | Literal["unclear"]
     text: str = ""
+    late: bool = False  # it was cut off for taking too long, and `text` says after how long
 
 
 def _known(program: str) -> _Program:
@@ -224,9 +225,15 @@ def ask(
 
         feed = None if by_argument else instructions
         code = child.run(argv, cwd, show, seconds, stop, feed, {WHO: name})
-    reply = read("".join(said)) if code == 0 else Reply("unclear")
+    if code is None and not (stop and stop.is_set()):
+        return Reply("unclear", f"cut off after {seconds / 60:g} minutes", late=True)
+    return _heard("".join(said), code)
+
+
+def _heard(said: str, code: int | None) -> Reply:
+    reply = read(said) if code == 0 else Reply("unclear")
     if reply.kind == "unclear":  # say what it last said, which is usually why
-        last = [line.strip() for line in "".join(said).splitlines() if line.strip()][-1:]
+        last = [line.strip() for line in said.splitlines() if line.strip()][-1:]
         return Reply("unclear", "".join(last))
     return reply
 

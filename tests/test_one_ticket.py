@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import time
+from collections.abc import Iterator
+from datetime import datetime
+
+import pytest
 from conftest import Project
 
 WRITES_GREETING = (
@@ -154,7 +159,30 @@ def test_a_coder_that_never_finishes_is_cut_off_and_asked_again(project: Project
     project.dk("run")
 
     assert "#1 done" in project.dk("status")
-    assert "without a clear answer" in project.dk("show", "1")
+    shown = project.dk("show", "1")
+    assert "coder-1 was cut off after 0.01 minutes" in shown and "agent_minutes" in shown
+    assert "without a clear answer" not in shown
+
+
+@pytest.fixture
+def far_from_utc(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    monkeypatch.setenv("TZ", "Asia/Tokyo")
+    time.tzset()
+    yield
+    monkeypatch.undo()
+    time.tzset()
+
+
+@pytest.mark.usefixtures("far_from_utc")
+def test_what_happened_to_a_ticket_is_timed_by_the_users_clock(project: Project) -> None:
+    project.configure(coder=WRITES_GREETING)
+    project.dk("add", "Greet", "--spec", "Anything.")
+
+    project.dk("run")
+
+    first = next(line for line in project.dk("show", "1").splitlines() if "coder-1 started" in line)
+    at = datetime.strptime(first[:19], "%Y-%m-%d %H:%M:%S")
+    assert abs((datetime.now() - at).total_seconds()) < 120
 
 
 def test_a_check_that_never_finishes_counts_as_failed(project: Project) -> None:

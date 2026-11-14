@@ -125,5 +125,8 @@ class Tickets:
         self._run("INSERT INTO history (ticket, what) VALUES (?, ?)", ticket, what)
 
     def history(self, ticket: int) -> list[str]:
-        rows, _ = self._run("SELECT at, what FROM history WHERE ticket = ? ORDER BY id", ticket)
+        rows, _ = self._run(
+            "SELECT datetime(at, 'localtime'), what FROM history WHERE ticket = ? ORDER BY id",
+            ticket,
+        )
         return [f"{at}  {what}" for at, what in rows]
