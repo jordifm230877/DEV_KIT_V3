@@ -133,10 +133,15 @@ def add(args: argparse.Namespace, tickets: Tickets) -> None:
     print(f"#{number} written")
 
 
-def audit(kind: str, note: str, project: Path, tickets: Tickets) -> None:
+def auditor(project: Path) -> None:
+    """Refuse when the project has nobody to carry out an audit."""
     role = process.AUDIT[0].role
     if not config.load(project).with_role(role):
         raise config.ConfigError(f"no agent has the role '{role}'")
+
+
+def audit(kind: str, note: str, project: Path, tickets: Tickets) -> None:
+    auditor(project)
     title = _audit_title(kind)
     spec = f"{briefs.AUDITS[kind]}\n{note}".strip()
     number = tickets.add(title, spec, process.AUDIT[0].name, "", [])

@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 
-from dk import agents, briefs, config, orders, preflight, principal, screen, starter, views
+from dk import agents, briefs, config, nightly, orders, preflight, principal, screen, starter, views
 from dk.director import Director
 from dk.jobs import PRINCIPAL
 from dk.tickets import Tickets
@@ -56,6 +56,9 @@ def _parser() -> argparse.ArgumentParser:
     ):
         command = commands.add_parser(name, help=text)
         command.add_argument("--no-tabs", action="store_true", help="do not open Herdr tabs")
+        if name == "night":
+            command.add_argument("--at", default="", help="start it every day at this time, HH:MM")
+            command.add_argument("--off", action="store_true", help="no longer start it every day")
     init = commands.add_parser("init", help="write a first devkit.toml and AGENTS.md")
     init.add_argument("--model", required=True, help="the model every agent starts with")
     init.add_argument(
@@ -187,7 +190,22 @@ def _run(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets) 
         director.run()
 
 
+def _nightly(at: str, project: Path) -> None:
+    """Set or take away the daily start of the night shift; nothing is started now."""
+    if at:
+        orders.auditor(project)
+        nightly.every_day(
+            project, at, [sys.executable, "-m", "dk", "--project", str(project), "night"]
+        )
+        print(f"the night shift will start every day at {at}; `dk night --off` ends that")
+    else:
+        nightly.never(project)
+        print("the night shift no longer starts by itself")
+
+
 def _night(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets) -> None:
+    if args.at or args.off:
+        return _nightly(args.at, project)
     director = _director(project, home, tickets, print)
     with _alone(home) as free:
         orders.night(project, tickets, director.workspace.changed_since)
