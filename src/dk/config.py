@@ -27,7 +27,7 @@ class Config:
     agents: tuple[Agent, ...]
     checks: dict[str, tuple[str, ...]]
     max_attempts: int = 3
-    agent_minutes: float = 30
+    agent_minutes: float = 90  # 30 cut off a coder twice on a ticket that builds slowly
     check_minutes: float = 10
     quality_rules: bool = True  # tell coders how to work well; a project may turn it off
     web: bool = True  # agents may look things up on the web; a project may turn it off
