@@ -96,7 +96,10 @@ def _behaviour_tests(tickets: Tickets, number: int, approved: bool, reason: str)
     """The user's word on behaviour tests: they are approved, or go back to their writer."""
     ticket, position = _stopped(tickets, number)
     if approved and not process.waiting(process.PROCESS, position):
-        raise LookupError(f"#{number} is not waiting for your approval")
+        raise LookupError(
+            f"#{number} is not waiting for your approval; "
+            f'answer what stopped it with: dk retry {number} --note "..."'
+        )
     if not approved and not ticket.protected:
         raise LookupError(f"#{number} has no behaviour tests to send back")
     decide = process.approve if approved else process.send_back

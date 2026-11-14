@@ -138,7 +138,9 @@ def test_only_a_ticket_waiting_for_the_user_can_be_approved_or_rejected(project:
     project.dk("add", "Greet", "--spec", "Say hello.")
     project.dk("run")
 
-    assert "#1 is not waiting for your approval" in project.refused("approve", "1")
+    said = project.refused("approve", "1")
+    assert "#1 is not waiting for your approval" in said
+    assert 'answer what stopped it with: dk retry 1 --note "..."' in said
     assert "#1 has no behaviour tests to send back" in project.refused(
         "reject", "1", "--note", "no"
     )
