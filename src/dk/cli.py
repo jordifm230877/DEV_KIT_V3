@@ -85,12 +85,20 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _command(project: Path) -> str:
+    """This program, as an agent types it: for the Principal's work and for proposals."""
+    return shlex.join([sys.executable, "-m", "dk", "--project", str(project)])
+
+
 def _director(project: Path, home: Path, tickets: Tickets, say: Callable[[str], None]) -> Director:
     herdr = os.environ.get("HERDR_BIN_PATH", "herdr")
     inside = "HERDR_WORKSPACE_ID" in os.environ
     notify = partial(screen.notify, herdr) if inside else (lambda title, body: None)
     workspace = Workspace(project, home / "work")
-    return Director(config.load(project), tickets, workspace, home / "logs", say, notify)
+    logs = home / "logs"
+    return Director(
+        config.load(project), tickets, workspace, logs, say, notify, command=_command(project)
+    )
 
 
 @contextmanager
@@ -120,7 +128,6 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
         raise config.ConfigError(f"no agent has the role '{PRINCIPAL}'")
     agent = principals[0]
     argv = agent.command or agents.conversation(agent.program, agent.model, director.config.web)
-    command = shlex.join([sys.executable, "-m", "dk", "--project", str(project)])
     trouble: list[Exception] = []
 
     def work() -> None:
@@ -136,7 +143,7 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
     with watching, screen.named(herdr, mine, "Principal"):
         behind.start()
         try:
-            agents.converse(argv, principal.conversation(command), project, agent.name)
+            agents.converse(argv, principal.conversation(director.command), project, agent.name)
         finally:
             director.stop.set()
             behind.join()

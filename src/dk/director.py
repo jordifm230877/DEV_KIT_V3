@@ -51,13 +51,14 @@ class Director:
 
     notify: Callable[[str, str], object] = lambda title, body: None
     stop: threading.Event = field(default_factory=threading.Event)
+    command: str = "dk"  # how an agent reaches this program
 
     _free: dict[str, Queue[Agent]] = field(default_factory=dict)
     _merging: threading.Lock = field(default_factory=threading.Lock)
 
     @property
     def jobs(self) -> Jobs:
-        return Jobs(self.config, self.tickets, self.workspace, self.logs, self.stop)
+        return Jobs(self.config, self.tickets, self.workspace, self.logs, self.stop, self.command)
 
     def run(self, keep_going: bool = False) -> None:
         """Take every unfinished ticket as far as it can go, as many at once as there are

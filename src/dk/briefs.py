@@ -21,10 +21,13 @@ You are a coder. Work only inside the current directory, which is your own copy 
 
 {ticket}{note}
 Make the changes the ticket asks for, with tests where the project has them.
-{quality}{tests}Do not commit and do not change anything outside this directory.
+{quality}{tests}Do not commit or change anything outside this directory.
+Propose work the ticket does not cover, never do it:
+`{command} propose "TITLE" --spec "WHY"`
 
-When you have finished, end your reply with exactly one of these lines:
+End your reply with exactly one of these lines:
 RESULT: done
+RESULT: done: <one line, if the user must know: where you departed from the ticket, a doubt>
 {always}"""
 
 _AUDITOR = """\
@@ -175,7 +178,13 @@ def tester(ticket: int, title: str, spec: str, note: str, earlier: list[str]) ->
 
 
 def coder(
-    ticket: int, title: str, spec: str, note: str, protected: list[str], quality: bool
+    ticket: int,
+    title: str,
+    spec: str,
+    note: str,
+    protected: list[str],
+    quality: bool,
+    command: str,
 ) -> str:
     tests = _PROTECTED.format(files=", ".join(protected)) if protected else ""
     return _CODER.format(
@@ -183,6 +192,7 @@ def coder(
         note=_notes(note),
         quality=_QUALITY if quality else "",
         tests=tests,
+        command=command,
         always=_ALWAYS,
     )
 

@@ -111,16 +111,15 @@ def _open(tickets: Tickets, epic: str) -> None:
 
 
 def propose(args: argparse.Namespace, tickets: Tickets) -> None:
-    """Suggest a ticket; whoever does is named, with the ticket they were on when they did."""
+    """Suggest a ticket; whoever does is named, with the ticket they were on when they did,
+    whose epic it joins unless another is given."""
     _open(tickets, args.epic)
     who = os.environ.get(agents.WHO, "")
-    on = [
-        f" while on #{ticket.id} {ticket.title}"
-        for ticket in tickets.all()
-        if who and ticket.worker == who
-    ]
-    number = tickets.add(args.title, args.spec, process.PROPOSED, args.epic, [])
-    tickets.record(number, f"proposed by {who or 'the user'}{''.join(on)}")
+    on = [ticket for ticket in tickets.all() if who and ticket.worker == who][:1]
+    epic = args.epic or "".join(ticket.epic for ticket in on)
+    number = tickets.add(args.title, args.spec, process.PROPOSED, epic, [])
+    during = "".join(f" while on #{ticket.id} {ticket.title}" for ticket in on)
+    tickets.record(number, f"proposed by {who or 'the user'}{during}")
     print(f"#{number} proposed; it waits for the user to accept it or turn it down")
 
 

@@ -46,6 +46,7 @@ class Jobs:
     workspace: Workspace
     logs: Path
     stop: threading.Event
+    command: str = "dk"  # how an agent reaches this program, to propose a ticket
 
     def log(self, agent: Agent) -> Path:
         """The file that fills with what the agent is doing."""
@@ -84,6 +85,8 @@ class Jobs:
             return Stopped(f"{reply.kind}: {reply.text}")
         if reply.kind != "done":
             return _unclear(agent, reply)
+        if reply.text:  # for the user and the Principal; no reviewer is shown it
+            self.tickets.record(ticket.id, f"{agent.name} noted: {reply.text}")
         if not self.workspace.save(ticket.id, f"Ticket #{ticket.id}: {ticket.title}"):
             missing = f"wrote no report at {only}" if only else "changed nothing"
             return Failed(f"{agent.name} said it was done but {missing}")
@@ -113,7 +116,8 @@ class Jobs:
         tests = ticket.protected
         note = self._fresh(ticket, position.note)
         brief = briefs.coder(
-            ticket.id, ticket.title, ticket.spec, note, sorted(tests), self.config.quality_rules
+            *(ticket.id, ticket.title, ticket.spec, note, sorted(tests)),
+            *(self.config.quality_rules, self.command),
         )
         outcome = self._produce(agent, brief, ticket)
         changed = self.workspace.tampered(ticket.id, tests) if tests else []
