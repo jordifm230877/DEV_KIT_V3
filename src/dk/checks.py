@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 from dk import child
@@ -17,13 +17,19 @@ def run(
     logs: Path,
     seconds: float,
     stop: threading.Event | None = None,
+    starting: Callable[[str], object] = str,
 ) -> str | None:
-    """Run each check in order. Returns None if all pass, else what failed and its last output."""
+    """Run each check in order, telling `starting` its name first. Returns None if all
+    pass, else what failed and its last output."""
     logs.mkdir(parents=True, exist_ok=True)
     for name, argv in checks.items():
+        starting(name)
         log = logs / f"check-{name}.log"
         with log.open("w") as output:
             code = child.run(argv, cwd, output.write, seconds, stop)
+        if code is None and not (stop and stop.is_set()):
+            limit = "the limit for one check (`check_minutes` in devkit.toml)"
+            return f"{name} failed: cut off after {seconds / 60:g} minutes, {limit}"
         if code != 0:
             tail = "\n".join(log.read_text().splitlines()[-_TAIL_LINES:])
             return f"{name} failed:\n{tail}"

@@ -168,7 +168,14 @@ class Director:
     def _check(self, ticket: Ticket, logs: Path) -> Outcome:
         copy = self.workspace.prepare(ticket.id)
         seconds = self.config.check_minutes * 60
-        failure = checks.run(self.config.checks, copy, logs, seconds, self.stop)
+
+        def starting(name: str) -> None:  # the board shows it as it shows a working agent
+            self.tickets.assign(ticket.id, f"check {name}")
+
+        try:
+            failure = checks.run(self.config.checks, copy, logs, seconds, self.stop, starting)
+        finally:
+            self.tickets.assign(ticket.id, "")
         return Failed(failure) if failure else Passed()
 
     def _merge(self, ticket: Ticket, logs: Path) -> Outcome:

@@ -147,3 +147,17 @@ def test_the_plain_list_has_no_colour(project: Project) -> None:
     project.dk("run")
 
     assert "\033" not in project.dk("status")
+
+
+def test_the_view_says_which_check_the_program_is_running_on_which_ticket(
+    project: Project,
+) -> None:
+    looks = LOOKS.format(root=str(project.root)).rpartition("pathlib.Path('greeting.txt')")[0]
+    project.configure(coder=HELLO, check=looks)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    checking = next(line for line in board(project).splitlines() if "check unit" in line)
+    assert "#1 Greet (check)" in checking and "since" in checking
+    assert "check unit" not in watch(project), "nothing is checked once the work has ended"

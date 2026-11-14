@@ -210,6 +210,8 @@ def test_a_check_that_never_finishes_counts_as_failed(project: Project) -> None:
     project.dk("run")
 
     assert "unit failed" in project.dk("status")
+    shown = project.dk("show", "1")
+    assert "cut off after 0.01 minutes" in shown and "check_minutes" in shown
     assert project.merged("greeting.txt") is None
 
 

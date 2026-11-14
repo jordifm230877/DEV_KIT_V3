@@ -29,7 +29,7 @@ class Config:
     checks: dict[str, tuple[str, ...]]
     max_attempts: int = 3
     agent_minutes: float = 90  # 30 cut off a coder twice on a ticket that builds slowly
-    check_minutes: float = 10
+    check_minutes: float = 30  # 10 was short for a Rust project's whole test suite
     quality_rules: bool = True  # tell coders how to work well; a project may turn it off
     web: bool = True  # agents may look things up on the web; a project may turn it off
     audit_tools: tuple[str, ...] = ()  # the scanners and profilers an audit should have

@@ -64,16 +64,21 @@ def status(tickets: list[Ticket], hidden: Sequence[str] = (), closed: Collection
         print(text)
 
 
+def _working(team: Sequence[config.Agent], tickets: list[Ticket]) -> Iterator[Row]:
+    """A line for each agent, and one for each check the program itself is running."""
+    busy = {ticket.worker: ticket for ticket in tickets if ticket.worker}
+    names = [agent.name for agent in team if agent.role != PRINCIPAL or agent.name in busy]
+    for name in [*names, *(doing for doing in busy if doing not in names)]:
+        on = busy.get(name)
+        doing = f"#{on.id} {on.title} ({on.step})  since {on.since}" if on else "free"
+        yield "busy" if on else "free", f"  {name:<12} {doing}"
+
+
 def board(team: Sequence[config.Agent], tickets: list[Ticket]) -> None:
     """What each agent is doing, the tickets not yet finished, and a count of the rest; in
-    colour, so that what needs the user stands out."""
-    busy = {ticket.worker: ticket for ticket in tickets if ticket.worker}
-    rows: list[Row] = [("heading", "Agents")]
-    for agent in team:
-        on = busy.get(agent.name)
-        doing = f"#{on.id} {on.title} ({on.step})  since {on.since}" if on else "free"
-        if on or agent.role != PRINCIPAL:  # the Principal is in the conversation otherwise
-            rows.append(("busy" if on else "free", f"  {agent.name:<12} {doing}"))
+    colour, so that what needs the user stands out. The Principal is listed only while it
+    has a job: otherwise it is in the conversation."""
+    rows: list[Row] = [("heading", "Agents"), *_working(team, tickets)]
     rows += [("heading", "Tickets"), *_rows(tickets, (process.DONE, process.CANCELLED), ())]
     steps = [ticket.step for ticket in tickets]
     done, cancelled = steps.count(process.DONE), steps.count(process.CANCELLED)
