@@ -10,6 +10,7 @@ MAX_LINES = 300
 COMPOSERS = {
     "director",
     "preflight",
+    "views",
     "cli",
     "__main__",
 }  # the only pieces allowed to know the others

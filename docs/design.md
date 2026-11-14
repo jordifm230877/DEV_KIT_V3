@@ -53,6 +53,7 @@ request.
 | `screen` | One Herdr tab per agent, showing what it is doing, and one for the board; watch-only | Affect the run |
 | `starter` | Writes a first `devkit.toml` and `AGENTS.md` (`dk init`) | Overwrite anything |
 | `preflight` | Finds what would stop the first ticket (`dk check`); a composer | Change anything |
+| `views` | What the user is shown: the ticket list, the board, one ticket; a composer | Change anything |
 | `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
 | conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve, finish tickets or skip steps |
 | stop review | A ticket that stops goes to the Principal as a job: it answers from what the project already says, or explains the stop to the user | Decide for the user, change files |

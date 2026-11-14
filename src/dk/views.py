@@ -1,0 +1,79 @@
+"""What the user is shown: the ticket list, the board that redraws itself, one ticket.
+
+A composer: it reads the ticket list, the configuration, the process and a ticket's copy.
+"""
+
+from __future__ import annotations
+
+import sys
+import time
+from collections.abc import Sequence
+from pathlib import Path
+
+from dk import config, process
+from dk.director import PRINCIPAL
+from dk.tickets import Ticket, Tickets
+from dk.workspace import Workspace
+
+
+def line(ticket: Ticket, steps: dict[int, str]) -> str:
+    where = f"stopped at {ticket.step}" if ticket.stopped else ticket.step
+    line = f"#{ticket.id} {where}  {ticket.title}"
+    if ticket.attempts:
+        line += f"  [{ticket.attempts} attempt{'s' if ticket.attempts > 1 else ''}]"
+    if ticket.stopped:
+        line += f"  {ticket.note.splitlines()[0]}"
+    held = process.held_by(ticket.follows, steps)
+    if held and ticket.step != process.CANCELLED:
+        line += "  waits for " + ", ".join(f"#{number}" for number in held)
+    return line
+
+
+def status(tickets: list[Ticket], hidden: Sequence[str] = ()) -> None:
+    """Tickets without an epic first, then each epic with its tickets; none at a hidden step."""
+    steps = {ticket.id: ticket.step for ticket in tickets}
+    listed = [ticket for ticket in tickets if ticket.step not in hidden]
+    for epic in sorted({ticket.epic for ticket in listed}):
+        if epic:
+            print(epic)
+        for ticket in listed:
+            if ticket.epic == epic:
+                print(("  " if epic else "") + line(ticket, steps))
+
+
+def board(team: Sequence[config.Agent], tickets: list[Ticket]) -> None:
+    """What each agent is doing, the tickets not yet finished, and a count of the rest."""
+    busy = {ticket.worker: ticket for ticket in tickets if ticket.worker}
+    print("Agents")
+    for agent in team:
+        on = busy.get(agent.name)
+        doing = f"#{on.id} {on.title} ({on.step})" if on else "free"
+        if on or agent.role != PRINCIPAL:  # the Principal is in the conversation otherwise
+            print(f"  {agent.name:<12} {doing}")
+    print("Tickets")
+    status(tickets, (process.DONE, process.CANCELLED))
+    steps = [ticket.step for ticket in tickets]
+    print(f"{steps.count(process.DONE)} finished, {steps.count(process.CANCELLED)} cancelled")
+
+
+def watch(project: Path, tickets: Tickets) -> None:
+    """Show the board again every two seconds, until interrupted."""
+    try:
+        while True:
+            print("\033[2J\033[H", end="")
+            board(config.load(project).agents, tickets.all())
+            sys.stdout.flush()
+            time.sleep(2)
+    except KeyboardInterrupt:
+        return
+
+
+def show(tickets: Tickets, workspace: Workspace, number: int) -> None:
+    ticket = tickets.get(number)
+    epic = [f"Epic: {ticket.epic}"] if ticket.epic else []
+    steps = {other.id: other.step for other in tickets.all()}
+    print(line(ticket, steps), *epic, ticket.spec, *tickets.history(ticket.id), sep="\n")
+    position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+    if process.waiting(process.PROCESS, position):
+        for name in sorted(ticket.protected):
+            print(f"\n--- {name}", (workspace.prepare(number) / name).read_text(), sep="\n")

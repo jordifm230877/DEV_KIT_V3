@@ -7,70 +7,17 @@ import os
 import shlex
 import sys
 import threading
-import time
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 
-from dk import agents, briefs, config, preflight, process, screen, starter
+from dk import agents, briefs, config, preflight, process, screen, starter, views
 from dk.director import PRINCIPAL, Director
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 
 HOME = ".devkit"
-
-
-def _line(ticket: Ticket, steps: dict[int, str]) -> str:
-    where = f"stopped at {ticket.step}" if ticket.stopped else ticket.step
-    line = f"#{ticket.id} {where}  {ticket.title}"
-    if ticket.attempts:
-        line += f"  [{ticket.attempts} attempt{'s' if ticket.attempts > 1 else ''}]"
-    if ticket.stopped:
-        line += f"  {ticket.note.splitlines()[0]}"
-    held = process.held_by(ticket.follows, steps)
-    if held and ticket.step != process.CANCELLED:
-        line += "  waits for " + ", ".join(f"#{number}" for number in held)
-    return line
-
-
-def _status(tickets: list[Ticket], hidden: Sequence[str] = ()) -> None:
-    """Tickets without an epic first, then each epic with its tickets; none at a hidden step."""
-    steps = {ticket.id: ticket.step for ticket in tickets}
-    listed = [ticket for ticket in tickets if ticket.step not in hidden]
-    for epic in sorted({ticket.epic for ticket in listed}):
-        if epic:
-            print(epic)
-        for ticket in listed:
-            if ticket.epic == epic:
-                print(("  " if epic else "") + _line(ticket, steps))
-
-
-def _board(team: Sequence[config.Agent], tickets: list[Ticket]) -> None:
-    """What each agent is doing, the tickets not yet finished, and a count of the rest."""
-    busy = {ticket.worker: ticket for ticket in tickets if ticket.worker}
-    print("Agents")
-    for agent in team:
-        on = busy.get(agent.name)
-        doing = f"#{on.id} {on.title} ({on.step})" if on else "free"
-        if on or agent.role != PRINCIPAL:  # the Principal is in the conversation otherwise
-            print(f"  {agent.name:<12} {doing}")
-    print("Tickets")
-    _status(tickets, (process.DONE, process.CANCELLED))
-    steps = [ticket.step for ticket in tickets]
-    print(f"{steps.count(process.DONE)} finished, {steps.count(process.CANCELLED)} cancelled")
-
-
-def _watch(project: Path, tickets: Tickets) -> None:
-    """Show the board again every two seconds, until interrupted."""
-    try:
-        while True:
-            print("\033[2J\033[H", end="")
-            _board(config.load(project).agents, tickets.all())
-            sys.stdout.flush()
-            time.sleep(2)
-    except KeyboardInterrupt:
-        return
 
 
 def _stopped(tickets: Tickets, number: int) -> tuple[Ticket, process.Position]:
@@ -119,17 +66,6 @@ def _decide(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
     tickets.move(number, *vars(decided).values())
     _said(tickets, number, "approved" if approved else "rejected", reason)
     print(f"#{number} will continue at {decided.step} on the next run")
-
-
-def _show(tickets: Tickets, workspace: Workspace, number: int) -> None:
-    ticket = tickets.get(number)
-    epic = [f"Epic: {ticket.epic}"] if ticket.epic else []
-    steps = {other.id: other.step for other in tickets.all()}
-    print(_line(ticket, steps), *epic, ticket.spec, *tickets.history(ticket.id), sep="\n")
-    position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
-    if process.waiting(process.PROCESS, position):
-        for name in sorted(ticket.protected):
-            print(f"\n--- {name}", (workspace.prepare(number) / name).read_text(), sep="\n")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -264,8 +200,10 @@ def _execute(args: argparse.Namespace) -> None:
         "init": lambda: print(*starter.write(project, args.model), sep="\n"),
         "run": lambda: _run(args, project, home, tickets),
         "talk": lambda: _talk(project, home, tickets, args.no_tabs),
-        "status": lambda: _watch(project, tickets) if args.watch else _status(tickets.all()),
-        "show": lambda: _show(tickets, Workspace(project, home / "work"), args.ticket),
+        "status": lambda: (
+            views.watch(project, tickets) if args.watch else views.status(tickets.all())
+        ),
+        "show": lambda: views.show(tickets, Workspace(project, home / "work"), args.ticket),
         "retry": lambda: _retry(tickets, args.ticket, args.note),
         "cancel": lambda: _cancel(tickets, args.ticket),
         "approve": lambda: _decide(tickets, args.ticket, True, ""),
