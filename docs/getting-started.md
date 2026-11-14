@@ -161,6 +161,9 @@ afterwards reads it.
 A ticket you no longer want: `dk cancel N`, or tell the Principal. Its unmerged work is
 thrown away.
 
+An epic whose tickets are all finished: `dk close "EPIC NAME"`, or tell the Principal. It
+then takes one line in `dk status` and accepts no more tickets.
+
 ## 6. Behaviour tests
 
 With a tester in the configuration, every ticket starts with Gherkin scenarios

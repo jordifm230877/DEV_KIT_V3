@@ -3,6 +3,7 @@
 - **Agent** — a program driven by a language model that is given one job at a time.
 - **Role** — what an agent is for: coder, verifier, QA, test-writer, Principal.
 - **Epic** — a large piece of work agreed between the user and the Principal.
+- **Closed** — an epic marked complete with `dk close`; it shows as one line and takes no more tickets.
 - **Ticket** — one unit of work: what is wanted and its acceptance criteria.
 - **Process** — the ordered list of steps every ticket goes through.
 - **Step** — one stage of the process, carried out by an agent, by the program or by the user.

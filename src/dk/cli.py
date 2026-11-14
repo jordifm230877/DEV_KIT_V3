@@ -53,6 +53,18 @@ def _cancel(tickets: Tickets, number: int) -> None:
     print(f"#{number} cancelled; its unmerged work is thrown away on the next run")
 
 
+def _close(tickets: Tickets, epic: str) -> None:
+    """Mark an epic as complete; only one whose tickets are all merged or given up."""
+    inside = [ticket for ticket in tickets.all() if epic and ticket.epic == epic]
+    if not inside:
+        raise LookupError(f"there is no epic '{epic}'")
+    unfinished = [t for t in inside if t.step not in (process.DONE, process.CANCELLED)]
+    if unfinished:
+        raise LookupError(f"#{unfinished[0].id} is not finished")
+    tickets.close(epic)
+    print(f"{epic} closed")
+
+
 def _decide(tickets: Tickets, number: int, approved: bool, reason: str) -> None:
     if os.environ.get(agents.WHO):
         raise LookupError("only the user can approve or reject; ask them to run this themselves")
@@ -102,6 +114,7 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("cancel", help="give a ticket up and throw its work away").add_argument(
         "ticket", type=int
     )
+    commands.add_parser("close", help="mark an epic as complete").add_argument("epic")
     commands.add_parser("approve", help="accept what waits for you").add_argument(
         "ticket", type=int
     )
@@ -177,6 +190,8 @@ def _check(project: Path, home: Path) -> None:
 
 
 def _add(args: argparse.Namespace, tickets: Tickets) -> None:
+    if args.epic in tickets.closed():
+        raise LookupError(f"epic '{args.epic}' is closed; put the ticket in another epic")
     first = process.start(process.PROCESS).step
     number = tickets.add(args.title, args.spec, first, args.epic, args.after)
     print(f"#{number} written")
@@ -201,11 +216,14 @@ def _execute(args: argparse.Namespace) -> None:
         "run": lambda: _run(args, project, home, tickets),
         "talk": lambda: _talk(project, home, tickets, args.no_tabs),
         "status": lambda: (
-            views.watch(project, tickets) if args.watch else views.status(tickets.all())
+            views.watch(project, tickets)
+            if args.watch
+            else views.status(tickets.all(), closed=tickets.closed())
         ),
         "show": lambda: views.show(tickets, Workspace(project, home / "work"), args.ticket),
         "retry": lambda: _retry(tickets, args.ticket, args.note),
         "cancel": lambda: _cancel(tickets, args.ticket),
+        "close": lambda: _close(tickets, args.epic),
         "approve": lambda: _decide(tickets, args.ticket, True, ""),
         "reject": lambda: _decide(tickets, args.ticket, False, args.note),
     }

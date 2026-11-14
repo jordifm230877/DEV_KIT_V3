@@ -155,6 +155,10 @@ Each step ends with something usable.
   tickets not finished, a count of the rest. Inside Herdr it has a `status` tab. The ticket
   list records who is working on a ticket right now, because the board runs as a separate
   program and cannot see inside the director. The user missed the status tab of V1 and V2.
+- `dk close EPIC` marks an epic as complete once all its tickets are merged or given up; the
+  list then shows it as one line, and it takes no more tickets. It is the user's statement
+  that the epic is finished: tickets all being done does not say that by itself. Asked for
+  in the real trial when the first epic was finished and nothing could say so.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

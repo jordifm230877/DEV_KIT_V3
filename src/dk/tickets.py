@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS history (
     id INTEGER PRIMARY KEY, ticket INTEGER NOT NULL REFERENCES ticket(id),
     at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, what TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS closed (epic TEXT PRIMARY KEY);
 """
 
 
@@ -104,6 +105,14 @@ class Tickets:
     def assign(self, ticket: int, worker: str) -> None:
         """Say which agent is doing a job on the ticket right now; nobody, with ""."""
         self._run("UPDATE ticket SET worker = ? WHERE id = ?", worker, ticket)
+
+    def close(self, epic: str) -> None:
+        """Mark an epic as complete."""
+        self._run("INSERT OR IGNORE INTO closed (epic) VALUES (?)", epic)
+
+    def closed(self) -> set[str]:
+        rows, _ = self._run("SELECT epic FROM closed")
+        return {epic for (epic,) in rows}
 
     def record(self, ticket: int, what: str) -> None:
         self._run("INSERT INTO history (ticket, what) VALUES (?, ?)", ticket, what)

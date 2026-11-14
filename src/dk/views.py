@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import sys
 import time
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from pathlib import Path
 
 from dk import config, process
@@ -29,16 +29,25 @@ def line(ticket: Ticket, steps: dict[int, str]) -> str:
     return line
 
 
-def status(tickets: list[Ticket], hidden: Sequence[str] = ()) -> None:
-    """Tickets without an epic first, then each epic with its tickets; none at a hidden step."""
+def _counted(tickets: list[Ticket]) -> str:
+    steps = [ticket.step for ticket in tickets]
+    return f"{steps.count(process.DONE)} done, {steps.count(process.CANCELLED)} cancelled"
+
+
+def status(tickets: list[Ticket], hidden: Sequence[str] = (), closed: Collection[str] = ()) -> None:
+    """Tickets without an epic first, then each epic with its tickets; none at a hidden step.
+    A closed epic takes one line."""
     steps = {ticket.id: ticket.step for ticket in tickets}
     listed = [ticket for ticket in tickets if ticket.step not in hidden]
     for epic in sorted({ticket.epic for ticket in listed}):
+        inside = [ticket for ticket in listed if ticket.epic == epic]
+        if epic in closed:
+            print(f"{epic}  closed: {_counted(inside)}")
+            continue
         if epic:
             print(epic)
-        for ticket in listed:
-            if ticket.epic == epic:
-                print(("  " if epic else "") + line(ticket, steps))
+        for ticket in inside:
+            print(("  " if epic else "") + line(ticket, steps))
 
 
 def board(team: Sequence[config.Agent], tickets: list[Ticket]) -> None:
