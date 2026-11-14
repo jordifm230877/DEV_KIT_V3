@@ -20,7 +20,6 @@ _RED, _GREEN, _YELLOW, _CYAN, _NO_COLOUR = (
 
 _ANSWERS = {"done": _GREEN, "approved": _GREEN, "rejected": _RED}  # any other answer waits
 _WHOLE = (  # how a line begins, and the colour of all of it
-    ("=== ", _BOLD + _CYAN),
     ("> ", _DIM),
     ("error:", _RED),
     ("#", _BOLD),
@@ -32,6 +31,7 @@ _BOARD = {  # the kinds of line on the board; any other kind is left as it is
     "stopped": _BOLD + _YELLOW,
     **dict.fromkeys(("free", "held", "closed", "count"), _DIM),
 }
+_TITLE = re.compile(r"(\d{4}-\d\d-\d\d \d\d:\d\d  )?=== ")  # a job, with when it started
 _STRONG = re.compile(r"\*\*(\S(?:.*?\S)?)\*\*")
 _CODE = re.compile(r"`([^`]+)`")
 
@@ -41,6 +41,8 @@ def line(text: str) -> str:
     if text.startswith("RESULT:"):
         answer = text.removeprefix("RESULT:").partition(":")[0].strip()
         return f"{_BOLD}{_ANSWERS.get(answer, _YELLOW)}{text}{_OFF}"
+    if _TITLE.match(text):
+        return f"{_BOLD}{_CYAN}{text}{_OFF}"
     for start, colour in _WHOLE:
         if text.startswith(start):
             return f"{colour}{text}{_OFF}"

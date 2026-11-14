@@ -13,6 +13,7 @@ import subprocess
 import threading
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -194,7 +195,7 @@ def ask(
     said: list[str] = []
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.open("a") as shown:
-        shown.write(f"\n=== {title} ===\n" if title else "")
+        shown.write(f"\n{datetime.now():%Y-%m-%d %H:%M}  === {title} ===\n" if title else "")
 
         def show(line: str) -> None:
             said.append(plain(line))

@@ -10,6 +10,7 @@ import json
 import sqlite3
 import threading
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +20,7 @@ CREATE TABLE IF NOT EXISTS ticket (
     step TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, note TEXT NOT NULL DEFAULT '',
     stopped INTEGER NOT NULL DEFAULT 0, protected TEXT NOT NULL DEFAULT '{}',
     epic TEXT NOT NULL DEFAULT '', follows TEXT NOT NULL DEFAULT '[]',
-    worker TEXT NOT NULL DEFAULT ''
+    worker TEXT NOT NULL DEFAULT '', since TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS history (
     id INTEGER PRIMARY KEY, ticket INTEGER NOT NULL REFERENCES ticket(id),
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS history (
 );
 CREATE TABLE IF NOT EXISTS closed (epic TEXT PRIMARY KEY);
 """
+_LATER = ("worker TEXT NOT NULL DEFAULT ''", "since TEXT NOT NULL DEFAULT ''")
 
 
 @dataclass(frozen=True)
@@ -42,6 +44,7 @@ class Ticket:
     epic: str
     follows: list[int]  # tickets that must be finished before this one starts
     worker: str  # the agent doing a job on it right now, if any
+    since: str  # when that job started, in the user's own time
 
 
 class Tickets:
@@ -49,7 +52,7 @@ class Tickets:
         self._db = sqlite3.connect(path, autocommit=True, check_same_thread=False)
         self._db.executescript(_SCHEMA)
         columns = [row[1] for row in self._db.execute("PRAGMA table_info(ticket)")]
-        for added in ("follows TEXT NOT NULL DEFAULT '[]'", "worker TEXT NOT NULL DEFAULT ''"):
+        for added in ("follows TEXT NOT NULL DEFAULT '[]'", *_LATER):
             if added.split()[0] not in columns:  # a list written before tickets had this
                 self._db.execute(f"ALTER TABLE ticket ADD COLUMN {added}")
         self._one_at_a_time = threading.Lock()
@@ -73,14 +76,14 @@ class Tickets:
     def all(self) -> list[Ticket]:
         rows, _ = self._run(
             "SELECT id, title, spec, step, attempts, note, stopped, protected, epic, follows,"
-            " worker FROM ticket ORDER BY id"
+            " worker, since FROM ticket ORDER BY id"
         )
         return [
             Ticket(
                 *(number, title, spec, step, tries, note, bool(stop)),
-                *(json.loads(files), epic, json.loads(follows), worker),
+                *(json.loads(files), epic, json.loads(follows), *working),
             )
-            for number, title, spec, step, tries, note, stop, files, epic, follows, worker in rows
+            for number, title, spec, step, tries, note, stop, files, epic, follows, *working in rows
         ]
 
     def get(self, ticket: int) -> Ticket:
@@ -104,7 +107,8 @@ class Tickets:
 
     def assign(self, ticket: int, worker: str) -> None:
         """Say which agent is doing a job on the ticket right now; nobody, with ""."""
-        self._run("UPDATE ticket SET worker = ? WHERE id = ?", worker, ticket)
+        now = f"{datetime.now():%Y-%m-%d %H:%M}"
+        self._run("UPDATE ticket SET worker = ?, since = ? WHERE id = ?", worker, now, ticket)
 
     def close(self, epic: str) -> None:
         """Mark an epic as complete."""

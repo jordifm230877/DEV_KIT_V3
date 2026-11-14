@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 from conftest import Herdr, Project
@@ -135,6 +137,8 @@ def test_the_view_shows_a_working_agent_in_green(project: Project) -> None:
 
     working = next(line for line in board(project).splitlines() if "coder-1" in line)
     assert working.startswith(GREEN) and working.endswith(OFF)
+    (said,) = re.findall(r"#1 Greet \(code\)  since (\d{4}-\d\d-\d\d \d\d:\d\d)", working)
+    assert datetime.strptime(said, "%Y-%m-%d %H:%M") <= datetime.now()
 
 
 def test_the_plain_list_has_no_colour(project: Project) -> None:

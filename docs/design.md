@@ -185,6 +185,9 @@ Each step ends with something usable.
   own tools read it too. The user asked for the look the agent programs have by themselves.
   The board is coloured the same way, so that a stopped ticket and a working agent stand
   out; the plain `dk status` list has no colour, because the Principal reads it.
+- The title of each job in an agent's log begins with the date and time it started, and the
+  board says since when each working agent has been on its ticket, both in the user's own
+  time: the user could not tell a job that had just begun from one stuck for an hour.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+from datetime import datetime
+
 import pytest
 from conftest import Herdr, Project
 
@@ -44,6 +47,19 @@ def test_an_agents_tab_shows_which_ticket_it_is_on_and_what_it_says(project: Pro
     shown = (project.root / ".devkit" / "logs" / "coder-1.log").read_text()
     assert "#1 Greet" in shown and "code" in shown
     assert shown.index("#1 Greet") < shown.index("wrote it") < shown.index("RESULT: done")
+
+
+def test_each_job_in_an_agents_tab_says_when_it_started(project: Project) -> None:
+    project.configure(coder=HELLO)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    before = datetime.now()
+
+    project.dk("run")
+
+    shown = (project.root / ".devkit" / "logs" / "coder-1.log").read_text()
+    (said,) = re.findall(r"^(\d{4}-\d\d-\d\d \d\d:\d\d)  === #1 Greet \(code\) ===$", shown, re.M)
+    started = datetime.strptime(said, "%Y-%m-%d %H:%M")
+    assert before.replace(second=0, microsecond=0) <= started <= datetime.now()
 
 
 def test_the_tabs_close_even_when_the_run_cannot_go_on(project: Project, herdr: Herdr) -> None:

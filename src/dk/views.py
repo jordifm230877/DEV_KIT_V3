@@ -71,7 +71,7 @@ def board(team: Sequence[config.Agent], tickets: list[Ticket]) -> None:
     rows: list[Row] = [("heading", "Agents")]
     for agent in team:
         on = busy.get(agent.name)
-        doing = f"#{on.id} {on.title} ({on.step})" if on else "free"
+        doing = f"#{on.id} {on.title} ({on.step})  since {on.since}" if on else "free"
         if on or agent.role != PRINCIPAL:  # the Principal is in the conversation otherwise
             rows.append(("busy" if on else "free", f"  {agent.name:<12} {doing}"))
     rows += [("heading", "Tickets"), *_rows(tickets, (process.DONE, process.CANCELLED), ())]

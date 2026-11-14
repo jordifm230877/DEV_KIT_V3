@@ -45,6 +45,16 @@ def test_the_parts_of_an_agents_work_are_told_apart_by_colour(tmp_path: Path) ->
     assert error == f"{RED}error: no credit{OFF}"
 
 
+def test_a_title_that_says_when_the_job_started_is_a_title_too(tmp_path: Path) -> None:
+    log = tmp_path / "coder-1.log"
+    log.write_text("2026-11-14 17:09  === #1 Greet (code) ===\n2026-11-14 17:09  I began.\n")
+
+    title, words = followed(log)
+
+    assert title == f"{BOLD}{CYAN}2026-11-14 17:09  === #1 Greet (code) ==={OFF}"
+    assert words == "2026-11-14 17:09  I began."
+
+
 def test_emphasis_an_agent_writes_is_shown_and_its_marks_are_not(tmp_path: Path) -> None:
     log = tmp_path / "coder-1.log"
     log.write_text("It **must** pass `cargo test` first.\n## Summary\n2 * 3 * 4 and a `lone tick\n")
