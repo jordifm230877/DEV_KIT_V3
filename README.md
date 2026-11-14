@@ -85,7 +85,9 @@ dk retry 1 --note "an answer"   # send a stopped ticket on again
 dk cancel 1       # give a ticket up; its unmerged work is thrown away
 dk close "EPIC"   # mark an epic complete, once all its tickets are finished
 dk reopen "EPIC"  # open a closed epic again
-dk audit security # or performance: an `auditor` agent reports on the whole project in docs/audits/
+dk audit security # or performance, or tests: an `auditor` agent reports on the whole project in
+                  # docs/audits/ and proposes tickets for what matters most
+dk night          # every audit that has something new to look at; `--at 02:30` starts it every day
 dk approve 1      # accept the behaviour tests shown by `dk show 1`; only you can, no agent
 dk reject 1 --note "what to change"
 dk propose "Title" --spec "..."   # an agent suggests a ticket; it waits until you `dk approve N` or `dk reject N`

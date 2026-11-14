@@ -202,9 +202,11 @@ returned; a coder that thinks one is wrong stops and tells you why.
 
 ## 7. Audits
 
-To have the whole project looked over for security or for performance, ask the Principal,
-or run `dk audit security` or `dk audit performance` (add `--note "..."` to say what to look
-at in particular). It needs an agent with the role `auditor` in `devkit.toml`:
+To have the whole project looked over, ask the Principal or run `dk audit security`,
+`dk audit performance` or `dk audit tests` (add `--note "..."` to say what to look at in
+particular). An audit of the tests breaks the code on purpose, in its throwaway copy, to see
+whether the tests notice; on a large project it is slow, so give the auditor a longer limit
+(`minutes = 240` under its `[[agents]]`). It needs an agent with the role `auditor` in `devkit.toml`:
 
 ```toml
 [[agents]]
@@ -217,8 +219,9 @@ model = "provider/model-name"
 The audit is carried out like a ticket: you see it in `dk status` and in the auditor's tab.
 The auditor works in a throwaway copy, where it may build, run and measure, and uses the
 scanners and profilers it finds installed (`cargo audit`, `trivy`, ...). It fixes nothing.
-Its report arrives in `docs/audits/`, with the severity, the evidence and a proposed ticket
-for each finding; which of them become tickets is your decision.
+Its report arrives in `docs/audits/`, with the severity and the evidence of each finding.
+For the findings that matter most, five at most, it proposes a ticket (see below); which of
+them become tickets is your decision.
 
 The report ends with the tools the auditor recommends for this project, after looking on
 the web for current ones, and how to install each. Install those you want and list their
@@ -232,6 +235,42 @@ tools = ["cargo-audit", "gitleaks"]
 The auditor is then told to use them, and `dk check` names those that are not installed.
 DevKit installs nothing itself. When you ask the Principal
 to close an epic, it suggests an audit if what the epic changed gives a reason.
+
+### Proposed tickets and a coder's notes
+
+An auditor, and a coder that comes across work its ticket does not cover, propose a ticket
+instead of doing the work. A proposed ticket is listed as `proposed` and nothing happens to
+it until you decide:
+
+```bash
+dk show 14                             # what is proposed, by whom, and on which ticket
+dk approve 14                          # it becomes a ticket like any other; add
+                                       # --no-behaviour-tests if a user of the product sees nothing of it
+dk reject 14 --note "why not"          # it is given up
+```
+
+Only you can: ask the Principal to explain a proposal or to look into it first, but `dk`
+refuses the decision to any agent. A coder may also end its work with one line for you, such
+as where it departed from the ticket or what it is unsure of; `dk show N` has it as
+`coder-1 noted: ...`. The reviewers are not shown it.
+
+### The night shift
+
+`dk night` writes all three audits and then works like `dk run`. It leaves out an audit
+that is still unfinished, and one whose last report the project has not changed since, so
+the same findings do not come back every morning. To have it start by itself:
+
+```bash
+dk night --at 02:30                    # every day at that time; starts nothing now
+dk night --off                         # no longer
+```
+
+This uses your system's own timers (systemd, for your account); the computer must be on,
+and where you are not kept logged in, `loginctl enable-linger` lets it run without you. On
+a system without `systemctl`, have your own scheduler run `dk night`. In the morning,
+`dk status` lists what was proposed. Only one of `dk run`, `dk talk` and `dk night` works on
+a project at a time: a night shift that finds work going on writes its audits and leaves
+them to it.
 
 Known vulnerabilities in dependencies and container images are better caught on every
 ticket by a scanner under `[checks]` than by an audit now and then.

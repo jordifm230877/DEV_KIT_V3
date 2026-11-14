@@ -48,6 +48,7 @@ request.
 | `director` | Carries out the step each ticket waits for; the only piece that decides | Talk to models or Git directly |
 | `jobs` | The jobs agents are given on a ticket: what each is told and what its answer means; a composer | Decide where a ticket goes next |
 | `orders` | What the user, or the Principal for them, asks of the ticket list with a command: write, send on, give up, close, decide; a composer | Start anything |
+| `nightly` | Has the system start a command every day at a set time (systemd timers) | Know what the command does |
 | `principal` | What the Principal is told, in the conversation and about a stopped ticket | Start anything |
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
 | `briefs` | The short instructions each role receives | — |
@@ -215,6 +216,26 @@ Each step ends with something usable.
   network with shell commands, so this opens nothing new.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
+- An agent can propose a ticket (`dk propose`), which waits at the step `proposed` until the
+  user accepts it or turns it down; `dk` refuses that decision to any agent, as with
+  behaviour tests. Coders are told to propose work their ticket does not cover instead of
+  doing it, and auditors to propose their most important findings, five at most, knowing
+  the titles already asked for or turned down. Agents are given the command rather than a
+  format to write proposals in: a command either works or fails, and nothing has to be
+  read out of a model's prose.
+- A coder may add one line for the user to its answer (`RESULT: done: ...`); it is kept in
+  the ticket's history, where the user and the Principal read it. No reviewer is shown it:
+  a reviewer judges better without the account of whoever wrote the code, whose reasons
+  can talk it into accepting what it would have refused.
+- The night shift (`dk night`) is every kind of audit plus `dk run`, started by the user or
+  every day by a systemd timer (`--at`). DevKit keeps no clock and no process of its own
+  running; the system already has both. An audit is left out while one of its kind is
+  unfinished or while the project has not changed since its last report. A third kind of
+  audit, `tests`, breaks the code on purpose to see whether the tests notice; it runs in the
+  auditor's throwaway copy like the others.
+- Only one program works on a project at a time (`dk run`, `dk talk`, `dk night`), held by a
+  lock file in `.devkit/`. A night shift that starts by itself could otherwise take the same
+  tickets as a conversation left open.
 
 ## Deliberately left out
 
