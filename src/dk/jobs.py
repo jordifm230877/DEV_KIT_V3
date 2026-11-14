@@ -24,7 +24,7 @@ FORUM = "team_forum"  # where the Principal's look at stopped tickets is shown
 
 def _unclear(agent: Agent, reply: agents.Reply) -> Lost:
     if reply.late:
-        limit = "the limit for one job (`agent_minutes` in devkit.toml)"
+        limit = "the limit for one job (`minutes` of the agent or `agent_minutes` in devkit.toml)"
         return Lost(f"{agent.name} was {reply.text}, {limit}; what it had done is kept")
     last = f"; it last said: {reply.text}" if reply.text else ""
     return Lost(f"{agent.name} ended without a clear answer{last}")
@@ -59,7 +59,7 @@ class Jobs:
         try:
             return agents.ask(
                 *(argv, brief, copy, self.log(agent)),
-                self.config.agent_minutes * 60,
+                (agent.minutes or self.config.agent_minutes) * 60,
                 title=f"#{ticket.id} {ticket.title} ({ticket.step})",
                 plain=agents.reader(agent.program),
                 stop=self.stop,

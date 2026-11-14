@@ -164,6 +164,19 @@ def test_a_coder_that_never_finishes_is_cut_off_and_asked_again(project: Project
     assert "without a clear answer" not in shown
 
 
+def test_an_agent_can_have_a_limit_of_its_own(project: Project) -> None:
+    slow = "import time; time.sleep(60)\nprint('RESULT: done')"
+    project.configure(coder=slow, max_attempts=1, settings="agent_minutes = 10")
+    settings = project.root / "devkit.toml"
+    settings.write_text(settings.read_text().replace('"coder"\n', '"coder"\nminutes = 0.01\n'))
+    project.git("commit", "-qam", "give the coder its own limit")
+    project.dk("add", "Slow", "--spec", "Anything.")
+
+    project.dk("run")
+
+    assert "coder-1 was cut off after 0.01 minutes" in project.dk("show", "1")
+
+
 @pytest.fixture
 def far_from_utc(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setenv("TZ", "Asia/Tokyo")

@@ -20,6 +20,7 @@ class Agent:
     program: str = ""
     model: str = ""
     command: tuple[str, ...] = ()
+    minutes: float = 0  # how long one job of its may take; 0 for the project's `agent_minutes`
 
 
 @dataclass(frozen=True)
