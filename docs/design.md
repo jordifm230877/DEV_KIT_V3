@@ -47,6 +47,7 @@ request.
 | `process` | The cycle as a list of steps and the rule for moving along it | Touch files or programs |
 | `director` | Carries out the step each ticket waits for; the only piece that decides | Talk to models or Git directly |
 | `jobs` | The jobs agents are given on a ticket: what each is told and what its answer means; a composer | Decide where a ticket goes next |
+| `orders` | What the user, or the Principal for them, asks of the ticket list with a command: write, send on, give up, close, decide; a composer | Start anything |
 | `principal` | What the Principal is told, in the conversation and about a stopped ticket | Start anything |
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
 | `briefs` | The short instructions each role receives | — |

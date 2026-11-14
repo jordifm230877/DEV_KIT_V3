@@ -10,6 +10,7 @@ MAX_LINES = 300
 COMPOSERS = {
     "director",
     "jobs",
+    "orders",
     "preflight",
     "views",
     "cli",
