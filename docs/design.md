@@ -54,6 +54,7 @@ request.
 | `preflight` | Finds what would stop the first ticket (`dk check`); a composer | Change anything |
 | `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
 | conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve, finish tickets or skip steps |
+| stop review | A ticket that stops goes to the Principal as a job: it answers from what the project already says, or explains the stop to the user | Decide for the user, change files |
 
 An agent answers every job in one of three ways: done, blocked (with the reason), or a
 question for the user. It never needs to know what happens next.
@@ -133,6 +134,13 @@ Each step ends with something usable.
 - `dk init` and `dk check` exist because every setup mistake in that trial was found late,
   after a ticket had used its attempts. `preflight` is a fourth composer rather than more
   lines in `cli`.
+- A ticket that stops is handed to the Principal before the user (not the wait for approval,
+  which is no problem to explain). It is a separate read-only job, not the open conversation:
+  a program cannot speak into that. It may send the ticket on once with an answer the ticket,
+  `AGENTS.md` or `docs/discovery.md` already hold; a second stop is the user's. In the real
+  trial every stop reached the user as one raw line, and somebody outside DevKit had to
+  read the history to say what it meant. Only a Principal set up with `program` is asked;
+  a custom `command` is a conversation and cannot take a job.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief.
 

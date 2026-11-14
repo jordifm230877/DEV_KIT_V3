@@ -130,6 +130,11 @@ When a ticket is finished, its changes are merged into your branch as one merge 
 
 ## 5. When a ticket needs you
 
+A ticket that stops goes to the Principal first. If the ticket, `AGENTS.md` or
+`docs/discovery.md` already answer what the agent needed, the Principal sends the ticket on
+with that answer, once. Otherwise it writes for you what happened, why, and what it
+recommends: `dk show N` has it on a line starting with the Principal's name.
+
 Herdr shows a notification, and `dk status` shows the ticket as stopped with the reason:
 
 | It says | What to do |

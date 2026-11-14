@@ -10,7 +10,7 @@ import threading
 import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from queue import Queue
 
@@ -29,6 +29,7 @@ from dk.process import (
     Stopped,
     advance,
     held_by,
+    retry,
 )
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
@@ -96,6 +97,7 @@ class Director:
 
     def _drive(self, ticket: Ticket) -> None:
         position = _position(ticket)
+        helped = False  # the Principal answers a stop once; after that it is the user's
         while not position.final and not self.stop.is_set():
             step = next(step for step in PROCESS if step.name == position.step)
             outcome = self._perform(step, ticket, position)
@@ -107,7 +109,41 @@ class Director:
                 self.tickets.record(ticket.id, f"{step.name}: {outcome.reason}")
             self.say(f"#{ticket.id} {step.name} {type(outcome).__name__.lower()}")
             if position.stopped:
-                self.notify(f"#{ticket.id} {ticket.title} needs you", position.note)
+                position, helped = self._halt(step, ticket, position, helped), True
+
+    def _halt(self, step: Step, ticket: Ticket, position: Position, helped: bool) -> Position:
+        """Where a ticket that stopped is left: sent on by the Principal, or with the user."""
+        if step.kind != "user" and not helped:
+            position = self._consult(ticket.id, position)
+        if position.stopped:
+            self.notify(f"#{ticket.id} {ticket.title} needs you", position.note)
+        return position
+
+    def _consult(self, number: int, position: Position) -> Position:
+        """A ticket that stops goes to the Principal first. It sends the ticket on with an
+        answer the project already holds, or explains the stop to the user."""
+        able = [agent for agent in self.config.with_role(PRINCIPAL) if agent.program]
+        if not able:
+            return position
+        ticket = self.tickets.get(number)
+        brief = briefs.stopped(
+            number, ticket.title, ticket.spec, self.tickets.history(number)[-12:], position.note
+        )
+        agent = self._free[PRINCIPAL].get()
+        try:
+            reply = self._ask(agent, False, brief, ticket)
+        finally:
+            self._free[PRINCIPAL].put(agent)
+        self.workspace.restore(number)
+        if reply.kind == "done" and reply.text:
+            self.tickets.amend(number, f"The Principal answered: {reply.text}")
+            self.tickets.record(number, f"sent on by {agent.name}: {reply.text}")
+            position = retry(position)
+        elif reply.kind != "unclear":
+            self.tickets.record(number, f"{agent.name}: {reply.text}")
+            position = replace(position, note=f"{position.note}\n{agent.name}: {reply.text}")
+        self.tickets.move(number, *vars(position).values())
+        return position
 
     def _perform(self, step: Step, ticket: Ticket, position: Position) -> Outcome:
         logs = self.logs / f"ticket-{ticket.id}" / f"attempt-{position.attempts + 1}"
@@ -153,7 +189,7 @@ class Director:
         return {
             agent.name: self.logs / f"{agent.name}.log"
             for agent in self.config.agents
-            if agent.role != PRINCIPAL
+            if agent.role != PRINCIPAL or agent.program
         }
 
     def _ask(self, agent: Agent, writes: bool, brief: str, ticket: Ticket) -> agents.Reply:

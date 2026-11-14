@@ -203,3 +203,35 @@ them to the user; only the user can approve or reject them, in their own termina
 
 def principal(command: str) -> str:
     return _PRINCIPAL.format(command=command)
+
+
+_STOPPED = """\
+You are the Principal of a small software team. A ticket has stopped and waits for the user.
+The current directory is a copy of the project with the work done on it so far.
+
+{ticket}
+What happened to it, latest last:
+{history}
+
+It stopped because: {reason}
+
+Find out why: read AGENTS.md, docs/discovery.md, the code and the history above.
+If the ticket, AGENTS.md or docs/discovery.md already say what the team needs in order to
+go on, give that answer, and the ticket is sent on with it. Decide nothing the user has not
+decided: what to build, a choice between options and approved behaviour tests are the
+user's. If in doubt, it is the user's.
+Otherwise tell the user in plain words what happened, why, and what you recommend. They can
+change the project or its devkit.toml, answer with `dk retry {id} --note "..."`, send
+approved behaviour tests back with `dk reject {id} --note "..."`, or `dk cancel {id}`.
+Do not change any file; anything you change is thrown away.
+
+End your reply with exactly one of these lines:
+RESULT: done: <the answer, for whoever works on the ticket next>
+RESULT: question: <for the user: what happened, why, and what you recommend>"""
+
+
+def stopped(ticket: int, title: str, spec: str, history: list[str], reason: str) -> str:
+    """What the Principal is told when a ticket stops, before the user is."""
+    return _STOPPED.format(
+        ticket=_ticket(ticket, title, spec), history="\n".join(history), reason=reason, id=ticket
+    )

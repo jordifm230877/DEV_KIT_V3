@@ -74,6 +74,9 @@ dk approve 1      # accept the behaviour tests shown by `dk show 1`; only you ca
 dk reject 1 --note "what to change"
 ```
 
+A ticket that stops is looked at by the Principal first: it sends the ticket on with an answer
+the project already holds, or explains the stop for you in `dk show N`.
+
 Any program can be an agent: give `command = ["my-agent", "--flag"]` instead of `program`.
 It receives the instructions on standard input (or in place of an `"{instructions}"`
 argument) and must end its output with one line: `RESULT: done` (a coder or test-writer), `RESULT: approved` or
