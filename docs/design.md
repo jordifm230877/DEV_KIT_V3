@@ -291,6 +291,12 @@ Each step ends with something usable.
   `AGENTS.md` that `dk init` writes says DevKit runs them. In a trial whose suite took
   fifteen minutes, every ticket listed `cargo test` as a criterion, so the coder, the
   verifier and QA each ran all of it again: over an hour for a change of minutes.
+- A project begun from nothing has no checks when `dk init` runs: there is no file yet to
+  tell what kind it is, and the starter files are never written again. So the Principal is
+  told that the first ticket of a project, or of a component, adds its checks to
+  `devkit.toml` and `AGENTS.md`; the starter `AGENTS.md` says who runs the checks even when
+  it can list none; and every run of a project with no checks says so. `dk init` does not
+  have to know each language, or how a repository of several components is laid out.
 - An `examiner` reads each ticket first (step `examine`) and ends with `approved` or with
   its doubts as questions. Unclear tickets used to be found out late: by the tester when it
   could not write the scenarios, or by a coder who guessed. Nothing new carries the doubt:

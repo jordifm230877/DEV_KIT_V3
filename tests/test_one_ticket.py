@@ -273,3 +273,24 @@ def test_work_already_checked_is_not_checked_again_before_merging(project: Proje
 
     assert "#1 done" in project.dk("status")
     assert counted.read_text() == "x", "the project gained nothing meanwhile"
+
+
+def test_a_run_says_so_when_the_project_has_no_checks(project: Project) -> None:
+    """A project begun from nothing had none, and its tickets were merged unproved."""
+    project.configure(coder=WRITES_GREETING)
+    settings = project.root / "devkit.toml"
+    settings.write_text(settings.read_text().split("[checks]")[0])
+    project.git("commit", "-qam", "no checks")
+    project.dk("add", "Greet", "--spec", "Create greeting.txt saying hello.")
+
+    said = project.dk("run")
+
+    assert "this project has no checks: nothing proves that a ticket's work is right" in said
+    assert project.merged("greeting.txt") == "hello\n"
+
+
+def test_a_run_of_a_project_with_checks_says_nothing_of_them(project: Project) -> None:
+    project.configure(coder=WRITES_GREETING, check=NEEDS_GREETING)
+    project.dk("add", "Greet", "--spec", "Create greeting.txt saying hello.")
+
+    assert "no checks" not in project.dk("run")

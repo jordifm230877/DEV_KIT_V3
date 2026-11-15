@@ -49,3 +49,12 @@ def test_files_that_already_exist_are_left_alone(project: Project) -> None:
     assert (project.root / "AGENTS.md").read_text() == "our own rules\n"
     assert (project.root / "devkit.toml").read_text() == "max_attempts = 5\n"
     assert said.count("already exists") == 2
+
+
+def test_a_project_begun_from_nothing_is_still_told_who_runs_the_checks(project: Project) -> None:
+    project.dk("init", "--model", "some/model")
+
+    rules = (project.root / "AGENTS.md").read_text()
+    assert "DevKit runs all of these on each ticket" in rules
+    assert "run only the tests of what you change, not the whole suite" in rules
+    assert "under [checks] in devkit.toml" in rules, "where the same commands must be listed"

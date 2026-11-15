@@ -79,6 +79,8 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     assert "Before closing an epic" in brief and "the user decides" in brief
     # Tickets that listed `cargo test` as a criterion made each reviewer run all of it again.
     assert "never an acceptance criterion" in brief
+    # A project begun from nothing has no checks when `dk init` runs, and nobody added them.
+    assert "first ticket adds its checks to devkit.toml and AGENTS.md" in brief
     assert len(brief.split()) < 300
 
 

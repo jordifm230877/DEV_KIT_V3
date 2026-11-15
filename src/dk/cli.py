@@ -36,6 +36,12 @@ from dk.workspace import Workspace
 HOME = ".devkit"
 
 
+_NO_CHECKS = (
+    "this project has no checks: nothing proves that a ticket's work is right; "
+    "list them under [checks] in devkit.toml"
+)
+
+
 def _command(project: Path) -> str:
     """This program, as an agent types it: for the Principal's work and for proposals."""
     return shlex.join([sys.executable, "-m", "dk", "--project", str(project)])
@@ -47,9 +53,10 @@ def _director(project: Path, home: Path, tickets: Tickets, say: Callable[[str], 
     notify = partial(screen.notify, herdr) if inside else (lambda title, body: None)
     workspace = Workspace(project, home / "work")
     logs = home / "logs"
-    return Director(
-        config.load(project), tickets, workspace, logs, say, notify, command=_command(project)
-    )
+    settings = config.load(project)
+    if not settings.checks:  # a project begun from nothing had none: its tickets merged unproved
+        say(_NO_CHECKS)
+    return Director(settings, tickets, workspace, logs, say, notify, command=_command(project))
 
 
 @contextmanager

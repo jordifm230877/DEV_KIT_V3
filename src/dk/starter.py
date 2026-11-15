@@ -35,6 +35,11 @@ _KINDS = {
 }
 _UNKNOWN = Kind({}, "features/", "<!-- say where -->")
 
+_NO_COMMANDS = (
+    "<!-- List the commands that build and test the project, the same as under [checks] in "
+    "devkit.toml. -->"
+)
+
 _NO_CHECKS = """\
 # No checks yet. Add the commands that prove this project works; each must exit 0:
 # [checks]
@@ -84,10 +89,8 @@ def _rules(kind: Kind) -> str:
     commands = (
         "DevKit runs all of these on each ticket once its code is written, and they must "
         "succeed.\nWhile you work, run only the tests of what you change, not the whole suite:"
-        f"\n\n{listed}"
-        if listed
-        else "<!-- List the commands that build and test the project. -->"
-    )
+        "\n\n"
+    ) + (listed or _NO_COMMANDS)
     return _RULES.format(commands=commands, scenarios=kind.scenarios, steps=kind.steps)
 
 
