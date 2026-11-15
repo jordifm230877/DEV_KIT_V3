@@ -11,7 +11,7 @@ import os
 from collections.abc import Callable
 from pathlib import Path
 
-from dk import agents, briefs, config, jobs, process
+from dk import agents, audits, config, jobs, process
 from dk.process import CANCELLED
 from dk.tickets import Ticket, Tickets
 
@@ -146,7 +146,7 @@ def auditor(project: Path) -> None:
 def audit(kind: str, note: str, project: Path, tickets: Tickets) -> None:
     auditor(project)
     title = _audit_title(kind)
-    spec = f"{briefs.AUDITS[kind]}\n{note}".strip()
+    spec = f"{audits.AUDITS[kind]}\n{note}".strip()
     number = tickets.add(title, spec, process.AUDIT[0].name, "", [])
     print(f"#{number} written; its report will be {jobs.report(title)}")
 
@@ -158,7 +158,7 @@ def _audit_title(kind: str) -> str:
 def night(project: Path, tickets: Tickets, changed: Callable[[str], bool]) -> None:
     """Write an audit of every kind, except one still unfinished or one whose last report
     the project has not changed since; `changed` says so for a pattern of report files."""
-    for kind in briefs.AUDITS:
+    for kind in audits.AUDITS:
         title = _audit_title(kind)
         unfinished = [
             ticket.id

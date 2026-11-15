@@ -53,6 +53,7 @@ request.
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
 | `shown` | Turns what Pi, Claude and Codex print into lines a person can read | Start anything |
 | `briefs` | The short instructions each role receives | — |
+| `audits` | The kinds of audit and what an auditor is told | — |
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
 | `checks` | Runs the project's check commands | Interpret results |
 | `screen` | One Herdr tab per agent, showing what it is doing, and one for the board; watch-only | Affect the run |

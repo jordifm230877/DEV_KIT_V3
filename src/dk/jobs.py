@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from dk import agents, briefs, shown
+from dk import agents, audits, briefs, shown
 from dk.config import Agent, Config
 from dk.process import (
     DONE,
@@ -132,10 +132,9 @@ class Jobs:
             for other in self.tickets.all()
             if other.step != DONE and of(other.step) is PROCESS
         ]
-        brief = briefs.auditor(
-            *(ticket.id, ticket.title, ticket.spec, position.note, where),
-            *(self.config.audit_tools, self.command, known),
-        )
+        about = briefs.about(ticket.id, ticket.title, ticket.spec, position.note)
+        tools = self.config.audit_tools
+        brief = audits.brief(about, where, tools, self.command, known, briefs.ALWAYS)
         return self._produce(agent, brief, ticket, where)
 
     def specify(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:

@@ -15,7 +15,8 @@ from pathlib import Path
 
 from dk import (
     agents,
-    briefs,
+    arguments,
+    audits,
     config,
     nightly,
     orders,
@@ -32,76 +33,6 @@ from dk.tickets import Tickets
 from dk.workspace import Workspace
 
 HOME = ".devkit"
-
-
-def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="dk", description=__doc__)
-    parser.add_argument("--project", type=Path, default=Path.cwd(), help="the project directory")
-    commands = parser.add_subparsers(dest="command", required=True)
-    add = commands.add_parser("add", help="write a new ticket")
-    add.add_argument("title")
-    add.add_argument("--spec", required=True, help="what is wanted and how to tell it is done")
-    add.add_argument("--epic", default="", help="the larger piece of work this belongs to")
-    add.add_argument(
-        "--no-behaviour-tests",
-        action="store_true",
-        help="for a ticket that changes nothing a user of the product can see",
-    )
-    add.add_argument(
-        "--after",
-        type=int,
-        action="append",
-        default=[],
-        help="a ticket that must be merged before this one starts; may be repeated",
-    )
-    propose = commands.add_parser("propose", help="suggest a ticket; the user decides on it")
-    propose.add_argument("title")
-    propose.add_argument("--spec", required=True, help="what is wanted and why")
-    propose.add_argument("--epic", default="", help="the larger piece of work this belongs to")
-    audit = commands.add_parser("audit", help="have the whole project audited; leaves a report")
-    audit.add_argument("kind", choices=list(briefs.AUDITS))
-    audit.add_argument("--note", default="", help="what to look at in particular")
-    for name, text in (
-        ("night", "audit everything that changed, and go on with unfinished tickets"),
-        ("run", "work on every unfinished ticket"),
-        ("talk", "talk with the Principal while the work goes on"),
-    ):
-        command = commands.add_parser(name, help=text)
-        command.add_argument("--no-tabs", action="store_true", help="do not open Herdr tabs")
-        if name == "night":
-            command.add_argument("--at", default="", help="start it every day at this time, HH:MM")
-            command.add_argument("--off", action="store_true", help="no longer start it every day")
-    init = commands.add_parser("init", help="write a first devkit.toml and AGENTS.md")
-    init.add_argument("--model", required=True, help="the model every agent starts with")
-    init.add_argument(
-        "--program", default="pi", choices=list(agents.PROGRAMS), help="their program"
-    )
-    commands.add_parser("check", help="find what would stop the first ticket")
-    status = commands.add_parser("status", help="list the tickets")
-    status.add_argument("--watch", action="store_true", help="keep showing agents and tickets")
-    show = commands.add_parser("show", help="one ticket and everything that happened to it")
-    show.add_argument("ticket", type=int)
-    retry = commands.add_parser("retry", help="send a stopped ticket on again")
-    retry.add_argument("ticket", type=int)
-    retry.add_argument("--note", default="", help="an answer or instruction for the agent")
-    commands.add_parser("cancel", help="give a ticket up and throw its work away").add_argument(
-        "ticket", type=int
-    )
-    site = commands.add_parser("web", help="show the agents and the tickets in a browser")
-    site.add_argument("--port", type=int, default=8642, help="where on this computer; 0 for any")
-    follow = commands.add_parser("follow", help="show a file of an agent's work, in colour")
-    follow.add_argument("log", type=Path)
-    commands.add_parser("close", help="mark an epic as complete").add_argument("epic")
-    commands.add_parser("reopen", help="open a closed epic again").add_argument("epic")
-    approve = commands.add_parser("approve", help="accept what waits for you")
-    approve.add_argument("ticket", type=int)
-    approve.add_argument(
-        "--no-behaviour-tests", action="store_true", help="for a proposed ticket you accept"
-    )
-    reject = commands.add_parser("reject", help="send back what waits for you")
-    reject.add_argument("ticket", type=int)
-    reject.add_argument("--note", required=True, help="what must change")
-    return parser
 
 
 def _command(project: Path) -> str:
@@ -271,7 +202,7 @@ def _execute(args: argparse.Namespace) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     try:
-        _execute(_parser().parse_args(argv))
+        _execute(arguments.parser(list(audits.AUDITS), list(agents.PROGRAMS)).parse_args(argv))
     except (config.ConfigError, agents.UnknownProgram, LookupError, RuntimeError) as error:
         print(f"dk: {error}")
         return 1

@@ -18,7 +18,7 @@ The ticket you stopped at was sent on again.
 Carry on with the job from where you left it, and end your reply with one `RESULT:` line as
 you were told before."""
 
-_ALWAYS = """\
+ALWAYS = """\
 RESULT: blocked: <why this cannot be done>
 RESULT: question: <what you need to know from the user>"""
 
@@ -35,40 +35,6 @@ End your reply with exactly one of these lines:
 RESULT: done
 RESULT: done: <one line, if the user must know: where you departed from the ticket, a doubt>
 {always}"""
-
-_AUDITOR = """\
-You audit a project. The current directory is a throwaway copy of it: build it, run it and
-measure freely. Nothing you change here is kept except your report.
-
-{ticket}{note}
-{tools}Use the scanners and profilers this kind of project has, if they are installed; say which
-were missing, and install nothing. Do not fix anything.
-Write your report to {report}. For each finding give its severity (high, medium or low),
-where it is and the evidence (the command you ran and what it showed).
-Report what you observed, not what might be. Say also what you checked and found fine,
-and what you could not check.
-Propose a ticket for the findings that matter most, five at most; the user decides:
-`{command} propose "TITLE" --spec "WHAT AND WHY"`
-{known}End the report with the tools you recommend for auditing this project, after looking
-on the web for current ones: what each is for and how to install it, and the line to put
-under `[audit]` in devkit.toml, `tools = [...]`, naming their commands.
-
-When you have finished, end your reply with exactly one of these lines:
-RESULT: done
-{always}"""
-
-AUDITS = {
-    "security": "Audit the security of this project: how secrets and credentials are handled, "
-    "what is done with input from outside, how cryptography is used, permissions, "
-    "dependencies with known vulnerabilities, and container images if it has any.",
-    "performance": "Audit the performance of this project: find where the product is slow or "
-    "wasteful. Measure: time its start and its main operations and profile where you can. "
-    "Point at code only with a measurement or a plain reason behind it.",
-    "tests": "Audit how well the tests of this project protect it. Break the code on purpose, "
-    "one small change at a time (mutation testing, with a tool for its language), and find "
-    "the changes no test notices. Look too for behaviour that has no test and for tests "
-    "that would pass whatever the code did.",
-}
 
 _QUALITY = """\
 How to work:
@@ -171,7 +137,7 @@ RESULT: rejected: <which scenarios must go or change, and why>
 
 def vetting(ticket: int, title: str, spec: str, files: list[str]) -> str:
     return _VETTING.format(
-        ticket=_ticket(ticket, title, spec), files=", ".join(files), always=_ALWAYS
+        ticket=_ticket(ticket, title, spec), files=", ".join(files), always=ALWAYS
     )
 
 
@@ -179,6 +145,11 @@ def answered(added: str, note: str) -> str:
     """What an agent that left its job to ask is told when it picks the job up again."""
     added = f"Added to the ticket since you asked:\n{added.strip()}\n" if added.strip() else ""
     return _ANSWERED.format(added=added, note=_notes(note))
+
+
+def about(ticket: int, title: str, spec: str, note: str = "") -> str:
+    """The ticket as an agent is told it, with the notes of earlier work on it."""
+    return _ticket(ticket, title, spec) + _notes(note)
 
 
 def _ticket(ticket: int, title: str, spec: str) -> str:
@@ -192,7 +163,7 @@ def _notes(note: str) -> str:
 def tester(ticket: int, title: str, spec: str, note: str, earlier: list[str]) -> str:
     mine = _MINE.format(files=", ".join(earlier)) if earlier else ""
     return _TESTER.format(
-        ticket=_ticket(ticket, title, spec), note=_notes(note), mine=mine, always=_ALWAYS
+        ticket=_ticket(ticket, title, spec), note=_notes(note), mine=mine, always=ALWAYS
     )
 
 
@@ -212,7 +183,7 @@ def coder(
         quality=_QUALITY if quality else "",
         tests=tests,
         command=command,
-        always=_ALWAYS,
+        always=ALWAYS,
     )
 
 
@@ -223,7 +194,7 @@ def reviewer(
     task += with_behaviour_tests if behaviour else ""
     task += with_quality_rules if quality else ""
     return _REVIEWER.format(
-        who=who, ticket=_ticket(ticket, title, spec), base=base, task=task, always=_ALWAYS
+        who=who, ticket=_ticket(ticket, title, spec), base=base, task=task, always=ALWAYS
     )
 
 
@@ -249,28 +220,4 @@ def approval(ticket: int) -> str:
     return (
         f"the behaviour tests are ready for you: read them with `dk show {ticket}`, then "
         f'`dk approve {ticket}` or `dk reject {ticket} --note "what to change"`'
-    )
-
-
-def auditor(
-    ticket: int,
-    title: str,
-    spec: str,
-    note: str,
-    report: str,
-    tools: tuple[str, ...],
-    command: str,
-    known: list[str],
-) -> str:
-    """`known` are the titles of tickets already asked for or turned down."""
-    expected = f"The project expects these tools: {', '.join(tools)}.\n" if tools else ""
-    known_text = f"Propose none of these again: {'; '.join(known)}.\n" if known else ""
-    return _AUDITOR.format(
-        ticket=_ticket(ticket, title, spec),
-        note=_notes(note),
-        tools=expected,
-        report=report,
-        command=command,
-        known=known_text,
-        always=_ALWAYS,
     )
