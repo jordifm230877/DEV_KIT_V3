@@ -269,6 +269,10 @@ Each step ends with something usable.
   reports both, Pi only the first, and Codex neither while it works, and a figure shown for
   some agents and not for others would mislead. Codex reports only as a turn ends, so its
   count appears late. Read from the real programs, each asked one question.
+- The ticket list is kept in SQLite's write-ahead mode, where a reader never waits for a
+  writer. Before, the board waited for each write, and counting what jobs spend made writes
+  frequent: with the disk busy compiling, the board gave up after five seconds and ended
+  with `database is locked`. Programs started before the change go on working with the list.
 - An `examiner` reads each ticket first (step `examine`) and ends with `approved` or with
   its doubts as questions. Unclear tickets used to be found out late: by the tester when it
   could not write the scenarios, or by a coder who guessed. Nothing new carries the doubt:

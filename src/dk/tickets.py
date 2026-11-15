@@ -84,6 +84,9 @@ def _ticket(*row: Any) -> Ticket:
 class Tickets:
     def __init__(self, path: Path) -> None:
         self._db = sqlite3.connect(path, autocommit=True, check_same_thread=False)
+        # The board, the page and every command read the list while jobs write to it; kept
+        # this way no reader waits for a writer. Waiting, they gave up: database is locked.
+        self._db.execute("PRAGMA journal_mode=WAL")
         self._db.executescript(_SCHEMA)
         columns = [row[1] for row in self._db.execute("PRAGMA table_info(ticket)")]
         for added in ("follows TEXT NOT NULL DEFAULT '[]'", *_LATER):

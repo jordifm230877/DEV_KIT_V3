@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import sqlite3
 
 import pytest
 from conftest import Programs, Project, Site, team
@@ -144,3 +145,18 @@ def test_a_program_that_reports_no_tokens_has_nothing_said_of_them(project: Proj
     project.dk("run")
 
     assert "used" not in history(project) and "tokens" not in history(project)
+
+
+def test_the_tickets_can_be_listed_while_one_is_being_written(project: Project) -> None:
+    """A count is written at every call to the model. With the disk busy, the board waited
+    for such a write, gave up after five seconds and ended: database is locked."""
+    project.configure(coder=DONE)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    writing = sqlite3.connect(project.root / ".devkit" / "tickets.db", autocommit=True)
+    writing.execute("BEGIN EXCLUSIVE")
+    writing.execute("UPDATE ticket SET spent = '[1, 1]'")
+
+    listed = project.dk("status")
+
+    writing.execute("ROLLBACK")
+    assert "Greet" in listed
