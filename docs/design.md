@@ -51,6 +51,7 @@ request.
 | `nightly` | Has the system start a command every day at a set time (systemd timers) | Know what the command does |
 | `principal` | What the Principal is told, in the conversation and about a stopped ticket | Start anything |
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
+| `shown` | Turns what Pi, Claude and Codex print into lines a person can read | Start anything |
 | `briefs` | The short instructions each role receives | — |
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
 | `checks` | Runs the project's check commands | Interpret results |

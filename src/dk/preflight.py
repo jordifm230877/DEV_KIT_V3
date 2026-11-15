@@ -11,7 +11,7 @@ import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
-from dk import agents, checks
+from dk import agents, checks, shown
 from dk.config import Agent, Config
 from dk.workspace import Workspace
 
@@ -31,7 +31,7 @@ def _reach(agent: Agent, argv: tuple[str, ...], log: Path) -> str:
         reply = agents.ask(
             *(argv, _PROBE, Path(nowhere), log, _PROBE_SECONDS),
             title=f"check {agent.name}",
-            plain=agents.reader(agent.program),
+            plain=shown.reader(agent.program),
             name=agent.name,
         )
     if reply.kind != "unclear":

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from dk import agents, briefs
+from dk import agents, briefs, shown
 from dk.config import Agent, Config
 from dk.process import (
     DONE,
@@ -78,7 +78,7 @@ class Jobs:
                 *(argv, brief, copy, self.log(agent)),
                 (agent.minutes or self.config.agent_minutes) * 60,
                 title=f"#{ticket.id} {ticket.title} ({ticket.step})",
-                plain=agents.reader(agent.program),
+                plain=shown.reader(agent.program),
                 stop=self.stop,
                 name=agent.name,
             )

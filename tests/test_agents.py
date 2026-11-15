@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from dk import agents
+from dk import agents, shown
 
 
 def test_pi_is_started_for_one_job_with_the_chosen_model() -> None:
@@ -91,7 +91,7 @@ def test_pis_detailed_output_is_shown_as_readable_lines(tmp_path: Path) -> None:
     log = tmp_path / "agent.log"
 
     reply = agents.ask(
-        [sys.executable, "-c", emit], "x", tmp_path, log, 30, plain=agents.reader("pi")
+        [sys.executable, "-c", emit], "x", tmp_path, log, 30, plain=shown.reader("pi")
     )
 
     assert reply == agents.Reply("done", session="x"), "and it says what it will remember"
@@ -111,7 +111,7 @@ def test_pi_is_asked_for_its_detailed_output() -> None:
 
 
 def test_output_that_is_not_what_pi_normally_prints_is_shown_as_it_is() -> None:
-    plain = agents.reader("pi")
+    plain = shown.reader("pi")
 
     assert plain("Error: not logged in\n") == "Error: not logged in\n"
     assert plain("[1, 2]\n") == "[1, 2]\n"
@@ -152,7 +152,7 @@ def test_an_error_pi_got_from_the_model_is_shown_and_reported(tmp_path: Path) ->
     log = tmp_path / "agent.log"
 
     reply = agents.ask(
-        [sys.executable, "-c", emit], "x", tmp_path, log, 30, plain=agents.reader("pi")
+        [sys.executable, "-c", emit], "x", tmp_path, log, 30, plain=shown.reader("pi")
     )
 
     assert reply == agents.Reply(
