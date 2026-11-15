@@ -24,15 +24,15 @@ RESULT: question: <what you need from the user>"""
 
 # Claude's tool for commands cut a QA's `cargo test` off at ten minutes; it had to start again.
 LONG = """\
-Run commands that take minutes in the background, output to a file: your tool cuts long
-ones off.
+Run long commands in the background, output to a file: your tool cuts them off.
 """
 
 _CODER = """\
-You are a coder. Work only inside the current directory, your own copy of the project.
+You are a coder. The current directory is your own copy of the project.
 
 {ticket}{note}
 Make the changes the ticket asks for, with tests where the project has them.
+Run only the tests of what you change: every check is run when you finish.
 {quality}{tests}{long}Do not commit or change anything outside this directory.
 Propose work the ticket does not cover, never do it:
 `{command} propose "TITLE" --spec "WHY"`
@@ -46,10 +46,10 @@ _QUALITY = """\
 How to work:
 - Write a failing test first, see it fail as expected, then the smallest
   change that passes it. Fix causes, not symptoms.
-- Test what a user of the code sees, never its internals.
-- Before finishing, run on the files you changed, where installed: `crapper` (split or
-  test functions scoring 10 or more), `dryer` (remove duplication ranked 0.8 or more),
-  `mutator` (kill surviving mutants, or say why one cannot matter).
+- Test what the code's user sees, never its internals.
+- Before finishing, run on your changed files, where installed: `crapper` (split or
+  test functions scoring 10+), `dryer` (remove duplication ranked 0.8+),
+  `mutator` (kill survivors, or say why one cannot matter).
 """
 
 _PROTECTED = """\
@@ -81,18 +81,23 @@ They are yours to rewrite, whatever other rules say about existing scenarios.
 """
 
 _REVIEWER = """\
-You are {who}. The current directory is a copy of the project with the work for this ticket.
+You are {who}. The current directory is a copy of the project with this ticket's work.
 
 {ticket}
 See what was changed with: git diff {base}
 
 {task}
-{long}Do not change any file; anything you change is thrown away.
+{long}{checked}Do not change any file; anything you change is thrown away.
 
 End your reply with exactly one of these lines:
 RESULT: approved
 RESULT: rejected: <what must change, concretely>
 {always}"""
+
+# Coder, verifier and QA each ran a suite of fifteen minutes that the program runs anyway.
+_CHECKED = """\
+The project's checks have passed on this code: never run its whole test suite again.
+"""
 
 _TASKS = {
     "verifier": (
@@ -103,7 +108,7 @@ _TASKS = {
         " Check too that the code connecting the behaviour tests (.feature files) to the "
         "product really exercises the product.",
         " Reject it as well if new behaviour has no test, or if `crapper --no-coverage FILES` "
-        "or `dryer --threshold 0.8 FILES`, run on the changed files where they are installed, "
+        "or `dryer --threshold 0.8 FILES`, run on the changed files where installed, "
         "show a function scoring 10 or more or duplication ranked 0.8 or more. Go by what "
         "they print; never read their code.",
     ),
@@ -227,7 +232,9 @@ def reviewer(
     task += with_behaviour_tests if behaviour else ""
     task += with_quality_rules if quality else ""
     about = _ticket(ticket, title, spec)
-    return _REVIEWER.format(who=who, ticket=about, base=base, task=task, long=LONG, always=ALWAYS)
+    return _REVIEWER.format(
+        who=who, ticket=about, base=base, task=task, long=LONG, checked=_CHECKED, always=ALWAYS
+    )
 
 
 def tampering(files: list[str]) -> str:

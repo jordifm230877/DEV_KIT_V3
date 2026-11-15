@@ -24,6 +24,7 @@ def test_a_coder_is_told_the_quality_rules(project: Project) -> None:
     told = brief(project)
     for rule in RULES:
         assert rule in told
+    assert "only the tests of what you change" in told
     assert len(told.split()) < 200
 
 

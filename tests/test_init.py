@@ -36,6 +36,7 @@ def test_a_rust_project_gets_the_cargo_checks_and_its_own_folders(project: Proje
     assert checks["lint"] == ["cargo", "clippy", "--all-targets", "--", "-D", "warnings"]
     rules = (project.root / "AGENTS.md").read_text()
     assert "tests/features/" in rules and "cargo clippy --all-targets -- -D warnings" in rules
+    assert "DevKit runs all of these on each ticket" in rules, "no agent has to run them all"
 
 
 def test_files_that_already_exist_are_left_alone(project: Project) -> None:

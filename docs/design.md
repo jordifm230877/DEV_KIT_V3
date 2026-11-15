@@ -285,6 +285,12 @@ Each step ends with something usable.
   the background, with its output in a file. An agent program limits how long one command of
   its agent may run, and DevKit cannot change that: Claude cut a QA's `cargo test` off at
   ten minutes, and the ten minutes were lost.
+- Only the program runs the whole of the project's checks. A coder is told to run just the
+  tests of what it changes; a verifier and QA, that the checks have passed on the code they
+  look at; the Principal, never to write the checks as an acceptance criterion; and the
+  `AGENTS.md` that `dk init` writes says DevKit runs them. In a trial whose suite took
+  fifteen minutes, every ticket listed `cargo test` as a criterion, so the coder, the
+  verifier and QA each ran all of it again: over an hour for a change of minutes.
 - An `examiner` reads each ticket first (step `examine`) and ends with `approved` or with
   its doubts as questions. Unclear tickets used to be found out late: by the tester when it
   could not write the scenarios, or by a coder who guessed. Nothing new carries the doubt:

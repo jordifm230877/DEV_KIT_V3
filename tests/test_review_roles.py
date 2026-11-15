@@ -59,6 +59,9 @@ def test_the_verifier_judges_how_the_work_is_done(project: Project) -> None:
     for rule in QUALITY:
         assert rule in brief
     assert all(rule not in told(project, "qa") for rule in QUALITY)
+    for role in ("verifier", "qa"):  # each ran a suite of 15 minutes the program had just run
+        assert "checks have passed on this code" in told(project, role)
+        assert "whole test suite again" in told(project, role)
     assert len(brief.split()) < 200
 
 

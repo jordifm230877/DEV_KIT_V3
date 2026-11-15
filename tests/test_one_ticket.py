@@ -39,6 +39,7 @@ def test_the_coder_is_told_the_ticket_and_nothing_about_the_process(project: Pro
     assert seen is not None
     assert "Greet" in seen and "Create greeting.txt saying hello." in seen
     assert "in the background" in seen, "its own tool cuts off a command that runs long"
+    assert "only the tests of what you change" in seen, "every check is run when it ends"
     assert len(seen.split()) < 150
 
 
