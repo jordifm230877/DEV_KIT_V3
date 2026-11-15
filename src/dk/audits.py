@@ -4,14 +4,14 @@ from __future__ import annotations
 
 _AUDITOR = """\
 You audit a project. The current directory is a throwaway copy of it: build it, run it and
-measure freely. Nothing you change here is kept except your report.
+measure freely. Only your report is kept.
 
 {about}
 {tools}Use the scanners and profilers this kind of project has, if they are installed; say which
 were missing, and install nothing. Do not fix anything.
 Write your report to {report}. For each finding give its severity (high, medium or low),
-where it is and the evidence (the command you ran and what it showed).
-Report what you observed, not what might be. Say also what you checked and found fine,
+where it is and the evidence (the command run and what it showed).
+Report what you observed, not what might be. Say what you checked and found fine,
 and what you could not check.
 Propose a ticket for the findings that matter most, five at most; the user decides:
 `{command} propose "TITLE" --spec "WHAT AND WHY"`
@@ -19,7 +19,7 @@ Propose a ticket for the findings that matter most, five at most; the user decid
 on the web for current ones: what each is for and how to install it, and the line to put
 under `[audit]` in devkit.toml, `tools = [...]`, naming their commands.
 
-When you have finished, end your reply with exactly one of these lines:
+End your reply with exactly one of these lines:
 RESULT: done
 {always}"""
 
@@ -30,10 +30,12 @@ AUDITS = {
     "performance": "Audit the performance of this project: find where the product is slow or "
     "wasteful. Measure: time its start and its main operations and profile where you can. "
     "Point at code only with a measurement or a plain reason behind it.",
-    "tests": "Audit how well the tests of this project protect it. Break the code on purpose, "
+    "tests": "Audit how well this project's tests protect it. Break the code on purpose, "
     "one small change at a time (mutation testing, with a tool for its language), and find "
     "the changes no test notices. Look too for behaviour that has no test and for tests "
-    "that would pass whatever the code did.",
+    "that would pass whatever the code did. Then try the unusual and the wrong: empty, "
+    "huge or malformed input, limits, work that fails halfway, is cancelled or times out. "
+    "Name each such case that has no test.",
 }
 
 

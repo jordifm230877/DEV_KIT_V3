@@ -130,6 +130,9 @@ def test_an_audit_of_the_tests_breaks_the_code_to_see_whether_they_notice(projec
     told = brief(project, "tests")
 
     assert "Break the code on purpose" in told and "no test notices" in told
+    for case in ("malformed input", "limits", "fails halfway", "cancelled", "times out"):
+        assert case in told, "what no ticket asks anyone to try"
+    assert "Name each such case that has no test" in told
     assert "secrets" not in told and report("tests") in told
     assert len(told.split()) < 300
 
