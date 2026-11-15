@@ -206,6 +206,7 @@ def site(project: Project) -> Iterator[Site]:
     tools = project.root.parent / "tools"
     tools.mkdir(exist_ok=True)
     (tools / "site.txt").write_text(address)
+    (tools / "key.txt").write_text(server.stdout.readline().split()[-1].partition("#")[2])
 
     def get(path: str) -> Any:
         with urlopen(address.rstrip("/") + path) as answer:

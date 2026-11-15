@@ -94,3 +94,19 @@ a.row:hover { background: var(--ground); text-decoration: none; }
   .row .extra { text-align: left; grid-column: 2; }
   .history li { grid-template-columns: 1fr; gap: 0; }
 }
+.word { padding: 12px; display: grid; gap: 10px; }
+.word textarea {
+  width: 100%; box-sizing: border-box; padding: 8px; font: inherit; color: var(--ink);
+  background: var(--ground); border: 1px solid var(--line); border-radius: 6px; resize: vertical;
+}
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 6px; cursor: pointer;
+  background: var(--card); color: var(--ink); border: 1px solid var(--line);
+}
+button:hover { border-color: var(--accent); }
+button.main { background: var(--accent); border-color: var(--accent); color: var(--card); font-weight: 600; }
+button.quiet { margin-left: auto; color: var(--stopped); }
+.told { padding: 8px 10px; border-radius: 6px; background: var(--code); border-left: 4px solid var(--done); }
+.told.bad { border-left-color: var(--stopped); }
+.hint { color: var(--soft); font-size: 13px; }

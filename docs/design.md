@@ -254,15 +254,21 @@ Each step ends with something usable.
   tickets as a conversation left open.
 - `dk web` shows the board, the epics and each ticket with its behaviour tests in a browser,
   because long Gherkin files and a list of twenty tickets were hard to review in a terminal.
-  It reads the same ticket list as the commands and changes nothing, so it needs no
-  protection yet: approving from the page would let an agent on the same computer approve
-  its own tests, and must come with a key only the user sees. The page is plain HTML, CSS
+  It reads the same ticket list as the commands. The page is plain HTML, CSS
   and JavaScript with no build step and asks again every two seconds, as the board does. An
   epic follows another when one of its tickets follows a ticket of the other; that is worked
   out, not stored, so it cannot disagree with the tickets. Looked at with the real trial
   project in a browser, wide and narrow. It answers every computer of the network, because
-  the user looks at it from another one; anyone on that network can read the tickets, which
-  is one more reason not to let the page change anything without a key.
+  the user looks at it from another one; anyone on that network can read the tickets.
+- From the page the user approves or sends back behaviour tests, answers a stopped ticket,
+  accepts or turns down a proposal and gives a ticket up: the same orders as the commands,
+  carried out by the same code. They need a key that `dk web` makes anew each time it
+  starts and prints in the user's terminal, at the end of an address to open once; the
+  browser keeps it. Without it an agent on the same computer, or anyone on the network,
+  could approve in the user's name. The key is written to no file, because agents read
+  files. It travels unencrypted, which is enough for a home network and not for an open
+  one. Tried in a browser: the page already open when the address with the key was opened
+  did not load again, so the key is also read then.
 - What a job spends of its model is counted from what the agent's program prints: the tokens
   sent to the model and the tokens it wrote. The board and the page show it for the job
   going on, and the ticket's history keeps it for each job that ended. Each call to the
@@ -304,4 +310,5 @@ Each step ends with something usable.
 
 Beads, backups and retention, several projects in one database, a separate watcher process
 for Git, per-role credentials, resuming a job that was cut off or failed (only one that
-stopped to ask is picked up again), changing anything from the web page.
+stopped to ask is picked up again), writing or editing tickets, epics and behaviour tests
+from the web page.

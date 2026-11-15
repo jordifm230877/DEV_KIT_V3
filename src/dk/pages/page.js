@@ -1,11 +1,28 @@
-// The page of `dk web`: it asks for data every two seconds and draws it. It changes nothing.
+// The page of `dk web`: it asks for data every two seconds and draws it. With the key that
+// `dk web` showed the user, it also passes on what they decide about a ticket.
 const app = document.getElementById("app");
 const where = document.getElementById("where");
 const fresh = document.getElementById("fresh");
 const folded = new Map(); // epics the reader opened or closed by hand
 const NAMES = { stopped: "needs you", proposed: "proposed", held: "waiting", ticket: "in progress",
   done: "done", cancelled: "cancelled" };
+const notes = new Map(); // what the reader is writing about each ticket, kept while it redraws
 let drawn = "";
+let told = null; // the answer to the last thing the reader asked for
+let key = "";
+
+// The address `dk web` gives ends in the key; it is kept in this browser and taken out of
+// sight. The page may already be open when that address is: then nothing loads again.
+function keyed() {
+  const given = location.hash.startsWith("#/") ? "" : location.hash.slice(1);
+  if (given) history.replaceState(null, "", location.pathname);
+  try {
+    if (given) localStorage.setItem("key", given);
+    key = localStorage.getItem("key") || "";
+  } catch { key = given || key; }
+  drawn = "";
+}
+keyed();
 
 function h(tag, attrs, ...children) {
   const node = document.createElement(tag);
@@ -97,6 +114,55 @@ function gherkin(text) {
   }));
 }
 
+async function order(asked) {
+  const answer = await fetch("api/order", { method: "POST", body: JSON.stringify(asked),
+    headers: { "Content-Type": "application/json", "X-Key": key } });
+  const said = await answer.json();
+  told = { ticket: asked.ticket, text: said.said || said.error, bad: !answer.ok };
+  if (answer.ok) notes.delete(asked.ticket);
+  if (answer.status === 403) key = "";
+  drawn = "";
+  look();
+}
+
+const button = (words, kind, asked, sure) => {
+  const one = h("button", { class: kind, type: "button" }, words);
+  one.addEventListener("click", () => {
+    if (!sure || confirm(sure)) order({ ...asked, note: notes.get(asked.ticket) || "" });
+  });
+  return one;
+};
+
+// What the reader can decide about this ticket now, as the commands of the same names would.
+function word(data) {
+  const ticket = data.id;
+  const over = ["done", "cancelled"].includes(data.kind);
+  const said = told && told.ticket === ticket
+    && h("div", { class: told.bad ? "told bad" : "told" }, told.text);
+  if (over) return said ? [h("h2", {}, "Your word"), h("div", { class: "word card" }, said)] : [];
+  if (!key) {
+    return [h("h2", {}, "Your word"), h("div", { class: "word card" }, said, h("div", { class: "hint" },
+      "To decide from here, open this page once with the second address `dk web` printed ",
+      "when it started: the one that ends in your key."))];
+  }
+  const note = h("textarea", { rows: 3, placeholder: "A note for the agents (needed to send back)" });
+  note.value = notes.get(ticket) || "";
+  note.addEventListener("input", () => notes.set(ticket, note.value));
+  const give = button("Give up this ticket", "quiet", { do: "cancel", ticket },
+    `Give up #${ticket}? Its unmerged work is thrown away.`);
+  const can = data.kind === "proposed" ? [
+    button("Accept", "main", { do: "approve", ticket }),
+    button("Accept, no behaviour tests", "", { do: "approve", ticket, tests: false }),
+    button("Turn down", "", { do: "reject", ticket }),
+  ] : data.approval ? [
+    button("Approve the behaviour tests", "main", { do: "approve", ticket }),
+    button("Send them back", "", { do: "reject", ticket }),
+  ] : data.kind === "stopped" ? [button("Send it on with this answer", "main", { do: "retry", ticket })]
+    : [];
+  return [h("h2", {}, "Your word"),
+    h("div", { class: "word card" }, said, can.length > 0 && note, h("div", { class: "buttons" }, can, give))];
+}
+
 function ticket(data) {
   where.textContent = data.epic || "Without an epic";
   return [
@@ -114,6 +180,7 @@ function ticket(data) {
     data.tests.length ? data.tests.map((file) => h("div", { class: "file card" },
       h("div", { class: "path" }, file.name), gherkin(file.text)))
       : h("div", { class: "empty card" }, "This ticket has no behaviour tests."),
+    word(data),
     h("h2", {}, "What happened"),
     h("ul", { class: "history card" }, data.history.map((line) =>
       h("li", {}, h("time", {}, line.slice(0, 19)), h("span", {}, line.slice(21))))),
@@ -139,6 +206,6 @@ async function look() {
   }
 }
 
-addEventListener("hashchange", () => { scrollTo(0, 0); look(); });
+addEventListener("hashchange", () => { keyed(); scrollTo(0, 0); look(); });
 setInterval(look, 2000);
 look();

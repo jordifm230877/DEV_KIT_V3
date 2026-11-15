@@ -5,8 +5,10 @@ It knows nothing about tickets; whoever starts it says what the data is.
 
 from __future__ import annotations
 
+import hmac
 import json
 import socket
+import threading
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -17,8 +19,27 @@ _KINDS = {".html": "text/html", ".css": "text/css", ".js": "text/javascript"}
 _DATA = "application/json"
 
 
+_ONE_AT_A_TIME = threading.Lock()
+_NO_KEY = "this needs the key `dk web` showed when it started: open the address it gave with it"
+
+
 class _Answers(BaseHTTPRequestHandler):
-    data: Callable[[str], object]  # given by `serve`
+    data: Callable[[str], object]  # given by `serve`, as are the next two
+    change: Callable[[object], str]
+    key: str
+
+    def do_POST(self) -> None:
+        """Carry out what is asked, for whoever has the key; what cannot be done is said."""
+        if urlsplit(self.path).path != "/api/order":
+            return self._send(404, "text/plain", b"there is no such page")
+        if not hmac.compare_digest(self.headers.get("X-Key", "").encode(), self.key.encode()):
+            return self._say(403, {"error": _NO_KEY})
+        try:
+            asked = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)))
+            with _ONE_AT_A_TIME:
+                self._say(200, {"said": type(self).change(asked)})
+        except (LookupError, ValueError) as error:
+            self._say(400, {"error": str(error)})
 
     def do_GET(self) -> None:
         path = urlsplit(self.path).path
@@ -32,9 +53,12 @@ class _Answers(BaseHTTPRequestHandler):
 
     def _data(self, what: str) -> None:
         try:
-            self._send(200, _DATA, json.dumps(type(self).data(what)).encode())
+            self._say(200, type(self).data(what))
         except LookupError as error:
-            self._send(404, _DATA, json.dumps({"error": str(error)}).encode())
+            self._say(404, {"error": str(error)})
+
+    def _say(self, status: int, what: object) -> None:
+        self._send(status, _DATA, json.dumps(what).encode())
 
     def _send(self, status: int, kind: str, body: bytes) -> None:
         self.send_response(status)
@@ -58,11 +82,20 @@ def _reached() -> str:
         return str(probe.getsockname()[0])
 
 
-def serve(port: int, data: Callable[[str], object], started: Callable[[str], object]) -> None:
+def serve(
+    port: int,
+    data: Callable[[str], object],
+    started: Callable[[str], object],
+    change: Callable[[object], str],
+    key: str,
+) -> None:
     """Answer browsers on this computer and its network until interrupted. `/api/<what>` is
     answered with `data(what)`, which raises LookupError for what is not there; anything else
-    is one of the page's own files. `started` is told the address; port 0 takes any free one."""
-    answers = type("Answers", (_Answers,), {"data": staticmethod(data)})
+    is one of the page's own files. `started` is told the address; port 0 takes any free one.
+    What is sent to `/api/order` with `key` is given to `change`, one at a time; it returns
+    what to say, or raises LookupError for what cannot be done."""
+    given = {"data": staticmethod(data), "change": staticmethod(change), "key": key}
+    answers = type("Answers", (_Answers,), given)
     with ThreadingHTTPServer(("0.0.0.0", port), answers) as server:
         started(f"http://{_reached()}:{server.server_port}/")
         try:

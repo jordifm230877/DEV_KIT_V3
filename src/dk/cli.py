@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import os
+import secrets
 import shlex
 import sys
 import threading
@@ -161,6 +162,20 @@ def _night(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets
             director.run()
 
 
+def _web(port: int, project: Path, home: Path, tickets: Tickets) -> None:
+    key = secrets.token_urlsafe(16)  # shown only here: an agent cannot approve its own work
+
+    def started(address: str) -> None:
+        print(f"the tickets of this project are at {address}", flush=True)
+        print(f"to approve and answer from the page, open it once at {address}#{key}", flush=True)
+
+    workspace = Workspace(project, home / "work")
+    web.serve(
+        *(port, lambda what: views.data(what, project, tickets, workspace), started),
+        *(lambda order: orders.asked(tickets, order), key),
+    )
+
+
 def _execute(args: argparse.Namespace) -> None:
     project: Path = args.project.resolve()
     home = project / HOME
@@ -182,11 +197,7 @@ def _execute(args: argparse.Namespace) -> None:
             else views.status(tickets.all(), closed=tickets.closed())
         ),
         "follow": lambda: views.follow(args.log),
-        "web": lambda: web.serve(
-            args.port,
-            lambda what: views.data(what, project, tickets, Workspace(project, home / "work")),
-            lambda address: print(f"the tickets of this project are at {address}", flush=True),
-        ),
+        "web": lambda: _web(args.port, project, home, tickets),
         "show": lambda: views.show(tickets, Workspace(project, home / "work"), args.ticket),
         "retry": lambda: orders.retry(tickets, args.ticket, args.note),
         "cancel": lambda: orders.cancel(tickets, args.ticket),

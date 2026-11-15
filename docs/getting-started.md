@@ -197,7 +197,11 @@ undoes it.
 With a tester in the configuration, every ticket starts with Gherkin scenarios
 (`.feature` files) that you approve before any code is written. If there is a verifier, it
 looks them over first and sends back any that are not about what a user of the product sees,
-so what reaches you is already filtered. They are easiest to read in the page of `dk web`.
+so what reaches you is already filtered. They are easiest to read in the page of `dk web`,
+where you can also approve them or send them back with a note, answer a stopped ticket and
+accept a proposal. For that, open the page once with the second address `dk web` prints when
+it starts, the one that ends in a key: without the key the page only shows. The key changes
+each time `dk web` starts.
 Say in `AGENTS.md` where
 the scenarios go and where the code that connects them to your product goes (for `behave`,
 `features/` and `features/steps/`). Without that, scenarios go under `features/`.

@@ -7,6 +7,8 @@ A composer: it reads the settings and the process and writes the ticket list. It
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import os
 import re
 from collections.abc import Callable
@@ -210,3 +212,25 @@ def night(project: Path, tickets: Tickets, changed: Callable[[str], bool]) -> No
             print(f"{title}: nothing changed since its last report")
         else:
             audit(kind, "", project, tickets)
+
+
+def asked(tickets: Tickets, order: object) -> str:
+    """Carry out what the user asked for from the page, as the command of that name would.
+    Returns what the command prints."""
+    said = order if isinstance(order, dict) else {}
+    do, number, note = said.get("do"), said.get("ticket"), str(said.get("note") or "").strip()
+    if not isinstance(number, int):
+        raise LookupError("say which ticket, by its number")
+    orders: dict[object, Callable[[], None]] = {
+        "approve": lambda: decide(tickets, number, True, "", said.get("tests") is not False),
+        "reject": lambda: decide(tickets, number, False, note),
+        "retry": lambda: retry(tickets, number, note),
+        "cancel": lambda: cancel(tickets, number),
+    }
+    if do not in orders:
+        raise LookupError(f"the page cannot ask for {do}")
+    if do == "reject" and not note:
+        raise LookupError("say what must change")
+    with contextlib.redirect_stdout(io.StringIO()) as printed:
+        orders[do]()
+    return printed.getvalue().strip()
