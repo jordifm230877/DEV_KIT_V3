@@ -75,7 +75,8 @@ function board(data) {
         h("div", { class: "name" }, agent.name),
         h("div", { class: "doing" }, agent.ticket
           ? [link(agent.ticket), ` ${titles.get(agent.ticket) || ""}, since ${agent.since.slice(11)}`]
-          : "free")))),
+          : "free"),
+        agent.spent && h("div", { class: "spent" }, agent.spent)))),
     h("h2", {}, "Epics and tickets"),
     data.epics.length ? data.epics.map(epic) : h("div", { class: "empty card" }, "No tickets yet."),
   ];

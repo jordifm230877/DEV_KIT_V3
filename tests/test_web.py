@@ -3,18 +3,12 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
-from collections.abc import Callable, Iterator
-from typing import Any
 from urllib.error import HTTPError
-from urllib.request import urlopen
 
 import pytest
-from conftest import Project
+from conftest import Project, Site
 from test_behaviour_tests import APPROVED_TEXT, HELLO, TESTER
 
-Site = Callable[[str], Any]
 # A coder that, in the middle of its job, asks the site what the user's browser would.
 LOOKS = """
 from urllib.request import urlopen
@@ -24,27 +18,6 @@ with urlopen((here / "site.txt").read_text() + "api/board") as answer:
 pathlib.Path('greeting.txt').write_text('hello\\n')
 print('RESULT: done')
 """
-
-
-@pytest.fixture
-def site(project: Project) -> Iterator[Site]:
-    """Start `dk web` as the user does; ask it for a path as a browser would."""
-    command = [sys.executable, "-m", "dk", "--project", str(project.root), "web", "--port", "0"]
-    server = subprocess.Popen(command, stdout=subprocess.PIPE, text=True)
-    assert server.stdout is not None
-    address = server.stdout.readline().split()[-1]
-    tools = project.root.parent / "tools"
-    tools.mkdir(exist_ok=True)
-    (tools / "site.txt").write_text(address)
-
-    def get(path: str) -> Any:
-        with urlopen(address.rstrip("/") + path) as answer:
-            text = answer.read().decode()
-            return json.loads(text) if "json" in answer.headers["Content-Type"] else text
-
-    yield get
-    server.terminate()
-    server.wait()
 
 
 def refused(site: Site, path: str) -> tuple[int, str]:
@@ -65,8 +38,8 @@ def test_the_board_lists_the_agents_and_the_tickets_of_each_epic(
     board = site("/api/board")
 
     assert board["agents"] == [
-        {"name": "coder-1", "role": "coder", "ticket": None, "since": ""},
-        {"name": "verifier-1", "role": "verifier", "ticket": None, "since": ""},
+        {"name": "coder-1", "role": "coder", "ticket": None, "since": "", "spent": ""},
+        {"name": "verifier-1", "role": "verifier", "ticket": None, "since": "", "spent": ""},
     ]
     loose, access, vault = board["epics"]
     assert [epic["name"] for epic in board["epics"]] == ["", "Access", "Vault"]

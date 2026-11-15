@@ -154,7 +154,9 @@ lasts, and you will see a `status` tab that says which agent is on which
 ticket and lists the unfinished tickets,
 and one tab per agent showing what it is doing. Outside Herdr, `dk status --watch` in
 another terminal shows the same board, and `dk web` shows it in your browser, with every
-ticket and its behaviour tests a click away. Ask the Principal how things are going
+ticket and its behaviour tests a click away. Next to a working agent the board says how
+many tokens its job has sent to the model and how many the model wrote so far; `dk show
+NUMBER` lists the same for each job that ended. Ask the Principal how things are going
 whenever you like. Leaving the conversation (Ctrl-D) stops the work; whatever was half done
 is redone next time.
 

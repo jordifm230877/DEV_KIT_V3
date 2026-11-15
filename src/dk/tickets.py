@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS ticket (
     stopped INTEGER NOT NULL DEFAULT 0, protected TEXT NOT NULL DEFAULT '{}',
     epic TEXT NOT NULL DEFAULT '', follows TEXT NOT NULL DEFAULT '[]',
     worker TEXT NOT NULL DEFAULT '', since TEXT NOT NULL DEFAULT '',
-    asking TEXT NOT NULL DEFAULT 'null', behaviour INTEGER NOT NULL DEFAULT 1
+    asking TEXT NOT NULL DEFAULT 'null', behaviour INTEGER NOT NULL DEFAULT 1,
+    spent TEXT NOT NULL DEFAULT '[0, 0]'
 );
 CREATE TABLE IF NOT EXISTS history (
     id INTEGER PRIMARY KEY, ticket INTEGER NOT NULL REFERENCES ticket(id),
@@ -35,6 +36,7 @@ _LATER = (
     "since TEXT NOT NULL DEFAULT ''",
     "asking TEXT NOT NULL DEFAULT 'null'",
     "behaviour INTEGER NOT NULL DEFAULT 1",
+    "spent TEXT NOT NULL DEFAULT '[0, 0]'",
 )
 
 
@@ -63,16 +65,19 @@ class Ticket:
     since: str  # when that job started, in the user's own time
     asking: Asking | None
     behaviour: bool  # whether behaviour tests are written for it before any code
+    spent: tuple[int, int]  # tokens that job has sent its model so far, and tokens it wrote
 
 
 def _ticket(*row: Any) -> Ticket:
-    *first, stop, files, epic, follows, worker, since, left, behaviour = row
+    *first, stop, files, epic, follows, worker, since, left, behaviour, spent = row
     number, title, spec, step, tries, note = first
     asking = Asking(*json.loads(left)) if json.loads(left) else None
     files, follows = json.loads(files), json.loads(follows)
+    sent, written = json.loads(spent)
     return Ticket(
         *(number, title, spec, step, tries, note, bool(stop)),
         *(files, epic, follows, worker, since, asking, bool(behaviour)),
+        spent=(sent, written),
     )
 
 
@@ -109,7 +114,7 @@ class Tickets:
     def all(self) -> list[Ticket]:
         rows, _ = self._run(
             "SELECT id, title, spec, step, attempts, note, stopped, protected, epic, follows,"
-            " worker, since, asking, behaviour FROM ticket ORDER BY id"
+            " worker, since, asking, behaviour, spent FROM ticket ORDER BY id"
         )
         return [_ticket(*row) for row in rows]
 
@@ -133,9 +138,15 @@ class Tickets:
         self._run("UPDATE ticket SET protected = ? WHERE id = ?", json.dumps(files), ticket)
 
     def assign(self, ticket: int, worker: str) -> None:
-        """Say which agent is doing a job on the ticket right now; nobody, with ""."""
+        """Say which agent is doing a job on the ticket right now; nobody, with "". Either
+        way, nothing has been spent on it yet."""
         now = f"{datetime.now():%Y-%m-%d %H:%M}"
+        self.spend(ticket, (0, 0))
         self._run("UPDATE ticket SET worker = ?, since = ? WHERE id = ?", worker, now, ticket)
+
+    def spend(self, ticket: int, spent: tuple[int, int]) -> None:
+        """Say what the job now on the ticket has spent of its model so far."""
+        self._run("UPDATE ticket SET spent = ? WHERE id = ?", json.dumps(spent), ticket)
 
     def untested(self, ticket: int) -> None:
         """Have no behaviour tests written for the ticket."""

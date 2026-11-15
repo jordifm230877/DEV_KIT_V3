@@ -54,6 +54,7 @@ request.
 | `principal` | What the Principal is told, in the conversation and about a stopped ticket | Start anything |
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
 | `shown` | Turns what Pi, Claude and Codex print into lines a person can read | Start anything |
+| `spent` | Counts the tokens a job sends its model and the ones the model writes, from what Pi, Claude and Codex print | Start anything |
 | `briefs` | The short instructions each role receives | — |
 | `audits` | The kinds of audit and what an auditor is told | — |
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
@@ -260,6 +261,14 @@ Each step ends with something usable.
   epic follows another when one of its tickets follows a ticket of the other; that is worked
   out, not stored, so it cannot disagree with the tickets. Looked at with the real trial
   project in a browser, wide and narrow.
+- What a job spends of its model is counted from what the agent's program prints: the tokens
+  sent to the model and the tokens it wrote. The board and the page show it for the job
+  going on, and the ticket's history keeps it for each job that ended. Each call to the
+  model sends again all that came before, so the tokens sent add up to the cost of the job,
+  not to how full the model's memory is. How full it is, and its limit, are left out: Claude
+  reports both, Pi only the first, and Codex neither while it works, and a figure shown for
+  some agents and not for others would mislead. Codex reports only as a turn ends, so its
+  count appears late. Read from the real programs, each asked one question.
 - An `examiner` reads each ticket first (step `examine`) and ends with `approved` or with
   its doubts as questions. Unclear tickets used to be found out late: by the tester when it
   could not write the scenarios, or by a coder who guessed. Nothing new carries the doubt:

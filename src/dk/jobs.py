@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from dk import agents, audits, briefs, shown
+from dk import agents, audits, briefs, shown, spent
 from dk.config import Agent, Config
 from dk.process import (
     DONE,
@@ -73,16 +73,27 @@ class Jobs:
         copy = self.workspace.prepare(ticket.id)
         self.tickets.record(ticket.id, f"{agent.name} started")
         self.tickets.assign(ticket.id, agent.name)
+        count, show = spent.counter(agent.program), shown.reader(agent.program)
+        used = [(0, 0)]
+
+        def plain(line: str) -> str:
+            if (now := count(line)) != used[-1]:  # the board shows it as it grows
+                used.append(now)
+                self.tickets.spend(ticket.id, now)
+            return show(line)
+
         try:
             return agents.ask(
                 *(argv, brief, copy, self.log(agent)),
                 (agent.minutes or self.config.agent_minutes) * 60,
                 title=f"#{ticket.id} {ticket.title} ({ticket.step})",
-                plain=shown.reader(agent.program),
+                plain=plain,
                 stop=self.stop,
                 name=agent.name,
             )
         finally:
+            if any(used[-1]):
+                self.tickets.record(ticket.id, f"{agent.name} used {spent.said(used[-1])}")
             self.tickets.assign(ticket.id, "")
 
     def _resumed(

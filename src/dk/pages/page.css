@@ -33,6 +33,7 @@ h2:first-child { margin-top: 4px; }
 .agent { padding: 10px 12px; }
 .agent .name { font-weight: 600; }
 .agent .doing { color: var(--soft); font-size: 13px; overflow-wrap: anywhere; }
+.agent .spent { color: var(--soft); font-size: 12px; font-variant-numeric: tabular-nums; }
 .agent.busy { border-left: 4px solid var(--going); }
 .needs { border-left: 4px solid var(--stopped); margin-bottom: 8px; padding: 10px 12px; }
 .needs.of-proposed { border-left-color: var(--proposed); }

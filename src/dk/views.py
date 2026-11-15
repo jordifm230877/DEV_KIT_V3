@@ -10,7 +10,7 @@ import time
 from collections.abc import Collection, Iterator, Sequence
 from pathlib import Path
 
-from dk import config, paint, process
+from dk import config, paint, process, spent
 from dk.jobs import PRINCIPAL
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
@@ -71,7 +71,8 @@ def _working(team: Sequence[config.Agent], tickets: list[Ticket]) -> Iterator[Ro
     for name in [*names, *(doing for doing in busy if doing not in names)]:
         on = busy.get(name)
         doing = f"#{on.id} {on.title} ({on.step})  since {on.since}" if on else "free"
-        yield "busy" if on else "free", f"  {name:<12} {doing}"
+        used = spent.said(on.spent) if on else ""
+        yield "busy" if on else "free", f"  {name:<12} {doing}{used and '  ' + used}"
 
 
 def board(team: Sequence[config.Agent], tickets: list[Ticket]) -> None:
@@ -162,6 +163,7 @@ def _team(team: Sequence[config.Agent], tickets: list[Ticket]) -> Iterator[dict[
             "role": roles.get(name, ""),
             "ticket": on.id if on else None,
             "since": on.since if on else "",
+            "spent": spent.said(on.spent) if on else "",
         }
 
 

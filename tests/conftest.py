@@ -6,7 +6,10 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import Any
+from urllib.request import urlopen
 
 import pytest
 
@@ -188,3 +191,27 @@ def team(project: Project, program: str, *roles: str, settings: str = "") -> Non
     (project.root / "devkit.toml").write_text(f'{agents}[checks]\nunit = ["true"]\n')
     project.git("add", "devkit.toml")
     project.git("commit", "-qm", "configure devkit")
+
+
+Site = Callable[[str], Any]
+
+
+@pytest.fixture
+def site(project: Project) -> Iterator[Site]:
+    """Start `dk web` as the user does; ask it for a path as a browser would."""
+    command = [sys.executable, "-m", "dk", "--project", str(project.root), "web", "--port", "0"]
+    server = subprocess.Popen(command, stdout=subprocess.PIPE, text=True)
+    assert server.stdout is not None
+    address = server.stdout.readline().split()[-1]
+    tools = project.root.parent / "tools"
+    tools.mkdir(exist_ok=True)
+    (tools / "site.txt").write_text(address)
+
+    def get(path: str) -> Any:
+        with urlopen(address.rstrip("/") + path) as answer:
+            text = answer.read().decode()
+            return json.loads(text) if "json" in answer.headers["Content-Type"] else text
+
+    yield get
+    server.terminate()
+    server.wait()
