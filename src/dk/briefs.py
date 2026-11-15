@@ -12,6 +12,12 @@ Notes from earlier work on this ticket:
 {note}
 """
 
+_ANSWERED = """\
+The ticket you stopped at was sent on again.
+{added}{note}
+Carry on with the job from where you left it, and end your reply with one `RESULT:` line as
+you were told before."""
+
 _ALWAYS = """\
 RESULT: blocked: <why this cannot be done>
 RESULT: question: <what you need to know from the user>"""
@@ -167,6 +173,12 @@ def vetting(ticket: int, title: str, spec: str, files: list[str]) -> str:
     return _VETTING.format(
         ticket=_ticket(ticket, title, spec), files=", ".join(files), always=_ALWAYS
     )
+
+
+def answered(added: str, note: str) -> str:
+    """What an agent that left its job to ask is told when it picks the job up again."""
+    added = f"Added to the ticket since you asked:\n{added.strip()}\n" if added.strip() else ""
+    return _ANSWERED.format(added=added, note=_notes(note))
 
 
 def _ticket(ticket: int, title: str, spec: str) -> str:

@@ -94,7 +94,7 @@ def test_pis_detailed_output_is_shown_as_readable_lines(tmp_path: Path) -> None:
         [sys.executable, "-c", emit], "x", tmp_path, log, 30, plain=agents.reader("pi")
     )
 
-    assert reply == agents.Reply("done")
+    assert reply == agents.Reply("done", session="x"), "and it says what it will remember"
     assert log.read_text().splitlines() == [
         "> bash echo hi",
         "> edit wc.py",

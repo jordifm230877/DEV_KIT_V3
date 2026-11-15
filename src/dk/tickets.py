@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS ticket (
     step TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, note TEXT NOT NULL DEFAULT '',
     stopped INTEGER NOT NULL DEFAULT 0, protected TEXT NOT NULL DEFAULT '{}',
     epic TEXT NOT NULL DEFAULT '', follows TEXT NOT NULL DEFAULT '[]',
-    worker TEXT NOT NULL DEFAULT '', since TEXT NOT NULL DEFAULT ''
+    worker TEXT NOT NULL DEFAULT '', since TEXT NOT NULL DEFAULT '',
+    asking TEXT NOT NULL DEFAULT 'null'
 );
 CREATE TABLE IF NOT EXISTS history (
     id INTEGER PRIMARY KEY, ticket INTEGER NOT NULL REFERENCES ticket(id),
@@ -28,7 +29,20 @@ CREATE TABLE IF NOT EXISTS history (
 );
 CREATE TABLE IF NOT EXISTS closed (epic TEXT PRIMARY KEY);
 """
-_LATER = ("worker TEXT NOT NULL DEFAULT ''", "since TEXT NOT NULL DEFAULT ''")
+_LATER = (
+    "worker TEXT NOT NULL DEFAULT ''",
+    "since TEXT NOT NULL DEFAULT ''",
+    "asking TEXT NOT NULL DEFAULT 'null'",
+)
+
+
+@dataclass(frozen=True)
+class Asking:
+    """The job an agent left to ask something, which its program can pick up again."""
+
+    program: str
+    session: str  # the program's own name for what it remembers of the job
+    known: int  # how much of the ticket had been written when it asked
 
 
 @dataclass(frozen=True)
@@ -45,6 +59,17 @@ class Ticket:
     follows: list[int]  # tickets that must be finished before this one starts
     worker: str  # the agent doing a job on it right now, if any
     since: str  # when that job started, in the user's own time
+    asking: Asking | None
+
+
+def _ticket(*row: Any) -> Ticket:
+    number, title, spec, step, tries, note, stop, files, epic, follows, worker, since, left = row
+    asking = Asking(*json.loads(left)) if json.loads(left) else None
+    files, follows = json.loads(files), json.loads(follows)
+    return Ticket(
+        *(number, title, spec, step, tries, note, bool(stop)),
+        *(files, epic, follows, worker, since, asking),
+    )
 
 
 class Tickets:
@@ -76,15 +101,9 @@ class Tickets:
     def all(self) -> list[Ticket]:
         rows, _ = self._run(
             "SELECT id, title, spec, step, attempts, note, stopped, protected, epic, follows,"
-            " worker, since FROM ticket ORDER BY id"
+            " worker, since, asking FROM ticket ORDER BY id"
         )
-        return [
-            Ticket(
-                *(number, title, spec, step, tries, note, bool(stop)),
-                *(json.loads(files), epic, json.loads(follows), *working),
-            )
-            for number, title, spec, step, tries, note, stop, files, epic, follows, *working in rows
-        ]
+        return [_ticket(*row) for row in rows]
 
     def get(self, ticket: int) -> Ticket:
         found = [candidate for candidate in self.all() if candidate.id == ticket]
@@ -109,6 +128,11 @@ class Tickets:
         """Say which agent is doing a job on the ticket right now; nobody, with ""."""
         now = f"{datetime.now():%Y-%m-%d %H:%M}"
         self._run("UPDATE ticket SET worker = ?, since = ? WHERE id = ?", worker, now, ticket)
+
+    def leave(self, ticket: int, asking: Asking | None) -> None:
+        """Remember the job an agent left to ask; with None, that there is none."""
+        left = json.dumps(asking and [*vars(asking).values()])
+        self._run("UPDATE ticket SET asking = ? WHERE id = ?", left, ticket)
 
     def close(self, epic: str) -> None:
         """Mark an epic as complete."""

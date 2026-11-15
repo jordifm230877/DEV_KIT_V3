@@ -25,7 +25,7 @@ from dk.process import (
     Stopped,
     of,
 )
-from dk.tickets import Ticket, Tickets
+from dk.tickets import Asking, Ticket, Tickets
 from dk.workspace import Workspace
 
 BEHAVIOUR_TESTS = "*.feature"
@@ -64,8 +64,12 @@ class Jobs:
         """The file that fills with what the agent is doing."""
         return self.logs / f"{label(agent)}.log"
 
-    def ask(self, agent: Agent, writes: bool, brief: str, ticket: Ticket) -> agents.Reply:
-        argv = agent.command or agents.command(agent.program, agent.model, writes, self.config.web)
+    def ask(
+        self, agent: Agent, writes: bool, brief: str, ticket: Ticket, session: str = ""
+    ) -> agents.Reply:
+        argv = agent.command or agents.command(
+            agent.program, agent.model, writes, self.config.web, session
+        )
         copy = self.workspace.prepare(ticket.id)
         self.tickets.record(ticket.id, f"{agent.name} started")
         self.tickets.assign(ticket.id, agent.name)
@@ -81,6 +85,20 @@ class Jobs:
         finally:
             self.tickets.assign(ticket.id, "")
 
+    def _resumed(
+        self, agent: Agent, writes: bool, brief: str, ticket: Ticket, note: str = ""
+    ) -> agents.Reply:
+        """Ask the agent; if a job was left on this ticket to ask something and the agent's
+        program can pick it up, it goes on from there with what was added to the ticket."""
+        left = ticket.asking if ticket.asking and ticket.asking.program == agent.program else None
+        if left and not agent.command:
+            brief = briefs.answered(ticket.spec[left.known :], note)
+        reply = self.ask(agent, writes, brief, ticket, left.session if left else "")
+        asked = reply.kind in ("blocked", "question") and reply.session
+        now = Asking(agent.program, reply.session, len(ticket.spec)) if asked else None
+        self.tickets.leave(ticket.id, now)
+        return reply
+
     def _fresh(self, ticket: Ticket, note: str) -> str:
         """Bring into the copy what the project gained since it was made. Returns the note
         for whoever works next, with the files to resolve if the two collide."""
@@ -88,9 +106,11 @@ class Jobs:
         _, clashes = self.workspace.update(ticket.id)
         return f"{note}\n{briefs.clash(clashes)}".strip() if clashes else note
 
-    def _produce(self, agent: Agent, brief: str, ticket: Ticket, only: str = "") -> Outcome:
+    def _produce(
+        self, agent: Agent, brief: str, ticket: Ticket, only: str = "", note: str = ""
+    ) -> Outcome:
         """Have the agent do work and save it; with `only`, nothing but that one file."""
-        reply = self.ask(agent, True, brief, ticket)
+        reply = self._resumed(agent, True, brief, ticket, note)
         if only:
             self.workspace.keep_only(ticket.id, only)
         if reply.kind in ("blocked", "question"):
@@ -122,7 +142,7 @@ class Jobs:
         note = self._fresh(ticket, position.note)
         earlier = sorted(ticket.protected)
         brief = briefs.tester(ticket.id, ticket.title, ticket.spec, note, earlier)
-        outcome = self._produce(agent, brief, ticket)
+        outcome = self._produce(agent, brief, ticket, note=note)
         if not isinstance(outcome, Passed):
             return outcome
         tests = self.workspace.fingerprints(ticket.id, BEHAVIOUR_TESTS)
@@ -138,7 +158,7 @@ class Jobs:
             *(ticket.id, ticket.title, ticket.spec, note, sorted(tests)),
             *(self.config.quality_rules, self.command),
         )
-        outcome = self._produce(agent, brief, ticket)
+        outcome = self._produce(agent, brief, ticket, note=note)
         changed = self.workspace.tampered(ticket.id, tests) if tests else []
         if isinstance(outcome, Passed) and changed:
             self.workspace.put_back(ticket.id, tests, changed)
@@ -162,7 +182,7 @@ class Jobs:
         return self._judge(agent, brief, ticket, "work")
 
     def _judge(self, agent: Agent, brief: str, ticket: Ticket, what: str) -> Outcome:
-        reply = self.ask(agent, False, brief, ticket)
+        reply = self._resumed(agent, False, brief, ticket)
         self.workspace.restore(ticket.id)
         if reply.kind in ("blocked", "question"):
             return Stopped(f"{reply.kind}: {reply.text}")

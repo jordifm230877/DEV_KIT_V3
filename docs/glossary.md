@@ -36,3 +36,4 @@
 - **Tab** — a Herdr tab that shows one agent's work as it happens; nothing typed there reaches the agent.
 - **Principal** — the agent the user talks with; it explores, writes tickets and reports, and does no work on tickets itself.
 - **Conversation** — a `dk talk` session; the director works behind it and stops when it ends.
+- **Session** — what an agent program remembers of one job, under a name of its own; with it, an agent that stopped to ask picks its job up again instead of starting afresh.

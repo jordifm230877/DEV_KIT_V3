@@ -219,7 +219,13 @@ Each step ends with something usable.
   with `web` in its name), which DevKit does not install. Agents could already reach the
   network with shell commands, so this opens nothing new.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
-  needs to know is in its brief.
+  needs to know is in its brief. The one exception: an agent that stops its job to ask picks
+  that job up again when the ticket is sent on, and is told only what was added to the ticket
+  since. Starting again lost everything the agent had understood, which made asking so costly
+  that agents decided by themselves instead. Pi, Claude and Codex keep a session of every job
+  for this, in their own folders; an agent of another program, or a session that is gone,
+  starts the job afresh. Tried with the three real programs, each recalling a word across the
+  two runs.
 - An agent can propose a ticket (`dk propose`), which waits at the step `proposed` until the
   user accepts it or turns it down; `dk` refuses that decision to any agent, as with
   behaviour tests. Coders are told to propose work their ticket does not cover instead of

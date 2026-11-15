@@ -164,7 +164,7 @@ Herdr shows a notification, and `dk status` shows the ticket as stopped with the
 
 | It says | What to do |
 |---|---|
-| `question: ...` or `blocked: ...` | Tell the Principal your answer, or `dk retry N --note "answer"` |
+| `question: ...` or `blocked: ...` | Tell the Principal your answer, or `dk retry N --note "answer"`; the agent goes on from where it stopped |
 | a check or review failed too many times | Read `dk show N`, then `dk retry N --note "hint"` for a fresh set of attempts |
 | `the merge could not be done` | Usually your own uncommitted changes are in the way. Commit or move them, then `dk retry N` |
 | `the behaviour tests are ready for you` | See the next section |

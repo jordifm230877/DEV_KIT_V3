@@ -12,7 +12,7 @@ import signal
 import subprocess
 import threading
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -40,31 +40,34 @@ class _Program:
     web: str  # the tools that reach the web, which such a job keeps
     offline: tuple[str, ...]  # what takes the web away
     talk: tuple[str, ...]  # a conversation with the user
+    again: str  # what, followed by a session, picks up the job that session remembers
 
 
 PROGRAMS = {
     "pi": _Program(
-        ("pi", "-p", "--no-session", "--mode", "json", "--model", "{model}"),
+        ("pi", "-p", "--mode", "json", "--model", "{model}"),
         "read,bash,grep,find,ls",
         "codex_search,*web*",  # Pi reaches the web through an extension, if one is installed
         ("--exclude-tools", "codex_search,*web*"),
         ("pi", "--model", "{model}", "--append-system-prompt", INSTRUCTIONS),
+        "--session",
     ),
     "claude": _Program(
-        ("claude", "-p", "--no-session-persistence", "--output-format", "stream-json")
+        ("claude", "-p", "--output-format", "stream-json")
         + ("--verbose", "--model", "{model}", _FREE["claude"])
         + ("--append-system-prompt", _RULES),
         "Read,Bash,Grep,Glob",
         "WebSearch,WebFetch",
         ("--disallowedTools", "WebSearch,WebFetch"),
         ("claude", "--model", "{model}", _FREE["claude"], "--append-system-prompt", INSTRUCTIONS),
+        "--resume",
     ),
     "codex": _Program(
-        ("codex", "exec", "--ephemeral", "--json", "--skip-git-repo-check")
-        + ("-m", "{model}", _FREE["codex"]),
+        ("codex", "exec", "--json", "--skip-git-repo-check") + ("-m", "{model}", _FREE["codex"]),
         *("", ""),  # Codex has no list of tools to narrow, and searches the web as it comes
         ("-c", 'web_search="disabled"'),
         ("codex", "-m", "{model}", _FREE["codex"], INSTRUCTIONS),
+        "resume",
     ),
 }
 
@@ -78,6 +81,7 @@ class Reply:
     kind: Answer | Literal["unclear"]
     text: str = ""
     late: bool = False  # it was cut off for taking too long, and `text` says after how long
+    session: str = ""  # the program's name for what it remembers of the job, if it keeps any
 
 
 def _known(program: str) -> _Program:
@@ -86,10 +90,16 @@ def _known(program: str) -> _Program:
     return PROGRAMS[program]
 
 
-def command(program: str, model: str, writes: bool, web: bool = True) -> tuple[str, ...]:
-    """The command line for a known agent program; a reviewer gets no tools that write."""
+def command(
+    program: str, model: str, writes: bool, web: bool = True, session: str = ""
+) -> tuple[str, ...]:
+    """The command line for a known agent program; a reviewer gets no tools that write.
+    With `session`, the job that session remembers is picked up again."""
     known = _known(program)
-    base = tuple(part.replace("{model}", model) for part in known.job)
+    again = (known.again, session) if session else ()  # right after the program and its mode
+    base = tuple(
+        part.replace("{model}", model) for part in (*known.job[:2], *again, *known.job[2:])
+    )
     tools = ",".join(filter(None, (known.reading, known.web if web else "")))
     narrowed = () if writes or not known.reading else ("--tools", tools)
     return (*base, *narrowed, *(() if web else known.offline), "--", INSTRUCTIONS)
@@ -200,6 +210,29 @@ def reader(program: str) -> Callable[[str], str]:
     return plain
 
 
+def _session(line: str) -> str:
+    """The name a known program gives, as it starts, to what it will remember of the job."""
+    try:
+        event = json.loads(line)
+    except ValueError:
+        return ""
+    if not isinstance(event, dict):
+        return ""
+    named = event.get("id") if event.get("type") == "session" else None  # how Pi says it
+    return str(named or event.get("session_id") or event.get("thread_id") or "")
+
+
+def _noting(sessions: list[str], plain: Callable[[str], str]) -> Callable[[str], str]:
+    """`plain`, which also adds to `sessions` the first session a line names."""
+
+    def shown(line: str) -> str:
+        if not sessions and (session := _session(line)):
+            sessions.append(session)
+        return plain(line)
+
+    return shown
+
+
 _ENDED = ("ended", "stopped")  # how a job that was not cut off for time is closed
 
 
@@ -222,6 +255,8 @@ def ask(
     by_argument = INSTRUCTIONS in argv
     argv = [instructions if part == INSTRUCTIONS else part for part in argv]
     said: list[str] = []
+    sessions: list[str] = []
+    plain = _noting(sessions, plain)
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.open("a") as shown:
         shown.write(f"\n{datetime.now():%Y-%m-%d %H:%M}  === {title} ===\n" if title else "")
@@ -236,7 +271,8 @@ def ask(
         late = code is None and not (stop and stop.is_set())
         how = f"cut off after {seconds / 60:g} minutes" if late else _ENDED[code is None]
         shown.write(f"{datetime.now():%Y-%m-%d %H:%M}  === {how} ===\n" if title else "")
-    return Reply("unclear", how, late=True) if late else _heard("".join(said), code)
+    reply = Reply("unclear", how, late=True) if late else _heard("".join(said), code)
+    return replace(reply, session="".join(sessions))
 
 
 def _heard(said: str, code: int | None) -> Reply:

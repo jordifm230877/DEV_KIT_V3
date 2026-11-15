@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -134,3 +135,56 @@ class Herdr:
 @pytest.fixture
 def herdr(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Herdr:
     return Herdr(tmp_path, monkeypatch)
+
+
+PREAMBLE = """\
+import json, pathlib, sys
+here = pathlib.Path(__file__).parent
+me = pathlib.Path(__file__).stem
+with (here / f"{me}-calls.jsonl").open("a") as log:
+    log.write(json.dumps(sys.argv[1:]) + "\\n")
+prompt = sys.argv[-1]
+
+def emit(**event):
+    print(json.dumps(event))
+
+def claude_says(*parts):
+    emit(type="assistant", message={"role": "assistant", "content": list(parts)})
+"""
+
+
+class Programs:
+    """Stand-ins for the real programs on PATH; what each does is written by the test."""
+
+    def __init__(self, folder: Path) -> None:
+        self._folder = folder
+
+    def does(self, name: str, body: str) -> None:
+        script = self._folder / f"{name}.py"
+        script.write_text(PREAMBLE + body + "\n")
+        launcher = self._folder / name
+        launcher.write_text(f'#!/bin/sh\nexec {sys.executable} {script} "$@"\n')
+        launcher.chmod(0o755)
+
+    def calls(self, name: str) -> list[list[str]]:
+        log = self._folder / f"{name}-calls.jsonl"
+        return [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
+
+
+@pytest.fixture
+def programs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Programs:
+    folder = tmp_path / "bin"
+    folder.mkdir()
+    monkeypatch.setenv("PATH", f"{folder}{os.pathsep}{os.environ['PATH']}")
+    return Programs(folder)
+
+
+def team(project: Project, program: str, *roles: str, settings: str = "") -> None:
+    agents = settings + "".join(
+        f'[[agents]]\nname = "{role}-1"\nrole = "{role}"\nprogram = "{program}"\n'
+        f'model = "some-model"\n\n'
+        for role in roles
+    )
+    (project.root / "devkit.toml").write_text(f'{agents}[checks]\nunit = ["true"]\n')
+    project.git("add", "devkit.toml")
+    project.git("commit", "-qm", "configure devkit")
