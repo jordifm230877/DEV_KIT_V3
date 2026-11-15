@@ -166,7 +166,9 @@ class Jobs:
 
     def examine(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         """Have the ticket read before any work; a doubt stops it for whoever can answer."""
-        brief = briefs.examiner(ticket.id, ticket.title, ticket.spec)
+        described = self.tickets.described().get(ticket.epic, "")
+        about = briefs.about(ticket.id, ticket.title, ticket.spec)
+        brief = briefs.examiner(about, ticket.epic, described)
         outcome = self._judge(agent, brief, ticket, "ticket")
         return Stopped(outcome.reason) if isinstance(outcome, Failed) else outcome
 

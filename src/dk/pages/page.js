@@ -24,6 +24,10 @@ const state = (ticket) => h("span", { class: `state ${ticket.kind}` },
   ticket.kind === "ticket" && !ticket.worker ? "queued" : NAMES[ticket.kind]);
 const listed = (numbers) => numbers.flatMap((number, at) => [at ? ", " : "", link(number)]);
 
+// Text as it was written, with a line that is only a heading ("Wanted:") set apart.
+const prose = (text) => text.trim().split("\n").map((line) =>
+  h("div", { class: /^[A-Z][A-Za-z ]{1,30}:$/.test(line.trim()) ? "label" : false }, line || "\u00a0"));
+
 function extra(ticket) {
   if (ticket.worker) return `${ticket.worker} since ${ticket.since.slice(11)}`;
   if (ticket.waits.length) return `waits for ${ticket.waits.map((n) => `#${n}`).join(", ")}`;
@@ -48,6 +52,7 @@ function epic(one) {
       one.follows.map((name) => h("span", { class: "chip" }, `after ${name}`)),
       h("span", { class: "count" }, `${one.done} of ${total} done`),
       h("span", { class: "bar" }, h("i", { style: `width:${total ? (100 * one.done) / total : 0}%` }))),
+    one.description && h("div", { class: "about" }, prose(one.description)),
     one.tickets.map(row));
   card.addEventListener("toggle", () => folded.set(one.name, card.open));
   return card;
@@ -103,7 +108,7 @@ function ticket(data) {
       data.waits.length > 0 && h("span", {}, "waits for ", listed(data.waits))),
     data.note && [h("h2", {}, "Why it stopped"), h("div", { class: "say card" }, data.note)],
     h("h2", {}, "What is wanted"),
-    h("div", { class: "block card" }, data.spec.trim()),
+    h("div", { class: "block card" }, prose(data.spec)),
     h("h2", {}, data.approval ? "Behaviour tests waiting for your approval" : "Behaviour tests"),
     data.tests.length ? data.tests.map((file) => h("div", { class: "file card" },
       h("div", { class: "path" }, file.name), gherkin(file.text)))

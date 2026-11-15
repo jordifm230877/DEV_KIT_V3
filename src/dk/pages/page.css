@@ -67,6 +67,8 @@ a.row:hover { background: var(--ground); text-decoration: none; }
 .title-line h1 { font-size: 22px; margin: 0; flex: 1; min-width: 240px; }
 .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; color: var(--soft); font-size: 13px; }
 .block { padding: 12px 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.about { padding: 10px 12px; border-top: 1px solid var(--line); font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--soft); }
 .say { padding: 10px 12px; border-left: 4px solid var(--stopped); white-space: pre-wrap; overflow-wrap: anywhere; }
 .say code { background: var(--code); padding: 1px 5px; border-radius: 4px; }
 .file { margin-bottom: 12px; overflow: hidden; }

@@ -18,6 +18,9 @@ def dk(*args):
     done = subprocess.run([*DK, *args], capture_output=True, text=True)
     return done.returncode, done.stdout
 
+def spec(wanted):
+    return f"Wanted: {wanted} Acceptance criteria: - it is so. Out of scope: the rest."
+
 def wait_for(text, ticket="1"):
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
@@ -38,7 +41,8 @@ def test_a_ticket_the_principal_writes_is_done_while_the_conversation_is_open(
     project: Project,
 ) -> None:
     talk = PRINCIPAL + (
-        "dk('add', 'Greet', '--spec', 'Say hello.', '--epic', 'Manners')\n"
+        "dk('epic', 'Manners', '--spec', 'Goal: g. Includes: i. Excludes: e.')\n"
+        "dk('add', 'Greet', '--spec', spec('Say hello.'), '--epic', 'Manners')\n"
         "wait_for('#1 done')\n"
         "notes.write_text('saw it done')"
     )
@@ -65,7 +69,9 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
         "cancel",
         "close",
         "reopen",
-        "acceptance",
+        'epic "NAME" --spec "Goal: ... Includes: ... Excludes: ..."',
+        '--spec "Wanted: ... Acceptance criteria: ... Out of scope: ..."',
+        "the epic first",
         "--no-behaviour-tests",
         "audit security|performance",
     ):
@@ -91,7 +97,7 @@ def test_the_principal_cannot_approve_for_the_user(project: Project) -> None:
         "print('RESULT: done')"
     )
     talk = PRINCIPAL + (
-        "dk('add', 'Greet', '--spec', 'Say hello.')\n"
+        "dk('add', 'Greet', '--spec', spec('Say hello.'))\n"
         "wait_for('stopped at approve')\n"
         "code, said = dk('approve', '1')\n"
         "notes.write_text(f'{code} {said}')"
@@ -129,7 +135,7 @@ def test_an_answer_given_during_the_conversation_lets_the_ticket_continue(
         "    print('RESULT: question: which language?')"
     )
     talk = PRINCIPAL + (
-        "dk('add', 'Greet', '--spec', 'Say hello.')\n"
+        "dk('add', 'Greet', '--spec', spec('Say hello.'))\n"
         "wait_for('which language?')\n"
         "dk('retry', '1', '--note', 'Catalan')\n"
         "wait_for('#1 done')\n"
@@ -143,7 +149,7 @@ def test_an_answer_given_during_the_conversation_lets_the_ticket_continue(
 
 def test_closing_the_conversation_stops_the_work_without_judging_it(project: Project) -> None:
     slow = "import time; time.sleep(60)\nprint('RESULT: done')"
-    talk = PRINCIPAL + "dk('add', 'Slow', '--spec', 'x')\nwait_for('coder-1 started')\n"
+    talk = PRINCIPAL + "dk('add', 'Slow', '--spec', spec('x'))\nwait_for('coder-1 started')\n"
     project.configure(coder=slow, principal=talk)
     started = time.monotonic()
 
@@ -163,7 +169,7 @@ def test_talking_needs_a_principal(project: Project) -> None:
 def test_inside_herdr_the_user_is_told_when_a_ticket_needs_them(
     project: Project, herdr: Herdr
 ) -> None:
-    talk = PRINCIPAL + "dk('add', 'Vague', '--spec', 'x')\nwait_for('stopped at code')\n"
+    talk = PRINCIPAL + "dk('add', 'Vague', '--spec', spec('x'))\nwait_for('stopped at code')\n"
     project.configure(coder="print('RESULT: question: which language?')", principal=talk)
 
     project.dk("talk")

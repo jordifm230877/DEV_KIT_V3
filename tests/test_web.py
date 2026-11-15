@@ -79,6 +79,17 @@ def test_the_board_lists_the_agents_and_the_tickets_of_each_epic(
     assert (access["done"], access["closed"]) == (0, False)
 
 
+def test_the_board_has_what_each_epic_is_for(project: Project, site: Site) -> None:
+    project.configure(coder=HELLO)
+    project.dk("epic", "Access", "--spec", "Goal: people get in.")
+    project.dk("add", "Sign in", "--spec", "a", "--epic", "Access")
+    project.dk("add", "Tidy", "--spec", "d")
+
+    loose, access = site("/api/board")["epics"]
+
+    assert (loose["description"], access["description"]) == ("", "Goal: people get in.")
+
+
 def test_the_board_says_what_is_finished_and_which_epics_are_closed(
     project: Project, site: Site
 ) -> None:

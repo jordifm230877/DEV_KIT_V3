@@ -139,12 +139,12 @@ _EXAMINER = """\
 You examine a ticket before anyone works on it. The current directory is a copy of the
 project; change nothing.
 
-{ticket}
+{ticket}{epic}
 Read AGENTS.md and docs/discovery.md if they exist, and the code the ticket touches. Find
 what a coder, or whoever writes its tests, would have to guess. Stop the ticket for:
 - words that can be read two ways, or a decision it leaves open;
 - an acceptance criterion nobody could check;
-- what contradicts AGENTS.md, docs/discovery.md or another part of the ticket;
+- what contradicts AGENTS.md, docs/discovery.md, its epic or another part of the ticket;
 - more than one piece of work in one ticket.
 Do not stop it over wording, or over what a competent coder decides alone: how to build it
 is theirs. What was added at its end answers earlier doubts; do not raise those again.
@@ -155,8 +155,10 @@ RESULT: question: <each doubt as a question that can be answered in a line, the 
 RESULT: blocked: <why this cannot be done>"""
 
 
-def examiner(ticket: int, title: str, spec: str) -> str:
-    return _EXAMINER.format(ticket=_ticket(ticket, title, spec))
+def examiner(about: str, epic: str, described: str) -> str:
+    """`about` is the ticket as agents are told it; `described`, what its epic is for."""
+    told = f"Its epic, {epic}:\n{described}\n" if described else ""
+    return _EXAMINER.format(ticket=about, epic=told)
 
 
 def vetting(ticket: int, title: str, spec: str, files: list[str]) -> str:

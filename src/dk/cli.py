@@ -190,6 +190,7 @@ def _execute(args: argparse.Namespace) -> None:
         "show": lambda: views.show(tickets, Workspace(project, home / "work"), args.ticket),
         "retry": lambda: orders.retry(tickets, args.ticket, args.note),
         "cancel": lambda: orders.cancel(tickets, args.ticket),
+        "epic": lambda: orders.epic(tickets, args.name, args.spec),
         "close": lambda: orders.close(tickets, args.epic),
         "reopen": lambda: orders.reopen(tickets, args.epic),
         "approve": lambda: orders.decide(

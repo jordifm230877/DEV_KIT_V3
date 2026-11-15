@@ -3,9 +3,9 @@
 - **Agent** — a program driven by a language model that is given one job at a time.
 - **Role** — what an agent is for: coder, verifier, QA, test-writer, examiner, auditor, Principal.
 - **Examiner** — the role of the agent that reads a ticket before any work and stops it over what would have to be guessed: words with two readings, a criterion nobody could check, a contradiction, two pieces of work in one.
-- **Epic** — a large piece of work agreed between the user and the Principal.
+- **Epic** — a large piece of work agreed between the user and the Principal. It is described under three headings: its goal, what it includes and what it excludes.
 - **Closed** — an epic marked complete with `dk close`; it shows as one line and takes no more tickets.
-- **Ticket** — one unit of work: what is wanted and its acceptance criteria.
+- **Ticket** — one unit of work, under three headings: what is wanted, its acceptance criteria and what is out of scope.
 - **Process** — the ordered list of steps every ticket goes through.
 - **Step** — one stage of the process, carried out by an agent, by the program or by the user.
 - **Outcome** — how a step ended: passed, failed (the work goes back to be redone), lost (the step gave nothing usable and is done again) or stopped (the user decides).

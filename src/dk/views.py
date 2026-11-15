@@ -131,7 +131,9 @@ def _facts(ticket: Ticket, steps: dict[int, str]) -> dict[str, object]:
     }
 
 
-def _epics(tickets: list[Ticket], closed: Collection[str]) -> Iterator[dict[str, object]]:
+def _epics(
+    tickets: list[Ticket], closed: Collection[str], described: dict[str, str]
+) -> Iterator[dict[str, object]]:
     """Each epic with its tickets; it follows the epics that tickets of its own follow."""
     steps = {ticket.id: ticket.step for ticket in tickets}
     home = {ticket.id: ticket.epic for ticket in tickets}
@@ -141,6 +143,7 @@ def _epics(tickets: list[Ticket], closed: Collection[str]) -> Iterator[dict[str,
         yield {
             "name": epic,
             "closed": epic in closed,
+            "description": described.get(epic, ""),
             "done": [ticket.step for ticket in inside].count(process.DONE),
             "follows": sorted(ahead - {epic, ""}),
             "tickets": [_facts(ticket, steps) for ticket in inside],
@@ -168,7 +171,7 @@ def data(what: str, project: Path, tickets: Tickets, workspace: Workspace) -> ob
     listed = tickets.all()
     if what == "board":
         agents = [*_team(config.load(project).agents, listed)]
-        return {"agents": agents, "epics": [*_epics(listed, tickets.closed())]}
+        return {"agents": agents, "epics": [*_epics(listed, tickets.closed(), tickets.described())]}
     if kind != "ticket" or not number.isdigit():
         raise LookupError(f"there is nothing called {what}")
     ticket = tickets.get(int(number))

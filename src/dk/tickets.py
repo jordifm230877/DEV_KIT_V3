@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS history (
     at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, what TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS closed (epic TEXT PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS epic (name TEXT PRIMARY KEY, description TEXT NOT NULL);
 """
 _LATER = (
     "worker TEXT NOT NULL DEFAULT ''",
@@ -155,6 +156,17 @@ class Tickets:
     def closed(self) -> set[str]:
         rows, _ = self._run("SELECT epic FROM closed")
         return {epic for (epic,) in rows}
+
+    def describe(self, epic: str, description: str) -> None:
+        """Say what an epic is for, in place of what was said before."""
+        self._run(
+            "INSERT OR REPLACE INTO epic (name, description) VALUES (?, ?)", epic, description
+        )
+
+    def described(self) -> dict[str, str]:
+        """What each epic that has a description is for."""
+        rows, _ = self._run("SELECT name, description FROM epic")
+        return dict(rows)
 
     def record(self, ticket: int, what: str) -> None:
         self._run("INSERT INTO history (ticket, what) VALUES (?, ?)", ticket, what)

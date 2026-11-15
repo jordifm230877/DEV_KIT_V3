@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 from collections.abc import Callable
 from pathlib import Path
 
@@ -128,11 +129,47 @@ def propose(args: argparse.Namespace, tickets: Tickets) -> None:
     print(f"#{number} proposed; it waits for the user to accept it or turn it down")
 
 
+TICKET = ("Wanted:", "Acceptance criteria:", "Out of scope:")
+EPIC = ("Goal:", "Includes:", "Excludes:")
+
+
+def _formed(text: str, headings: tuple[str, ...]) -> str:
+    """What an agent wrote, laid out under the headings every such text has. The user
+    writes as they like; an agent is refused a text that lacks a part."""
+    if not os.environ.get(agents.WHO):
+        return text
+    first, *rest = re.split("(" + "|".join(map(re.escape, headings)) + ")", text)
+    said = [body.strip() for body in rest[1::2]]
+    if first.strip() or tuple(rest[::2]) != headings or not all(said):
+        raise LookupError(f"write it as `{_form(headings)}`: each once, in this order, none empty")
+    return "\n\n".join(f"{heading}\n{body}" for heading, body in zip(headings, said, strict=True))
+
+
+def _form(headings: tuple[str, ...]) -> str:
+    return " ".join(f"{heading} ..." for heading in headings)
+
+
+def epic(tickets: Tickets, name: str, spec: str) -> None:
+    """Say what an epic is for, or show what was said."""
+    if spec:
+        tickets.describe(name, _formed(spec, EPIC))
+        print(f"{name} described")
+    elif name in tickets.described():
+        print(tickets.described()[name])
+    else:
+        raise LookupError(f"epic '{name}' has no description")
+
+
 def add(args: argparse.Namespace, tickets: Tickets) -> None:
     _open(tickets, args.epic)
+    spec = _formed(args.spec, TICKET)
+    if os.environ.get(agents.WHO) and args.epic and args.epic not in tickets.described():
+        raise LookupError(
+            f'say first what the epic is for: epic "{args.epic}" --spec "{_form(EPIC)}"'
+        )
     first = process.start(process.PROCESS).step
     tests = not args.no_behaviour_tests
-    number = tickets.add(args.title, args.spec, first, args.epic, args.after, tests)
+    number = tickets.add(args.title, spec, first, args.epic, args.after, tests)
     if args.no_behaviour_tests:
         tickets.record(number, "no behaviour tests: decided when the ticket was written")
     print(f"#{number} written")

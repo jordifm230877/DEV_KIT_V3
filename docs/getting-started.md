@@ -147,7 +147,9 @@ Tell the Principal what you want. While it is not yet clear what to build, it ex
 with you: it reads code, asks, and writes what was found and decided in
 `docs/discovery.md`. No ticket is written in that phase. When you say it is clear enough, it
 proposes epics and tickets, writes them once you agree, and the work starts behind the
-conversation. In Herdr the tab you are talking in is named `Principal` for as long as the conversation
+conversation. What it writes always has the same form: an epic says its goal, what it
+includes and what it excludes; a ticket what is wanted, its acceptance criteria and what is
+out of scope. `dk web` shows both. In Herdr the tab you are talking in is named `Principal` for as long as the conversation
 lasts, and you will see a `status` tab that says which agent is on which
 ticket and lists the unfinished tickets,
 and one tab per agent showing what it is doing. Outside Herdr, `dk status --watch` in
@@ -290,6 +292,7 @@ ticket by a scanner under `[checks]` than by an audit now and then.
 ```bash
 dk add "Title" --spec "What is wanted and how to tell it is done" --epic "Optional group"
 dk add "Next" --spec "..." --after 1    # not started until ticket 1 is merged
+dk epic "Optional group" --spec "Goal: ... Includes: ... Excludes: ..."   # what the epic is for
 dk add "Test server" --spec "..." --no-behaviour-tests   # changes nothing a user can see
 dk run            # work on every unfinished ticket, then exit
 dk status

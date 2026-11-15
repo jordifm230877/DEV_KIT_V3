@@ -270,6 +270,16 @@ Each step ends with something usable.
   (`--no-behaviour-tests`), not the step it starts at: every ticket starts at the first
   step, and the steps about behaviour tests are skipped for one that takes none. Starting
   such tickets further along would have carried them past the examiner.
+- What agents write has a fixed form, kept by the program and not by a model: a ticket
+  says `Wanted:`, `Acceptance criteria:` and `Out of scope:`, an epic `Goal:`, `Includes:`
+  and `Excludes:` (`dk epic NAME --spec ...`, which also replaces what was said). `dk`
+  refuses an agent a text that lacks a part, has one empty or out of order, and lays out
+  what it accepts with each heading on a line of its own; an agent must describe an epic
+  before writing tickets for it. An agent that rewrote the Principal's drafts was
+  considered and left out: it would know less than the Principal and could change what the
+  user had agreed. The user, typing by hand, writes as they like, and so does whoever
+  proposes a ticket: the examiner asks about what a proposal leaves open once it is
+  accepted. The examiner is told what the ticket's epic is for.
 
 ## Deliberately left out
 

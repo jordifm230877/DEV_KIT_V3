@@ -91,6 +91,7 @@ dk show 1         # the ticket and everything that happened to it
 dk web            # the same in your browser: agents, epics, tickets and their behaviour tests; changes nothing
 dk retry 1 --note "an answer"   # send a stopped ticket on again
 dk cancel 1       # give a ticket up; its unmerged work is thrown away
+dk epic "EPIC" --spec "Goal: ... Includes: ... Excludes: ..."   # say what an epic is for; without --spec, show it
 dk close "EPIC"   # mark an epic complete, once all its tickets are finished
 dk reopen "EPIC"  # open a closed epic again
 dk audit security # or performance, or tests: an `auditor` agent reports on the whole project in
