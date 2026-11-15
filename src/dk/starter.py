@@ -82,7 +82,8 @@ def _configuration(kind: Kind, model: str, program: str) -> str:
 def _rules(kind: Kind) -> str:
     listed = "\n".join(f"    {' '.join(argv)}" for argv in kind.checks.values())
     commands = (
-        "DevKit runs all of these on each ticket once its code is written; they must succeed:"
+        "DevKit runs all of these on each ticket once its code is written, and they must "
+        "succeed.\nWhile you work, run only the tests of what you change, not the whole suite:"
         f"\n\n{listed}"
         if listed
         else "<!-- List the commands that build and test the project. -->"
