@@ -38,6 +38,7 @@ def test_the_coder_is_told_the_ticket_and_nothing_about_the_process(project: Pro
     seen = project.merged("seen.txt")
     assert seen is not None
     assert "Greet" in seen and "Create greeting.txt saying hello." in seen
+    assert "in the background" in seen, "its own tool cuts off a command that runs long"
     assert len(seen.split()) < 150
 
 

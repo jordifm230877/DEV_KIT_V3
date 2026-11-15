@@ -54,6 +54,7 @@ def test_a_security_auditor_is_told_what_to_look_for_and_to_fix_nothing(project:
         assert part in told
     for rule in ("Do not fix", "what you observed", "could not check", "severity"):
         assert rule in told
+    assert "in the background" in told, "its own tool cuts off a command that runs long"
     assert "RESULT: done" in told and len(told.split()) < 300
 
 

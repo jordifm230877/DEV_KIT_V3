@@ -143,7 +143,7 @@ class Jobs:
             for other in self.tickets.all()
             if other.step != DONE and of(other.step) is PROCESS
         ]
-        about = briefs.about(ticket.id, ticket.title, ticket.spec, position.note)
+        about = briefs.about(ticket.id, ticket.title, ticket.spec, position.note) + briefs.LONG
         tools = self.config.audit_tools
         brief = audits.brief(about, where, tools, self.command, known, briefs.ALWAYS)
         return self._produce(agent, brief, ticket, where)

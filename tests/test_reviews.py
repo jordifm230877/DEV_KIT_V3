@@ -52,6 +52,7 @@ def test_a_reviewer_is_told_the_ticket_and_how_to_see_the_changes(project: Proje
     seen = (project.root.parent / "tools" / "seen.txt").read_text()
     assert "Greet" in seen and "Say hello." in seen
     assert f"git diff {project.git('rev-parse', 'HEAD~1')}" in seen
+    assert "in the background" in seen, "its own tool cuts off a command that runs long"
     assert len(seen.split()) < 200
 
 

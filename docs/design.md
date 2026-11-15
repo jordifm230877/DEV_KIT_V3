@@ -273,6 +273,10 @@ Each step ends with something usable.
   writer. Before, the board waited for each write, and counting what jobs spend made writes
   frequent: with the disk busy compiling, the board gave up after five seconds and ended
   with `database is locked`. Programs started before the change go on working with the list.
+- The coder, the reviewers and the auditor are told to run a command that takes minutes in
+  the background, with its output in a file. An agent program limits how long one command of
+  its agent may run, and DevKit cannot change that: Claude cut a QA's `cargo test` off at
+  ten minutes, and the ten minutes were lost.
 - An `examiner` reads each ticket first (step `examine`) and ends with `approved` or with
   its doubts as questions. Unclear tickets used to be found out late: by the tester when it
   could not write the scenarios, or by a coder who guessed. Nothing new carries the doubt:

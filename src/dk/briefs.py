@@ -20,30 +20,36 @@ you were told before."""
 
 ALWAYS = """\
 RESULT: blocked: <why this cannot be done>
-RESULT: question: <what you need to know from the user>"""
+RESULT: question: <what you need from the user>"""
+
+# Claude's tool for commands cut a QA's `cargo test` off at ten minutes; it had to start again.
+LONG = """\
+Run commands that take minutes in the background, output to a file: your tool cuts long
+ones off.
+"""
 
 _CODER = """\
-You are a coder. Work only inside the current directory, which is your own copy of the project.
+You are a coder. Work only inside the current directory, your own copy of the project.
 
 {ticket}{note}
 Make the changes the ticket asks for, with tests where the project has them.
-{quality}{tests}Do not commit or change anything outside this directory.
+{quality}{tests}{long}Do not commit or change anything outside this directory.
 Propose work the ticket does not cover, never do it:
 `{command} propose "TITLE" --spec "WHY"`
 
 End your reply with exactly one of these lines:
 RESULT: done
-RESULT: done: <one line, if the user must know: where you departed from the ticket, a doubt>
+RESULT: done: <one line the user must know: where you departed from the ticket, a doubt>
 {always}"""
 
 _QUALITY = """\
 How to work:
-- Write a failing test first, see it fail for the reason you expect, then make the smallest
+- Write a failing test first, see it fail as expected, then the smallest
   change that passes it. Fix causes, not symptoms.
 - Test what a user of the code sees, never its internals.
-- Before you finish, run these on the files you changed, where they are installed: `crapper`
-  (split or test any function scoring 10 or more), `dryer` (remove duplication it ranks 0.8
-  or more) and `mutator` (kill the mutants that survive, or say why one cannot matter).
+- Before finishing, run on the files you changed, where installed: `crapper` (split or
+  test functions scoring 10 or more), `dryer` (remove duplication ranked 0.8 or more),
+  `mutator` (kill surviving mutants, or say why one cannot matter).
 """
 
 _PROTECTED = """\
@@ -81,7 +87,7 @@ You are {who}. The current directory is a copy of the project with the work for 
 See what was changed with: git diff {base}
 
 {task}
-Do not change any file; anything you change is thrown away.
+{long}Do not change any file; anything you change is thrown away.
 
 End your reply with exactly one of these lines:
 RESULT: approved
@@ -210,6 +216,7 @@ def coder(
         tests=tests,
         command=command,
         always=ALWAYS,
+        long=LONG,
     )
 
 
@@ -219,9 +226,8 @@ def reviewer(
     who, task, with_behaviour_tests, with_quality_rules = _TASKS[role]
     task += with_behaviour_tests if behaviour else ""
     task += with_quality_rules if quality else ""
-    return _REVIEWER.format(
-        who=who, ticket=_ticket(ticket, title, spec), base=base, task=task, always=ALWAYS
-    )
+    about = _ticket(ticket, title, spec)
+    return _REVIEWER.format(who=who, ticket=about, base=base, task=task, long=LONG, always=ALWAYS)
 
 
 def tampering(files: list[str]) -> str:
