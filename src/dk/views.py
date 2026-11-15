@@ -118,6 +118,71 @@ def follow(log: Path) -> None:
         return
 
 
+def _facts(ticket: Ticket, steps: dict[int, str]) -> dict[str, object]:
+    """A ticket as the page shows it in a list."""
+    over = ticket.step in (process.DONE, process.CANCELLED)
+    kind = ticket.step if over else _kind(ticket, steps)
+    return {
+        **{name: getattr(ticket, name) for name in ("id", "title", "step", "attempts", "epic")},
+        **{name: getattr(ticket, name) for name in ("follows", "worker", "since")},
+        "kind": kind,
+        "note": ticket.note if ticket.stopped else "",
+        "waits": process.held_by(ticket.follows, steps) if kind == "held" else [],
+    }
+
+
+def _epics(tickets: list[Ticket], closed: Collection[str]) -> Iterator[dict[str, object]]:
+    """Each epic with its tickets; it follows the epics that tickets of its own follow."""
+    steps = {ticket.id: ticket.step for ticket in tickets}
+    home = {ticket.id: ticket.epic for ticket in tickets}
+    for epic in sorted({ticket.epic for ticket in tickets}):
+        inside = [ticket for ticket in tickets if ticket.epic == epic]
+        ahead = {home[number] for ticket in inside for number in ticket.follows}
+        yield {
+            "name": epic,
+            "closed": epic in closed,
+            "done": [ticket.step for ticket in inside].count(process.DONE),
+            "follows": sorted(ahead - {epic, ""}),
+            "tickets": [_facts(ticket, steps) for ticket in inside],
+        }
+
+
+def _team(team: Sequence[config.Agent], tickets: list[Ticket]) -> Iterator[dict[str, object]]:
+    """Each agent and the ticket it is on, and each check the program itself is running."""
+    busy = {ticket.worker: ticket for ticket in tickets if ticket.worker}
+    roles = {agent.name: agent.role for agent in team}
+    idle = [name for name, role in roles.items() if role != PRINCIPAL and name not in busy]
+    for name in sorted([*busy, *idle], key=[*roles, *busy].index):
+        on = busy.get(name)
+        yield {
+            "name": name,
+            "role": roles.get(name, ""),
+            "ticket": on.id if on else None,
+            "since": on.since if on else "",
+        }
+
+
+def data(what: str, project: Path, tickets: Tickets, workspace: Workspace) -> object:
+    """What the page asks for: `board`, or `ticket/N`."""
+    kind, _, number = what.partition("/")
+    listed = tickets.all()
+    if what == "board":
+        agents = [*_team(config.load(project).agents, listed)]
+        return {"agents": agents, "epics": [*_epics(listed, tickets.closed())]}
+    if kind != "ticket" or not number.isdigit():
+        raise LookupError(f"there is nothing called {what}")
+    ticket = tickets.get(int(number))
+    position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+    files = sorted(ticket.protected)
+    return {
+        **_facts(ticket, {other.id: other.step for other in listed}),
+        "spec": ticket.spec,
+        "history": tickets.history(ticket.id),
+        "approval": process.waiting(process.PROCESS, position),
+        "tests": [{"name": name, "text": workspace.text(ticket.id, name)} for name in files],
+    }
+
+
 def show(tickets: Tickets, workspace: Workspace, number: int) -> None:
     ticket = tickets.get(number)
     epic = [f"Epic: {ticket.epic}"] if ticket.epic else []

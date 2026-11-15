@@ -58,7 +58,8 @@ request.
 | `screen` | One Herdr tab per agent, showing what it is doing, and one for the board; watch-only | Affect the run |
 | `starter` | Writes a first `devkit.toml` and `AGENTS.md` (`dk init`) | Overwrite anything |
 | `preflight` | Finds what would stop the first ticket (`dk check`); a composer | Change anything |
-| `views` | What the user is shown: the ticket list, the board, one ticket, an agent's work as it happens; a composer | Change anything |
+| `views` | What the user is shown: the ticket list, the board, one ticket, an agent's work as it happens, and the same as data for the web page; a composer | Change anything |
+| `web` | A web server for this computer only: hands out the page in `pages/` and answers with data it is given | Know what a ticket is |
 | `paint` | Colour for one line of an agent's work or of the board | Know agents or tickets |
 | `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
 | conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve, finish tickets or skip steps |
@@ -247,8 +248,18 @@ Each step ends with something usable.
 - Only one program works on a project at a time (`dk run`, `dk talk`, `dk night`), held by a
   lock file in `.devkit/`. A night shift that starts by itself could otherwise take the same
   tickets as a conversation left open.
+- `dk web` shows the board, the epics and each ticket with its behaviour tests in a browser,
+  because long Gherkin files and a list of twenty tickets were hard to review in a terminal.
+  It reads the same ticket list as the commands and changes nothing, so it needs no
+  protection yet: approving from the page would let an agent on the same computer approve
+  its own tests, and must come with a key only the user sees. The page is plain HTML, CSS
+  and JavaScript with no build step and asks again every two seconds, as the board does. An
+  epic follows another when one of its tickets follows a ticket of the other; that is worked
+  out, not stored, so it cannot disagree with the tickets. Looked at with the real trial
+  project in a browser, wide and narrow.
 
 ## Deliberately left out
 
-Beads, a web dashboard, backups and retention, several projects in one database, a separate
-watcher process for Git, per-role credentials, resuming a job exactly where it was.
+Beads, backups and retention, several projects in one database, a separate watcher process
+for Git, per-role credentials, resuming a job that was cut off or failed (only one that
+stopped to ask is picked up again), changing anything from the web page.

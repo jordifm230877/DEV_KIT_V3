@@ -13,7 +13,19 @@ from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 
-from dk import agents, briefs, config, nightly, orders, preflight, principal, screen, starter, views
+from dk import (
+    agents,
+    briefs,
+    config,
+    nightly,
+    orders,
+    preflight,
+    principal,
+    screen,
+    starter,
+    views,
+    web,
+)
 from dk.director import Director
 from dk.jobs import PRINCIPAL
 from dk.tickets import Tickets
@@ -75,6 +87,8 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("cancel", help="give a ticket up and throw its work away").add_argument(
         "ticket", type=int
     )
+    site = commands.add_parser("web", help="show the agents and the tickets in a browser")
+    site.add_argument("--port", type=int, default=8642, help="where on this computer; 0 for any")
     follow = commands.add_parser("follow", help="show a file of an agent's work, in colour")
     follow.add_argument("log", type=Path)
     commands.add_parser("close", help="mark an epic as complete").add_argument("epic")
@@ -237,6 +251,11 @@ def _execute(args: argparse.Namespace) -> None:
             else views.status(tickets.all(), closed=tickets.closed())
         ),
         "follow": lambda: views.follow(args.log),
+        "web": lambda: web.serve(
+            args.port,
+            lambda what: views.data(what, project, tickets, Workspace(project, home / "work")),
+            lambda address: print(f"the tickets of this project are at {address}", flush=True),
+        ),
         "show": lambda: views.show(tickets, Workspace(project, home / "work"), args.ticket),
         "retry": lambda: orders.retry(tickets, args.ticket, args.note),
         "cancel": lambda: orders.cancel(tickets, args.ticket),

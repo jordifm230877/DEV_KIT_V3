@@ -43,6 +43,12 @@ class Workspace:
                 self._must(self._project, "worktree", "add", "-q", "-B", branch, str(copy))
         return copy
 
+    def text(self, ticket: int, name: str) -> str:
+        """What a file of the ticket says: in its copy, or in the project once that is gone."""
+        copy = self._copy(ticket)
+        file = (copy if copy.exists() else self._project) / name
+        return file.read_text() if file.is_file() else ""
+
     def save(self, ticket: int, message: str) -> bool:
         """Record what the agent left. Returns whether the ticket has any work to show."""
         copy = self._copy(ticket)

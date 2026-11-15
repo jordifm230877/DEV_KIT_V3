@@ -145,7 +145,8 @@ conversation. In Herdr the tab you are talking in is named `Principal` for as lo
 lasts, and you will see a `status` tab that says which agent is on which
 ticket and lists the unfinished tickets,
 and one tab per agent showing what it is doing. Outside Herdr, `dk status --watch` in
-another terminal shows the same board. Ask the Principal how things are going
+another terminal shows the same board, and `dk web` shows it in your browser, with every
+ticket and its behaviour tests a click away. Ask the Principal how things are going
 whenever you like. Leaving the conversation (Ctrl-D) stops the work; whatever was half done
 is redone next time.
 
@@ -185,7 +186,8 @@ undoes it.
 With a tester in the configuration, every ticket starts with Gherkin scenarios
 (`.feature` files) that you approve before any code is written. If there is a verifier, it
 looks them over first and sends back any that are not about what a user of the product sees,
-so what reaches you is already filtered. Say in `AGENTS.md` where
+so what reaches you is already filtered. They are easiest to read in the page of `dk web`.
+Say in `AGENTS.md` where
 the scenarios go and where the code that connects them to your product goes (for `behave`,
 `features/` and `features/steps/`). Without that, scenarios go under `features/`.
 

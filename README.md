@@ -82,6 +82,7 @@ dk add "Greeting" --spec "Create greeting.txt containing hello."   # optionally 
 dk run            # work on every unfinished ticket
 dk status         # one line per ticket; --watch keeps showing agents and unfinished tickets
 dk show 1         # the ticket and everything that happened to it
+dk web            # the same in your browser: agents, epics, tickets and their behaviour tests; changes nothing
 dk retry 1 --note "an answer"   # send a stopped ticket on again
 dk cancel 1       # give a ticket up; its unmerged work is thrown away
 dk close "EPIC"   # mark an epic complete, once all its tickets are finished
