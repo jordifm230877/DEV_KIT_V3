@@ -63,7 +63,7 @@ request.
 | `starter` | Writes a first `devkit.toml` and `AGENTS.md` (`dk init`) | Overwrite anything |
 | `preflight` | Finds what would stop the first ticket (`dk check`); a composer | Change anything |
 | `views` | What the user is shown: the ticket list, the board, one ticket, an agent's work as it happens, and the same as data for the web page; a composer | Change anything |
-| `web` | A web server for this computer only: hands out the page in `pages/` and answers with data it is given | Know what a ticket is |
+| `web` | A web server for this computer and its network: hands out the page in `pages/` and answers with data it is given | Know what a ticket is |
 | `paint` | Colour for one line of an agent's work or of the board | Know agents or tickets |
 | `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
 | conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve, finish tickets or skip steps |
@@ -260,7 +260,9 @@ Each step ends with something usable.
   and JavaScript with no build step and asks again every two seconds, as the board does. An
   epic follows another when one of its tickets follows a ticket of the other; that is worked
   out, not stored, so it cannot disagree with the tickets. Looked at with the real trial
-  project in a browser, wide and narrow.
+  project in a browser, wide and narrow. It answers every computer of the network, because
+  the user looks at it from another one; anyone on that network can read the tickets, which
+  is one more reason not to let the page change anything without a key.
 - What a job spends of its model is counted from what the agent's program prints: the tokens
   sent to the model and the tokens it wrote. The board and the page show it for the job
   going on, and the ticket's history keeps it for each job that ended. Each call to the

@@ -1,4 +1,4 @@
-"""A small web server for this computer only: it hands out a page and answers with data.
+"""A small web server for this computer and its network: it hands out a page and answers with data.
 
 It knows nothing about tickets; whoever starts it says what the data is.
 """
@@ -6,6 +6,7 @@ It knows nothing about tickets; whoever starts it says what the data is.
 from __future__ import annotations
 
 import json
+import socket
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -47,13 +48,23 @@ class _Answers(BaseHTTPRequestHandler):
         return  # every look of the page would otherwise fill the terminal
 
 
+def _reached() -> str:
+    """The address by which other computers of the network reach this one; its own, if none."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+        try:
+            probe.connect(("192.0.2.1", 9))  # sends nothing; the system says which it would use
+        except OSError:
+            return "127.0.0.1"
+        return str(probe.getsockname()[0])
+
+
 def serve(port: int, data: Callable[[str], object], started: Callable[[str], object]) -> None:
-    """Answer browsers on this computer until interrupted. `/api/<what>` is answered with
-    `data(what)`, which raises LookupError for what is not there; anything else is one of
-    the page's own files. `started` is told the address; port 0 takes any free one."""
+    """Answer browsers on this computer and its network until interrupted. `/api/<what>` is
+    answered with `data(what)`, which raises LookupError for what is not there; anything else
+    is one of the page's own files. `started` is told the address; port 0 takes any free one."""
     answers = type("Answers", (_Answers,), {"data": staticmethod(data)})
-    with ThreadingHTTPServer(("127.0.0.1", port), answers) as server:
-        started(f"http://127.0.0.1:{server.server_port}/")
+    with ThreadingHTTPServer(("0.0.0.0", port), answers) as server:
+        started(f"http://{_reached()}:{server.server_port}/")
         try:
             server.serve_forever()
         except KeyboardInterrupt:

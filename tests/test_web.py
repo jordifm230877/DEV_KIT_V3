@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import socket
 from urllib.error import HTTPError
 
 import pytest
@@ -149,3 +150,15 @@ def test_the_page_and_its_parts_are_served(project: Project, site: Site) -> None
 
     assert "<title>DevKit</title>" in page
     assert "api/" in site("/page.js") and "body" in site("/page.css")
+
+
+def test_the_site_answers_other_computers_of_the_network(project: Project, site: Site) -> None:
+    """The user looks at the board from another computer; it answered only its own."""
+    project.configure(coder=HELLO)
+    address = (project.root.parent / "tools" / "site.txt").read_text()
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+        probe.connect(("192.0.2.1", 9))  # sends nothing; says which address reaches outside
+        mine = probe.getsockname()[0]
+
+    assert address.startswith(f"http://{mine}:"), "the address it gives is one others can use"
+    assert site("/api/board")["agents"][0]["name"] == "coder-1"
