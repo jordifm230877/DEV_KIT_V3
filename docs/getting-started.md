@@ -60,6 +60,12 @@ program = "pi"
 model = "openai-codex/gpt-6.1-sol"
 
 [[agents]]
+name = "examiner-1"     # reads each ticket first and asks what is not clear
+role = "examiner"
+program = "pi"
+model = "openai-codex/gpt-6.1-sol"
+
+[[agents]]
 name = "coder-1"
 role = "coder"
 program = "pi"
@@ -94,7 +100,7 @@ git add devkit.toml && git commit -m "Configure DevKit"
 
 Things to know:
 
-- **Only the coder is required.** Leave out the verifier or QA and that review is skipped.
+- **Only the coder is required.** Leave out the examiner, the verifier or QA and that review is skipped.
   Leave out the principal and you write tickets yourself with `dk add`. Leave out the
   tester, together with the `behaviour` check, and tickets go straight to the coder.
 - **The `behaviour` check** is `behave` for Python, your Cucumber command for Java.
@@ -166,6 +172,7 @@ Herdr shows a notification, and `dk status` shows the ticket as stopped with the
 | It says | What to do |
 |---|---|
 | `question: ...` or `blocked: ...` | Tell the Principal your answer, or `dk retry N --note "answer"`; the agent goes on from where it stopped |
+| `question: ...` at the step `examine` | The examiner found the ticket unclear. Answer its questions the same way; it reads the ticket again with your answer |
 | a check or review failed too many times | Read `dk show N`, then `dk retry N --note "hint"` for a fresh set of attempts |
 | `the merge could not be done` | Usually your own uncommitted changes are in the way. Commit or move them, then `dk retry N` |
 | `the behaviour tests are ready for you` | See the next section |

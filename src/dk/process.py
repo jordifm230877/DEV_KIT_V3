@@ -23,12 +23,14 @@ class Step:
     kind: Literal["work", "review", "user", "checks", "merge"]
     role: str = ""
     required: bool = False  # a step whose role nobody has is skipped, unless required
+    behaviour: bool = False  # about behaviour tests; skipped for a ticket that takes none
 
 
 PROCESS: tuple[Step, ...] = (
-    Step("specify", "work", "tester"),
-    Step("vet", "review", "verifier"),
-    Step("approve", "user", "tester"),
+    Step("examine", "review", "examiner"),
+    Step("specify", "work", "tester", behaviour=True),
+    Step("vet", "review", "verifier", behaviour=True),
+    Step("approve", "user", "tester", behaviour=True),
     Step("code", "work", "coder", required=True),
     Step("check", "checks"),
     Step("verify", "review", "verifier"),
@@ -96,11 +98,9 @@ class Position:
         return self.stopped or self.step in (DONE, CANCELLED, PROPOSED)
 
 
-def start(process: Sequence[Step], behaviour_tests: bool = True) -> Position:
-    """Where a new ticket begins: at the first step, or past the user's approval when it
-    was written as one that needs no behaviour tests."""
-    asks = [index for index, step in enumerate(process) if step.kind == "user"]
-    return Position(process[0 if behaviour_tests or not asks else asks[-1] + 1].name)
+def start(process: Sequence[Step]) -> Position:
+    """Where a new ticket begins."""
+    return Position(process[0].name)
 
 
 def _rework(process: Sequence[Step], step: str) -> str:
@@ -139,12 +139,14 @@ def held_by(follows: Sequence[int], steps: Mapping[int, str]) -> list[int]:
     return [number for number in follows if steps[number] not in (DONE, CANCELLED)]
 
 
-def preparing(step: str, roles: Collection[str]) -> bool:
+def preparing(step: str, roles: Collection[str], behaviour: bool = True) -> bool:
     """Whether work from this step ends with the user's decision before anything is built;
-    `roles` are those somebody has, for a step whose role nobody has is skipped."""
+    `roles` are those somebody has, for a step whose role nobody has is skipped, and so
+    are the steps about behaviour tests for a ticket that takes none (`behaviour` false)."""
     names = [one.name for one in PROCESS]
     ahead = PROCESS[names.index(step) :] if step in names else ()
-    decisive = (one for one in ahead if one.required or (one.kind == "user" and one.role in roles))
+    asked = [one for one in ahead if one.role in roles and (behaviour or not one.behaviour)]
+    decisive = (one for one in ahead if one.required or (one.kind == "user" and one in asked))
     return any(one.kind == "user" for one in [*decisive][:1])
 
 

@@ -303,4 +303,4 @@ def test_a_first_configuration_can_name_the_program(project: Project) -> None:
     project.dk("init", "--model", "sonnet", "--program", "claude")
 
     written = (project.root / "devkit.toml").read_text()
-    assert written.count('program = "claude"') == 5 and '"pi"' not in written
+    assert written.count('program = "claude"') == 6 and '"pi"' not in written

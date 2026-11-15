@@ -16,7 +16,9 @@ one page, the design has grown too much.
 ## The development cycle
 
 1. The user and the Principal discuss what to build and write one or more **epics**.
-2. Epics are split into **tickets**: what is wanted, and the acceptance criteria.
+2. Epics are split into **tickets**: what is wanted, and the acceptance criteria. If there
+   is an examiner, it reads each ticket before any work and stops it over what a coder
+   would have to guess; the Principal or the user answers, and it goes on.
 3. A test-writer agent turns each ticket into **behaviour tests** in Gherkin
    ("given, when, then"), as `.feature` files. If there is a verifier, it looks them over
    first and sends back scenarios that are not about what a user of the product sees.
@@ -258,6 +260,16 @@ Each step ends with something usable.
   epic follows another when one of its tickets follows a ticket of the other; that is worked
   out, not stored, so it cannot disagree with the tickets. Looked at with the real trial
   project in a browser, wide and narrow.
+- An `examiner` reads each ticket first (step `examine`) and ends with `approved` or with
+  its doubts as questions. Unclear tickets used to be found out late: by the tester when it
+  could not write the scenarios, or by a coder who guessed. Nothing new carries the doubt:
+  it stops the ticket as any question does, the Principal answers what the project already
+  decides, the user the rest, and the examiner picks its job up again with the answer. It
+  judges what is asked, never how the ticket is worded.
+- Whether behaviour tests are written for a ticket is something the ticket says
+  (`--no-behaviour-tests`), not the step it starts at: every ticket starts at the first
+  step, and the steps about behaviour tests are skipped for one that takes none. Starting
+  such tickets further along would have carried them past the examiner.
 
 ## Deliberately left out
 

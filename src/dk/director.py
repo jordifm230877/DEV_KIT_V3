@@ -96,13 +96,15 @@ class Director:
         """As many tickets are built at once as there are coders, so that with one coder
         each is built on the one before it; preparing behaviour tests does not count."""
         steps = {other.id: other.step for other in tickets}
+        known = {other.id: other for other in tickets}
         waiting = _position(ticket).final or held_by(ticket.follows, steps)
         if ticket.id in active or waiting or len(active) > len(self.config.agents):
             return False
         roles = self._free.keys()
-        building = sum(not preparing(steps[number], roles) for number in active)
+        prepared = [preparing(known[n].step, roles, known[n].behaviour) for n in active]
+        building = len(prepared) - sum(prepared)
         coders = max(len(self.config.with_role("coder")), 1)
-        return preparing(ticket.step, roles) or building < coders
+        return preparing(ticket.step, roles, ticket.behaviour) or building < coders
 
     def _reserve(self, ticket: Ticket) -> tuple[bool, Agent | None]:
         """Whether the ticket's step can start now, and the agent taken for it if it needs
@@ -175,6 +177,8 @@ class Director:
         if step.kind == "merge":
             with self._merging:
                 return self._merge(ticket, logs)
+        if step.behaviour and not ticket.behaviour:
+            return Skipped()
         if step.role not in self._free:
             if step.required:
                 raise ConfigError(f"no agent has the role '{step.role}'")
@@ -184,6 +188,7 @@ class Director:
             return Stopped(briefs.approval(ticket.id))
         work = self.jobs
         jobs = {"specify": work.specify, "vet": work.vet, "code": work.code, "audit": work.audit}
+        jobs["examine"] = work.examine
         job = jobs.get(step.name, work.review)
         agent = agent or self._free[step.role].get()
         try:

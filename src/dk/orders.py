@@ -70,7 +70,7 @@ def reopen(tickets: Tickets, epic: str) -> None:
 
 def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: bool) -> None:
     """The user's word on a proposed ticket: it becomes a ticket like any other, or is given up."""
-    first = process.start(process.PROCESS, tests) if accepted else process.Position(CANCELLED)
+    first = process.start(process.PROCESS) if accepted else process.Position(CANCELLED)
     tickets.move(number, *vars(first).values())
     if not accepted:
         tickets.record(number, f"turned down by the user: {reason}")
@@ -78,6 +78,7 @@ def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: b
         return
     tickets.record(number, "accepted by the user")
     if not tests:
+        tickets.untested(number)
         tickets.record(number, "no behaviour tests: decided when the ticket was accepted")
     print(f"#{number} accepted; it will start at {first.step} on the next run")
 
@@ -129,8 +130,9 @@ def propose(args: argparse.Namespace, tickets: Tickets) -> None:
 
 def add(args: argparse.Namespace, tickets: Tickets) -> None:
     _open(tickets, args.epic)
-    first = process.start(process.PROCESS, not args.no_behaviour_tests).step
-    number = tickets.add(args.title, args.spec, first, args.epic, args.after)
+    first = process.start(process.PROCESS).step
+    tests = not args.no_behaviour_tests
+    number = tickets.add(args.title, args.spec, first, args.epic, args.after, tests)
     if args.no_behaviour_tests:
         tickets.record(number, "no behaviour tests: decided when the ticket was written")
     print(f"#{number} written")

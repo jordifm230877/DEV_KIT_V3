@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS ticket (
     stopped INTEGER NOT NULL DEFAULT 0, protected TEXT NOT NULL DEFAULT '{}',
     epic TEXT NOT NULL DEFAULT '', follows TEXT NOT NULL DEFAULT '[]',
     worker TEXT NOT NULL DEFAULT '', since TEXT NOT NULL DEFAULT '',
-    asking TEXT NOT NULL DEFAULT 'null'
+    asking TEXT NOT NULL DEFAULT 'null', behaviour INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS history (
     id INTEGER PRIMARY KEY, ticket INTEGER NOT NULL REFERENCES ticket(id),
@@ -33,6 +33,7 @@ _LATER = (
     "worker TEXT NOT NULL DEFAULT ''",
     "since TEXT NOT NULL DEFAULT ''",
     "asking TEXT NOT NULL DEFAULT 'null'",
+    "behaviour INTEGER NOT NULL DEFAULT 1",
 )
 
 
@@ -60,15 +61,17 @@ class Ticket:
     worker: str  # the agent doing a job on it right now, if any
     since: str  # when that job started, in the user's own time
     asking: Asking | None
+    behaviour: bool  # whether behaviour tests are written for it before any code
 
 
 def _ticket(*row: Any) -> Ticket:
-    number, title, spec, step, tries, note, stop, files, epic, follows, worker, since, left = row
+    *first, stop, files, epic, follows, worker, since, left, behaviour = row
+    number, title, spec, step, tries, note = first
     asking = Asking(*json.loads(left)) if json.loads(left) else None
     files, follows = json.loads(files), json.loads(follows)
     return Ticket(
         *(number, title, spec, step, tries, note, bool(stop)),
-        *(files, epic, follows, worker, since, asking),
+        *(files, epic, follows, worker, since, asking, bool(behaviour)),
     )
 
 
@@ -88,12 +91,16 @@ class Tickets:
             done = self._db.execute(statement, values)
             return done.fetchall(), done.lastrowid
 
-    def add(self, title: str, spec: str, step: str, epic: str, follows: list[int]) -> int:
+    def add(
+        self, title: str, spec: str, step: str, epic: str, follows: list[int], tests: bool = True
+    ) -> int:
+        """`tests` says whether behaviour tests are written for it before any code."""
         for earlier in follows:
             self.get(earlier)
         _, number = self._run(
-            "INSERT INTO ticket (title, spec, step, epic, follows) VALUES (?, ?, ?, ?, ?)",
-            *(title, spec, step, epic, json.dumps(follows)),
+            "INSERT INTO ticket (title, spec, step, epic, follows, behaviour)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            *(title, spec, step, epic, json.dumps(follows), tests),
         )
         assert number is not None
         return number
@@ -101,7 +108,7 @@ class Tickets:
     def all(self) -> list[Ticket]:
         rows, _ = self._run(
             "SELECT id, title, spec, step, attempts, note, stopped, protected, epic, follows,"
-            " worker, since, asking FROM ticket ORDER BY id"
+            " worker, since, asking, behaviour FROM ticket ORDER BY id"
         )
         return [_ticket(*row) for row in rows]
 
@@ -128,6 +135,10 @@ class Tickets:
         """Say which agent is doing a job on the ticket right now; nobody, with ""."""
         now = f"{datetime.now():%Y-%m-%d %H:%M}"
         self._run("UPDATE ticket SET worker = ?, since = ? WHERE id = ?", worker, now, ticket)
+
+    def untested(self, ticket: int) -> None:
+        """Have no behaviour tests written for the ticket."""
+        self._run("UPDATE ticket SET behaviour = 0 WHERE id = ?", ticket)
 
     def leave(self, ticket: int, asking: Asking | None) -> None:
         """Remember the job an agent left to ask; with None, that there is none."""

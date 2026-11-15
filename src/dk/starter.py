@@ -10,7 +10,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-TEAM = ("principal", "tester", "coder", "verifier", "qa")
+TEAM = ("principal", "examiner", "tester", "coder", "verifier", "qa")
 
 
 @dataclass(frozen=True)
