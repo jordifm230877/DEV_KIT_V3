@@ -54,6 +54,20 @@ def test_the_reviewer_is_told_what_makes_a_scenario_good(project: Project) -> No
         assert rule in brief
 
 
+def test_the_reviewer_refuses_scenarios_that_would_stop_the_ticket_later(
+    project: Project,
+) -> None:
+    project.configure(coder=HELLO, tester=TESTER, verifier=VERIFIER)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    brief = asked(project)[0]
+    assert "without running the project's whole test suite" in brief
+    assert "valid Gherkin" in brief and "starts with a keyword" in brief
+    assert len(brief.split()) < 200
+
+
 def test_without_behaviour_tests_there_is_nothing_to_look_over(project: Project) -> None:
     project.configure(coder=HELLO, verifier=VERIFIER)
     project.dk("add", "Greet", "--spec", "Say hello.")

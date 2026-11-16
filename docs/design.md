@@ -301,6 +301,12 @@ Each step ends with something usable.
   input, limits, work that fails halfway, is cancelled or times out) and names each case
   with no test. No ticket asks anyone for that, and asking it of the coder or the verifier
   would lengthen every ticket; the audit runs at night and proposes tickets for what it finds.
+- The test-writer and the verifier who looks its scenarios over are told two things that
+  each stopped a ticket only once it reached the coder: no scenario may need the project's
+  whole test suite run (one ran it twice from inside itself, and no check ended within its
+  thirty minutes), and no line of free text may start with a Gherkin keyword (a description
+  line starting with `Scenarios` left an approved file unreadable). DevKit parses no Gherkin
+  itself: the project's own runner is what decides, and the verifier may use it.
 - An audit does not take up a coder: tickets are built while it goes on. Counted as a ticket
   being built, an audit of the tests of fifty minutes kept three approved tickets waiting
   with the one coder idle. The auditor already works in its own copy; its report describes

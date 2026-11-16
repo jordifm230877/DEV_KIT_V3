@@ -202,6 +202,21 @@ def test_the_test_writer_is_told_that_scenarios_must_stay_true(project: Project)
     assert "stay true" in brief and "later tickets" in brief
 
 
+def test_the_test_writer_is_told_what_would_stop_the_ticket_later(project: Project) -> None:
+    """One approved scenario ran the whole suite from inside it, twice, and no check could
+    end in time; another could not be read, a line of its text starting with `Scenarios`."""
+    tester = "pathlib.Path(sys.argv[0]).with_name('brief.txt').write_text(prompt)\n" + TESTER
+    project.configure(coder=HELLO, tester=tester)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    brief = (project.root.parent / "tools" / "brief.txt").read_text()
+    assert "No scenario may need the project's whole test suite run" in brief
+    assert "No line of free text starts with a Gherkin keyword" in brief
+    assert len(brief.split()) < 200
+
+
 def test_a_test_writer_asked_again_is_told_its_earlier_scenarios_are_its_to_rewrite(
     project: Project,
 ) -> None:

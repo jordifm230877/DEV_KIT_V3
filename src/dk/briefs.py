@@ -68,6 +68,8 @@ Write one scenario for each thing the ticket asks for, in plain words that someo
 not program can check. Scenarios are kept and must stay true while later tickets change the
 product: describe what a user of the product sees, never this change itself ("nothing else
 changed", "the checks pass", "no dependency was added").
+No scenario may need the project's whole test suite run: scenarios are checked inside it.
+No line of free text starts with a Gherkin keyword (`Scenarios`, `Examples`, `Rule`).
 Write only .feature files: no code and no step definitions.
 {mine}Do not commit and do not change anything outside this directory.
 
@@ -137,7 +139,10 @@ Reject them unless every scenario:
 - will stay true while later tickets change the product: nothing about this change itself,
   about what was left unchanged, or about commits, checks, reviews and reports;
 - is something the ticket asks for;
-- can be checked by running the product.
+- can be checked by running the product, without running the project's whole test suite:
+  scenarios are checked inside it.
+Reject a file that is not valid Gherkin: one where a line of free text starts with a keyword
+(`Scenarios`, `Examples`, `Rule`) cannot be read.
 Do not change any file; anything you change is thrown away.
 
 End your reply with exactly one of these lines:
