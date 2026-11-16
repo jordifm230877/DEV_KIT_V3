@@ -150,6 +150,12 @@ def preparing(step: str, roles: Collection[str], behaviour: bool = True) -> bool
     return any(one.kind == "user" for one in [*decisive][:1])
 
 
+def building(step: str, roles: Collection[str], behaviour: bool = True) -> bool:
+    """Whether a ticket at this step takes up a coder. An audit does not: counted as one, it
+    kept every approved ticket waiting for as long as it lasted."""
+    return of(step) is PROCESS and not preparing(step, roles, behaviour)
+
+
 def cancel(position: Position) -> Position:
     """The ticket is given up, wherever it was; finished work stays finished."""
     if position.step in (DONE, CANCELLED):

@@ -104,6 +104,47 @@ def test_tickets_go_on_as_before_beside_an_audit(project: Project) -> None:
     assert project.merged(report("security")) is not None
 
 
+def test_a_ticket_is_built_while_an_audit_goes_on(project: Project) -> None:
+    """With one coder, an audit of fifty minutes kept three approved tickets waiting."""
+    mark = "pathlib.Path(sys.argv[0]).with_name('built')"
+    waits = f"""
+import time
+deadline = time.monotonic() + 5
+while time.monotonic() < deadline and not {mark}.exists():
+    time.sleep(0.05)
+pathlib.Path('docs/audits').mkdir(parents=True)
+pathlib.Path(re.search(r"docs/audits/\\S+\\.md", prompt).group(0)).write_text(
+    'built meanwhile\\n' if {mark}.exists() else 'nothing was built\\n')
+print('RESULT: done')
+"""
+    project.configure(coder=f"{mark}.write_text('')\n{HELLO}", auditor="import re" + waits)
+    project.dk("audit", "security")
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    assert project.merged(report("security")) == "built meanwhile\n"
+
+
+def test_an_audit_begins_while_a_ticket_is_built(project: Project) -> None:
+    mark = "pathlib.Path(sys.argv[0]).with_name('audited')"
+    waits = f"""
+import time
+deadline = time.monotonic() + 5
+while time.monotonic() < deadline and not {mark}.exists():
+    time.sleep(0.05)
+pathlib.Path('greeting.txt').write_text('audited meanwhile' if {mark}.exists() else 'alone')
+print('RESULT: done')
+"""
+    project.configure(coder=waits, auditor=f"{mark}.write_text('')\n{AUDITS}")
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("audit", "security")
+
+    project.dk("run")
+
+    assert project.merged("greeting.txt") == "audited meanwhile"
+
+
 TOOLS = '[audit]\ntools = ["cargo-audit", "gitleaks"]\n'
 
 

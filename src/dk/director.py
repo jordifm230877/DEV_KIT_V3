@@ -27,9 +27,9 @@ from dk.process import (
     Step,
     Stopped,
     advance,
+    building,
     held_by,
     of,
-    preparing,
     retry,
 )
 from dk.tickets import Ticket, Tickets
@@ -94,17 +94,16 @@ class Director:
 
     def _may_start(self, ticket: Ticket, tickets: list[Ticket], active: Collection[int]) -> bool:
         """As many tickets are built at once as there are coders, so that with one coder
-        each is built on the one before it; preparing behaviour tests does not count."""
+        each is built on the one before it; preparing behaviour tests and audits do not count."""
         steps = {other.id: other.step for other in tickets}
         known = {other.id: other for other in tickets}
         waiting = _position(ticket).final or held_by(ticket.follows, steps)
         if ticket.id in active or waiting or len(active) > len(self.config.agents):
             return False
         roles = self._free.keys()
-        prepared = [preparing(known[n].step, roles, known[n].behaviour) for n in active]
-        building = len(prepared) - sum(prepared)
+        built = sum(building(known[n].step, roles, known[n].behaviour) for n in active)
         coders = max(len(self.config.with_role("coder")), 1)
-        return preparing(ticket.step, roles, ticket.behaviour) or building < coders
+        return not building(ticket.step, roles, ticket.behaviour) or built < coders
 
     def _reserve(self, ticket: Ticket) -> tuple[bool, Agent | None]:
         """Whether the ticket's step can start now, and the agent taken for it if it needs
