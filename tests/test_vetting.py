@@ -68,6 +68,20 @@ def test_the_reviewer_refuses_scenarios_that_would_stop_the_ticket_later(
     assert len(brief.split()) < 200
 
 
+def test_the_reviewer_refuses_scenarios_that_repeat_what_is_already_checked(
+    project: Project,
+) -> None:
+    project.configure(coder=HELLO, tester=TESTER, verifier=VERIFIER)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    brief = asked(project)[0]
+    assert "checks nothing an existing scenario already checks" in brief
+    assert "telling cases, not every value" in brief
+    assert len(brief.split()) < 200
+
+
 def test_without_behaviour_tests_there_is_nothing_to_look_over(project: Project) -> None:
     project.configure(coder=HELLO, verifier=VERIFIER)
     project.dk("add", "Greet", "--spec", "Say hello.")

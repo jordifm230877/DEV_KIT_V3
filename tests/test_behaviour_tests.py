@@ -217,6 +217,21 @@ def test_the_test_writer_is_told_what_would_stop_the_ticket_later(project: Proje
     assert len(brief.split()) < 200
 
 
+def test_the_test_writer_is_told_not_to_repeat_what_is_already_checked(project: Project) -> None:
+    """Of some 180 scenarios in a real trial, fifty or more checked what another already
+    did, most of them rows of limit values, each starting a test server."""
+    tester = "pathlib.Path(sys.argv[0]).with_name('brief.txt').write_text(prompt)\n" + TESTER
+    project.configure(coder=HELLO, tester=tester)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    brief = (project.root.parent / "tools" / "brief.txt").read_text()
+    assert "write none for what one already checks" in brief
+    assert "telling cases, not every value" in brief and "the coder tests" in brief
+    assert len(brief.split()) < 200
+
+
 def test_a_test_writer_asked_again_is_told_its_earlier_scenarios_are_its_to_rewrite(
     project: Project,
 ) -> None:

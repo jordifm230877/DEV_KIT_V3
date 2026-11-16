@@ -62,18 +62,20 @@ _TESTER = """\
 You write behaviour tests. The current directory is your own copy of the project.
 
 {ticket}{note}
-Describe the behaviour this ticket asks for as Gherkin scenarios in .feature files. Put them
-where this project keeps them: its AGENTS.md says where; if it does not, under features/.
+Describe the behaviour this ticket asks for as Gherkin scenarios, in .feature files
+where this project keeps them: its AGENTS.md says where, or else under features/.
+Read the project's scenarios first: write none for what one already checks.
 Write one scenario for each thing the ticket asks for, in plain words that someone who does
-not program can check. Scenarios are kept and must stay true while later tickets change the
+not program can check. Give a rule its telling cases, not every value: the coder tests
+those in code. Scenarios are kept and must stay true while later tickets change the
 product: describe what a user of the product sees, never this change itself ("nothing else
-changed", "the checks pass", "no dependency was added").
-No scenario may need the project's whole test suite run: scenarios are checked inside it.
+changed", "the checks pass").
+No scenario may need the project's whole test suite run: it runs them.
 No line of free text starts with a Gherkin keyword (`Scenarios`, `Examples`, `Rule`).
 Write only .feature files: no code and no step definitions.
-{mine}Do not commit and do not change anything outside this directory.
+{mine}Do not commit or change anything outside this directory.
 
-When you have finished, end your reply with exactly one of these lines:
+End your reply with exactly one of these lines:
 RESULT: done
 {always}"""
 
@@ -137,13 +139,15 @@ These Gherkin scenarios were written for this ticket and are not yet shown to th
 Reject them unless every scenario:
 - describes something a user of the product can see or do, in plain words;
 - will stay true while later tickets change the product: nothing about this change itself,
-  about what was left unchanged, or about commits, checks, reviews and reports;
+  what it left unchanged, or commits, checks and reports;
 - is something the ticket asks for;
-- can be checked by running the product, without running the project's whole test suite:
-  scenarios are checked inside it.
-Reject a file that is not valid Gherkin: one where a line of free text starts with a keyword
-(`Scenarios`, `Examples`, `Rule`) cannot be read.
-Do not change any file; anything you change is thrown away.
+- checks nothing an existing scenario already checks;
+- gives a rule its telling cases, not every value;
+- can be checked by running the product, without running the project's whole test suite,
+  which runs them.
+Reject a file that is not valid Gherkin, as when a line of free text starts with a keyword
+(`Scenarios`, `Examples`).
+Change no file: it would be thrown away.
 
 End your reply with exactly one of these lines:
 RESULT: approved

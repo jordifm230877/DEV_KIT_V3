@@ -307,6 +307,11 @@ Each step ends with something usable.
   thirty minutes), and no line of free text may start with a Gherkin keyword (a description
   line starting with `Scenarios` left an approved file unreadable). DevKit parses no Gherkin
   itself: the project's own runner is what decides, and the verifier may use it.
+- The test-writer reads the scenarios the project already has and writes none for what one
+  already checks, and gives a rule its telling cases rather than every value; the verifier
+  rejects scenarios that do otherwise. In a real trial fifty or more of some 180 scenarios
+  repeated another, most of them rows of limit values that belong in unit tests: each
+  started a test server, and the suite took twenty-five minutes on every ticket.
 - An audit does not take up a coder: tickets are built while it goes on. Counted as a ticket
   being built, an audit of the tests of fifty minutes kept three approved tickets waiting
   with the one coder idle. The auditor already works in its own copy; its report describes
