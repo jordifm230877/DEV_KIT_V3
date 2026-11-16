@@ -317,6 +317,10 @@ Each step ends with something usable.
   changes are put back is told that no note or ticket text changes that. In a real trial the
   Principal advised an exception, the user passed it on as a note, and the coder changed the
   tests on each of its three attempts while the program put them back each time.
+- A command given where no project is (no `devkit.toml`, no Git repository, no `.devkit`) is
+  refused and leaves nothing behind; `init`, `check` and `follow` need none. Given by mistake
+  in a folder of a network drive, `dk approve` made a `.devkit` there and crashed, since the
+  ticket list cannot be kept on such a drive: database is locked.
 - An audit does not take up a coder: tickets are built while it goes on. Counted as a ticket
   being built, an audit of the tests of fifty minutes kept three approved tickets waiting
   with the one coder idle. The auditor already works in its own copy; its report describes

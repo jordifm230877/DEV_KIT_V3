@@ -34,6 +34,7 @@ from dk.tickets import Tickets
 from dk.workspace import Workspace
 
 HOME = ".devkit"
+_ANYWHERE = ("init", "check", "follow")  # commands that need no project to be there yet
 
 
 _NO_CHECKS = (
@@ -183,8 +184,20 @@ def _web(port: int, project: Path, home: Path, tickets: Tickets) -> None:
     )
 
 
+def _known(project: Path, command: str) -> None:
+    """Refuse a command given where no project is. Given by mistake in a folder of a network
+    drive, one left a `.devkit` there and ended in a crash: database is locked."""
+    marks = (config.FILE, ".git", HOME)
+    if command not in _ANYWHERE and not any((project / mark).exists() for mark in marks):
+        raise config.ConfigError(
+            f"there is no project in {project}: go to the project's folder or name it with "
+            "--project; `dk init` begins one"
+        )
+
+
 def _execute(args: argparse.Namespace) -> None:
     project: Path = args.project.resolve()
+    _known(project, args.command)
     home = project / HOME
     home.mkdir(exist_ok=True)
     (home / ".gitignore").write_text("*\n")
