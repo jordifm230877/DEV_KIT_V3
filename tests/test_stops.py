@@ -90,6 +90,8 @@ def test_the_principal_is_told_the_ticket_what_happened_and_why_it_stopped(
     for part in ("Ticket #1: Paint", "Paint it nicely.", "coder-1 started", "which colour?"):
         assert part in brief
     assert "RESULT: done: " in brief and "RESULT: question: " in brief
+    # It advised an exception for a coder; the program undid that coder's changes three times.
+    assert "no note lets a coder change them" in brief
     assert len(brief.split()) < 300
 
 

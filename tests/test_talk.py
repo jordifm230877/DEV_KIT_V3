@@ -81,6 +81,8 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     assert "never an acceptance criterion" in brief
     # A project begun from nothing has no checks when `dk init` runs, and nobody added them.
     assert "first ticket adds its checks to devkit.toml and AGENTS.md" in brief
+    # It passed on a note allowing a coder to change approved tests; the program undid them.
+    assert "no note lets a coder change them" in brief
     assert len(brief.split()) < 300
 
 

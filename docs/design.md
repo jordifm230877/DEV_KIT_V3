@@ -312,6 +312,11 @@ Each step ends with something usable.
   rejects scenarios that do otherwise. In a real trial fifty or more of some 180 scenarios
   repeated another, most of them rows of limit values that belong in unit tests: each
   started a test server, and the suite took twenty-five minutes on every ticket.
+- The Principal is told, in the conversation and when a ticket stops, that approved behaviour
+  tests change only by `reject` and that no note lets a coder change them; the coder whose
+  changes are put back is told that no note or ticket text changes that. In a real trial the
+  Principal advised an exception, the user passed it on as a note, and the coder changed the
+  tests on each of its three attempts while the program put them back each time.
 - An audit does not take up a coder: tickets are built while it goes on. Counted as a ticket
   being built, an audit of the tests of fifty minutes kept three approved tickets waiting
   with the one coder idle. The auditor already works in its own copy; its report describes

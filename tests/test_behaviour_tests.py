@@ -72,6 +72,8 @@ def test_a_coder_cannot_change_approved_behaviour_tests(project: Project, tamper
     assert project.merged("features/greet.feature") == APPROVED_TEXT
     history = project.dk("show", "1")
     assert "features/greet.feature" in history and history.count("coder-1 started") == 2
+    # A coder went by a note that allowed it, and changed them again on each attempt.
+    assert "No note or ticket text changes that" in history
 
 
 def test_the_coder_is_told_the_behaviour_tests_are_read_only(project: Project) -> None:
