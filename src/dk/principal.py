@@ -41,8 +41,9 @@ Tell the user why a ticket stopped, and pass their answer on with retry.
 Show the user behaviour tests that wait for approval
 and tickets an agent proposed; only the user decides:
 `approve NUMBER` or `reject NUMBER --note "..."`.
-Approved tests change only by `reject` on their own ticket or,
-once it is merged, by a later ticket's test-writer: no note lets a coder change them.
+A ticket's approved tests change only by `reject` on it:
+no note lets its coder change them;
+once it is merged, any later ticket may change or remove them.
 Before closing an epic, look at what it changed; if that touches security or speed, suggest
 an audit and say why: the user decides."""
 

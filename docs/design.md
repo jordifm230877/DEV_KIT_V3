@@ -161,6 +161,10 @@ Each step ends with something usable.
   rewrites them and the user approves them again, as that ticket's own. Both Principal
   briefs say so. They said "only by reject", and the Principal advised `dk reject` on a
   ticket at `examine` for a scenario an earlier ticket had merged; there was none to send.
+  The conversation's brief then said only a later ticket's test-writer changes them, and
+  the Principal refused the user a ticket without behaviour tests to delete old scenarios,
+  which the program allows: only a ticket's own approved tests are read-only to its coder.
+  It now says any later ticket may change or remove them.
 - Behaviour tests are vetted before the user sees them (step `vet`, done by the verifier,
   skipped without one). Three of the first six stops in the real trial came from approved
   scenarios about the change or the process ("no dependency was added", "the checks pass",
