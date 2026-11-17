@@ -198,14 +198,6 @@ class Jobs:
             return Failed(briefs.tampering(changed))
         return outcome
 
-    def examine(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
-        """Have the ticket read before any work; a doubt stops it for whoever can answer."""
-        described = self.tickets.described().get(ticket.epic, "")
-        about = briefs.about(ticket.id, ticket.title, ticket.spec)
-        brief = briefs.examiner(about, ticket.epic, described)
-        outcome = self._judge(agent, brief, ticket, "ticket")
-        return Stopped(outcome.reason) if isinstance(outcome, Failed) else outcome
-
     def vet(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         """Have the behaviour tests looked over before the user is asked to approve them."""
         if not ticket.protected:
@@ -217,7 +209,7 @@ class Jobs:
     def review(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         base = self.workspace.base(ticket.id)
         brief = briefs.reviewer(
-            *(agent.role, ticket.id, ticket.title, ticket.spec, base),
+            *(ticket.id, ticket.title, ticket.spec, base),
             *(bool(ticket.protected), self.config.quality_rules),
         )
         return self._judge(agent, brief, ticket, "work")

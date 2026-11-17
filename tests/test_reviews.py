@@ -1,8 +1,7 @@
-"""Finished code is read by a verifier and tried by QA before it is merged."""
+"""Finished code is read and tried by a verifier before it is merged."""
 
 from __future__ import annotations
 
-import pytest
 from conftest import Project
 
 HELLO = "pathlib.Path('greeting.txt').write_text('hello\\n')\nprint('RESULT: done')"
@@ -17,22 +16,21 @@ LEARNS = (
 )
 
 
-def test_work_is_verified_and_then_tried_by_qa_before_merging(project: Project) -> None:
-    project.configure(coder=HELLO, verifier=WANTS_HELLO, qa=WANTS_HELLO)
+def test_work_is_reviewed_once_before_merging(project: Project) -> None:
+    """Three agents judged every ticket, each able to stop it; a second reviewer, QA, was
+    asked after the verifier. A `qa` agent a project still lists is given nothing."""
+    project.configure(coder=HELLO, verifier=WANTS_HELLO, qa="print('RESULT: rejected: no')")
     project.dk("add", "Greet", "--spec", "Say hello.")
 
     project.dk("run")
 
     assert project.merged("greeting.txt") == "hello\n"
     history = project.dk("show", "1")
-    assert history.index("verifier-1 started") < history.index("qa-1 started")
+    assert history.count("verifier-1 started") == 1 and "qa-1" not in history
 
 
-@pytest.mark.parametrize("reviewer", ["verifier", "qa"])
-def test_rejected_work_returns_to_the_coder_with_the_reason(
-    project: Project, reviewer: str
-) -> None:
-    project.configure(coder=LEARNS, **{reviewer: WANTS_HELLO})
+def test_rejected_work_returns_to_the_coder_with_the_reason(project: Project) -> None:
+    project.configure(coder=LEARNS, verifier=WANTS_HELLO)
     project.dk("add", "Greet", "--spec", "Say hello.")
 
     project.dk("run")
@@ -61,7 +59,7 @@ def test_nothing_a_reviewer_changes_or_leaves_behind_is_merged(project: Project)
         "pathlib.Path('greeting.txt').write_text('goodbye\\n')\n"
         "pathlib.Path('junk.txt').write_text('left behind\\n')\n" + APPROVES
     )
-    project.configure(coder=HELLO, verifier=meddles, qa=WANTS_HELLO)
+    project.configure(coder=HELLO, verifier=meddles)
     project.dk("add", "Greet", "--spec", "Say hello.")
 
     project.dk("run")
@@ -89,23 +87,21 @@ def test_a_reviewer_without_a_verdict_is_asked_again_not_the_coder(project: Proj
 
 
 def test_a_review_nobody_is_there_to_do_is_skipped_openly(project: Project) -> None:
-    project.configure(coder=HELLO, qa=APPROVES)
+    project.configure(coder=HELLO)
     project.dk("add", "Greet", "--spec", "Say hello.")
 
     said = project.dk("run")
 
     assert "#1 verify skipped" in said and "#1 verify passed" not in said
-    assert "#1 qa passed" in said
-    history = project.dk("show", "1")
-    assert "verify skipped: no verifier" in history and "qa-1 started" in history
+    assert "verify skipped: no verifier" in project.dk("show", "1")
 
 
 def test_a_reviewer_with_a_question_stops_the_ticket_at_its_review(project: Project) -> None:
-    project.configure(coder=HELLO, qa="print('RESULT: question: hello to whom?')")
+    project.configure(coder=HELLO, verifier="print('RESULT: question: hello to whom?')")
     project.dk("add", "Greet", "--spec", "Say hello.")
 
     project.dk("run")
 
     status = project.dk("status")
-    assert "#1 stopped at qa" in status and "hello to whom?" in status
+    assert "#1 stopped at verify" in status and "hello to whom?" in status
     assert project.merged("greeting.txt") is None

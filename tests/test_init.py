@@ -12,7 +12,7 @@ def test_a_new_project_gets_a_full_team_on_the_chosen_model(project: Project) ->
 
     written = tomllib.loads((project.root / "devkit.toml").read_text())
     roles = [agent["role"] for agent in written["agents"]]
-    assert roles == ["principal", "examiner", "tester", "coder", "verifier", "qa"]
+    assert roles == ["principal", "tester", "coder", "verifier"]
     assert {agent["model"] for agent in written["agents"]} == {"some/model"}
     assert {agent["program"] for agent in written["agents"]} == {"pi"}
     assert "devkit.toml" in said and "AGENTS.md" in said and "commit" in said

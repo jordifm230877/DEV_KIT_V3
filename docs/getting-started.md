@@ -60,26 +60,14 @@ program = "pi"
 model = "openai-codex/gpt-6.1-sol"
 
 [[agents]]
-name = "examiner-1"     # reads each ticket first and asks what is not clear
-role = "examiner"
-program = "pi"
-model = "openai-codex/gpt-6.1-sol"
-
-[[agents]]
 name = "coder-1"
 role = "coder"
 program = "pi"
 model = "openai-codex/gpt-6.1-sol"
 
 [[agents]]
-name = "verifier-1"     # reads the code
+name = "verifier-1"     # reads the code and tries the result as a user would
 role = "verifier"
-program = "pi"
-model = "openai-codex/gpt-6.1-sol"
-
-[[agents]]
-name = "qa-1"           # tries the result as a user would
-role = "qa"
 program = "pi"
 model = "openai-codex/gpt-6.1-sol"
 
@@ -100,14 +88,14 @@ git add devkit.toml && git commit -m "Configure DevKit"
 
 Things to know:
 
-- **Only the coder is required.** Leave out the examiner, the verifier or QA and that review is skipped.
+- **Only the coder is required.** Leave out the verifier and the review is skipped.
   Leave out the principal and you write tickets yourself with `dk add`. Leave out the
   tester, together with the `behaviour` check, and tickets go straight to the coder.
 - **The `behaviour` check** is `behave` for Python, your Cucumber command for Java.
 - **Commit everything agents must see.** Each ticket is worked on in a copy of what Git
   holds; uncommitted files, `AGENTS.md` included, do not exist for the agents.
 - **More agents is more lines.** Add `coder-2` with `role = "coder"` and two tickets advance
-  at once. The same works for verifiers and QA. Behaviour tests for later tickets are
+  at once. The same works for verifiers. Behaviour tests for later tickets are
   written while the coders are busy.
 - **Each agent can use a different model.** A smaller model for reviews, for example.
 - **Each agent can think more or less.** `reasoning = "high"` under an agent is passed to
@@ -132,8 +120,8 @@ Things to know:
 - **Agents may look things up on the web.** Claude and Codex search by themselves; Pi needs
   an extension for it (`pi install npm:pi-codex-search`). Put `web = false` at the top of
   `devkit.toml` to take the web away from all of them.
-- **The verifier judges how the work is done; QA whether it works.** QA runs the product
-  and goes through the ticket's acceptance criteria and the approved scenarios one by one.
+- **The verifier judges how the work is done and whether it works.** It reads the changes,
+  then runs the product and goes through the ticket's acceptance criteria one by one.
 - If your project has an `AGENTS.md`, the agents read it, so project conventions belong
   there. (Pi and Codex do by themselves; a Claude agent is told to. In the conversation a
   Claude Principal reads `CLAUDE.md` only: put `@AGENTS.md` in it.)
@@ -183,7 +171,6 @@ Herdr shows a notification, and `dk status` shows the ticket as stopped with the
 | It says | What to do |
 |---|---|
 | `question: ...` or `blocked: ...` | Tell the Principal your answer, or `dk retry N --note "answer"`; the agent goes on from where it stopped |
-| `question: ...` at the step `examine` | The examiner found the ticket unclear. Answer its questions the same way; it reads the ticket again with your answer |
 | a check or review failed too many times | Read `dk show N`, then `dk retry N --note "hint"` for a fresh set of attempts |
 | it stopped before its behaviour tests were approved, for a change no user of the product sees | `dk retry N --no-behaviour-tests`: the ticket goes on to the coder without them, and what the test-writer had written for it is thrown away |
 | `the merge could not be done` | Usually your own uncommitted changes are in the way. Commit or move them, then `dk retry N` |

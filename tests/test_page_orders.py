@@ -143,7 +143,7 @@ def test_the_page_is_told_why_an_order_cannot_be_carried_out(project: Project, s
     errors = [answer["error"] for _, answer in refusals]
     assert "#1 is not stopped" in errors[0] and "no ticket #7" in errors[1]
     assert "run" in errors[2] and "ticket" in errors[3]
-    assert "#1 examine" in project.dk("status") or "#1 code" in project.dk("status")
+    assert "#1 specify" in project.dk("status") or "#1 code" in project.dk("status")
 
 
 def test_what_is_not_an_order_is_refused(project: Project, site: Site) -> None:

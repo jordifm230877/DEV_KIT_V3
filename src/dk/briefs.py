@@ -86,13 +86,13 @@ They are yours to rewrite, whatever other rules say about existing scenarios.
 """
 
 _REVIEWER = """\
-You are {who}. The current directory is a copy of the project with this ticket's work.
+You are a verifier. The current directory is the project with this ticket's work.
 
 {ticket}
-See what was changed with: git diff {base}
+See the changes with: git diff {base}
 
 {task}
-{long}{checked}Do not change any file; anything you change is thrown away.
+{long}{checked}Change no file: it would be thrown away.
 
 End your reply with exactly one of these lines:
 RESULT: approved
@@ -104,29 +104,22 @@ _CHECKED = """\
 The project's checks have passed on this code: never run its whole test suite again.
 """
 
-_TASKS = {
-    "verifier": (
-        "a verifier",
-        "Read the changes and judge how the work is done. Reject work that cheats (for "
-        "example code written only to satisfy a test), that changes things the ticket did "
-        "not ask for, that is carelessly written, or that is not what the ticket asks for.",
-        " Check too that the code connecting the behaviour tests (.feature files) to the "
-        "product really exercises the product.",
-        " Reject it as well if new behaviour has no test, or if `crapper --no-coverage FILES` "
-        "or `dryer --threshold 0.8 FILES`, run on the changed files where installed, "
-        "show a function scoring 10 or more or duplication ranked 0.8 or more. Go by what "
-        "they print; never read their code.",
-    ),
-    "qa": (
-        "a QA tester",
-        "Try the result the way a user would: run it. Go through the acceptance criteria in "
-        "the ticket one by one and check each against the running product. Reject it if any "
-        "of them does not actually work, and say which.",
-        " Do the same with the approved behaviour tests (.feature files): each scenario "
-        "must hold when you try it yourself.",
-        "",
-    ),
-}
+_TASK = (
+    "Judge how the work is done. Reject work that cheats (as code written only to satisfy "
+    "a test), that changes what the ticket did not ask for, or that is carelessly written.\n"
+    "Then run the result as a user would, going through the ticket's acceptance criteria "
+    "one by one: reject it if one does not work, and say which."
+)
+_WITH_BEHAVIOUR_TESTS = (
+    " Check too that the code connecting the behaviour tests (.feature files) to the "
+    "product really exercises the product."
+)
+_WITH_QUALITY_RULES = (
+    " Reject it too if new behaviour has no test, or if `crapper --no-coverage FILES` "
+    "or `dryer --threshold 0.8 FILES`, run on the changed files where installed, "
+    "show a function scoring 10+ or duplication ranked 0.8+. Go by what "
+    "they print; never read their code."
+)
 
 
 _VETTING = """\
@@ -154,32 +147,6 @@ End your reply with exactly one of these lines:
 RESULT: approved
 RESULT: rejected: <which scenarios must go or change, and why>
 {always}"""
-
-
-_EXAMINER = """\
-You examine a ticket before anyone works on it. The current directory is a copy of the
-project; change nothing.
-
-{ticket}{epic}
-Read AGENTS.md and docs/decisions.md if they exist, and the code the ticket touches. Find
-what a coder, or whoever writes its tests, would have to guess. Stop the ticket for:
-- words that can be read two ways, or a decision it leaves open;
-- an acceptance criterion nobody could check;
-- what contradicts AGENTS.md, docs/decisions.md, its epic or another part of the ticket;
-- more than one piece of work in one ticket.
-Do not stop it over wording, or over what a competent coder decides alone: how to build it
-is theirs. What was added at its end answers earlier doubts; do not raise those again.
-
-End your reply with exactly one of these lines:
-RESULT: approved
-RESULT: question: <each doubt as a question that can be answered in a line, the gravest first>
-RESULT: blocked: <why this cannot be done>"""
-
-
-def examiner(about: str, epic: str, described: str) -> str:
-    """`about` is the ticket as agents are told it; `described`, what its epic is for."""
-    told = f"Its epic, {epic}:\n{described}\n" if described else ""
-    return _EXAMINER.format(ticket=about, epic=told)
 
 
 def vetting(ticket: int, title: str, spec: str, files: list[str]) -> str:
@@ -235,15 +202,12 @@ def coder(
     )
 
 
-def reviewer(
-    role: str, ticket: int, title: str, spec: str, base: str, behaviour: bool, quality: bool
-) -> str:
-    who, task, with_behaviour_tests, with_quality_rules = _TASKS[role]
-    task += with_behaviour_tests if behaviour else ""
-    task += with_quality_rules if quality else ""
+def reviewer(ticket: int, title: str, spec: str, base: str, behaviour: bool, quality: bool) -> str:
+    task = _TASK + (_WITH_BEHAVIOUR_TESTS if behaviour else "")
+    task += _WITH_QUALITY_RULES if quality else ""
     about = _ticket(ticket, title, spec)
     return _REVIEWER.format(
-        who=who, ticket=about, base=base, task=task, long=LONG, checked=_CHECKED, always=ALWAYS
+        ticket=about, base=base, task=task, long=LONG, checked=_CHECKED, always=ALWAYS
     )
 
 

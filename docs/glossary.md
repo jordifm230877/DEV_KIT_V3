@@ -1,7 +1,7 @@
 # Glossary
 
 - **Agent** — a program driven by a language model that is given one job at a time.
-- **Role** — what an agent is for: coder, verifier, QA, test-writer, examiner, auditor, documenter, Principal.
+- **Role** — what an agent is for: coder, verifier, test-writer, auditor, documenter, Principal.
 - **Examiner** — the role of the agent that reads a ticket before any work and stops it over what would have to be guessed: words with two readings, a criterion nobody could check, a contradiction, two pieces of work in one.
 - **Epic** — a large piece of work agreed between the user and the Principal. It is described under three headings: its goal, what it includes and what it excludes.
 - **Closed** — an epic marked complete with `dk close`; it shows as one line and takes no more tickets.
@@ -15,7 +15,7 @@
 - **Cancelled** — a ticket given up with `dk cancel`; nobody works on it again and its unmerged work is thrown away.
 - **Proposed** — a ticket an agent suggested (`dk propose`) for work nobody asked for; nothing happens to it until the user accepts it (`dk approve`) or turns it down (`dk reject`).
 - **Exploring** — finding out what to build, done by the Principal in the conversation; never a ticket. Each study is written once in `docs/discovery/`.
-- **Decisions** — `docs/decisions.md`: what holds now for the project and what is still open, a line or two each. The Principal rewrites it; the examiner and the Principal read it for every ticket.
+- **Decisions** — `docs/decisions.md`: what holds now for the project and what is still open, a line or two each. The Principal rewrites it; the Principal reads it for every ticket.
 - **Follows** — a ticket that builds on another (`--after`) and is not started until that one is merged or cancelled.
 - **Vetting** — the look a reviewer takes at new behaviour tests before the user is asked to approve them (step `vet`).
 - **Skipped** — a step whose role no agent has; the history records it.

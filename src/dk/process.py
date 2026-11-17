@@ -27,14 +27,12 @@ class Step:
 
 
 PROCESS: tuple[Step, ...] = (
-    Step("examine", "review", "examiner"),
     Step("specify", "work", "tester", behaviour=True),
     Step("vet", "review", "verifier", behaviour=True),
     Step("approve", "user", "tester", behaviour=True),
     Step("code", "work", "coder", required=True),
     Step("check", "checks"),
     Step("verify", "review", "verifier"),
-    Step("qa", "review", "qa"),
     Step("merge", "merge"),
 )
 # An audit is carried like a ticket: an auditor writes a report, which joins the project.

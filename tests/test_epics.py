@@ -13,10 +13,10 @@ def test_the_status_groups_tickets_under_their_epic(project: Project) -> None:
     lines = project.dk("status").splitlines()
 
     assert lines == [
-        "#2 examine  Fix typo",
+        "#2 specify  Fix typo",
         "Accounts",
-        "  #1 examine  Log in",
-        "  #3 examine  Log out",
+        "  #1 specify  Log in",
+        "  #3 specify  Log out",
     ]
 
 
@@ -48,7 +48,7 @@ def test_a_finished_epic_can_be_closed_and_then_takes_one_line(project: Project)
     assert project.dk("status").splitlines() == [
         "Accounts  closed: 1 done, 1 cancelled",
         "Polish",
-        "  #3 examine  Fix typo",
+        "  #3 specify  Fix typo",
     ]
     assert "Epic: Accounts" in project.dk("show", "1"), "its tickets can still be read"
 

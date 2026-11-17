@@ -33,7 +33,7 @@ def test_the_status_says_what_a_ticket_waits_for(project: Project) -> None:
     project.dk("add", "Base", "--spec", "a")
     project.dk("add", "Other base", "--spec", "b")
     project.dk("add", "On top", "--spec", "c", "--after", "1", "--after", "2")
-    assert "#3 examine  On top  waits for #1, #2" in project.dk("status")
+    assert "#3 specify  On top  waits for #1, #2" in project.dk("status")
 
     project.dk("run")
 
@@ -87,4 +87,4 @@ def test_a_ticket_list_from_before_tickets_had_an_order_still_works(project: Pro
     project.dk("add", "New", "--spec", "b", "--after", "1")
 
     status = project.dk("status")
-    assert "#1 specify  Old\n" in status and "#2 examine  New  waits for #1" in status
+    assert "#1 specify  Old\n" in status and "#2 specify  New  waits for #1" in status

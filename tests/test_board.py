@@ -84,7 +84,7 @@ def test_the_view_lists_unfinished_tickets_and_only_counts_the_rest(project: Pro
 
     seen = watch(project)
 
-    assert "#3 examine  Wave" in seen
+    assert "#3 specify  Wave" in seen
     assert "Greet" not in seen and "Old idea" not in seen
     assert "1 finished, 1 cancelled" in seen
 
@@ -124,8 +124,8 @@ def test_the_view_uses_colour_to_tell_what_needs_the_user(project: Project) -> N
     assert shown("coder-1").startswith(DIM) and "free" in shown("coder-1")
     assert shown("Walls") == f"{BOLD}Walls{OFF}"
     assert shown("#1 stopped").startswith(f"{BOLD}{YELLOW}  #1 stopped at code")
-    assert shown("#2").startswith(f"{DIM}  #2 examine") and "waits for #1" in shown("#2")
-    assert shown("#3") == "#3 examine  Sweep"
+    assert shown("#2").startswith(f"{DIM}  #2 specify") and "waits for #1" in shown("#2")
+    assert shown("#3") == "#3 specify  Sweep"
     assert shown("finished") == f"{DIM}0 finished, 0 cancelled{OFF}"
 
 

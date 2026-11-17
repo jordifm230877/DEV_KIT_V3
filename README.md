@@ -13,7 +13,7 @@ and [the glossary](docs/glossary.md).
 
 Working so far (see the [build order](docs/design.md#build-order)): you talk with a
 Principal agent that writes the tickets, or write them yourself; a ticket goes from
-written to merged through an examiner that asks what is unclear, a coder, the project's checks, a verifier and QA. With a test-writer
+written to merged through a coder, the project's checks and a verifier that reads the work and tries it. With a test-writer
 agent, behaviour tests (Gherkin) are written first, wait for your approval and are then
 read-only. With several coders, tickets advance side by side; merges happen one at a time, each checked together
 with what was merged before it. Tried with a real model through Pi on small throwaway projects.
@@ -46,13 +46,7 @@ role = "principal"
 program = "pi"
 model = "provider/model-name"
 
-[[agents]]                  # optional: reads each ticket before any work and asks what is unclear
-name = "examiner-1"
-role = "examiner"
-program = "pi"
-model = "provider/model-name"
-
-[[agents]]                  # optional: without a verifier or QA that review is skipped
+[[agents]]                  # optional: without a verifier the review is skipped
 name = "verifier-1"
 role = "verifier"
 program = "pi"

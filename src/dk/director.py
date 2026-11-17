@@ -109,7 +109,8 @@ class Director:
         """Whether the ticket's step can start now, and the agent taken for it if it needs
         one. Taken here, in the order of the tickets, so that the earliest ticket goes first."""
         step = next(step for step in of(ticket.step) if step.name == ticket.step)
-        if step.kind not in ("work", "review") or step.role not in self._free:
+        skipped = step.behaviour and not ticket.behaviour  # no agent is taken for it
+        if step.kind not in ("work", "review") or step.role not in self._free or skipped:
             return True, None
         try:
             return True, self._free[step.role].get_nowait()
@@ -187,7 +188,7 @@ class Director:
             return Stopped(briefs.approval(ticket.id))
         work = self.jobs
         jobs = {"specify": work.specify, "vet": work.vet, "code": work.code, "audit": work.audit}
-        jobs |= {"examine": work.examine, "document": work.document}
+        jobs |= {"document": work.document}
         job = jobs.get(step.name, work.review)
         agent = agent or self._free[step.role].get()
         try:

@@ -47,7 +47,7 @@ def test_the_board_lists_the_agents_and_the_tickets_of_each_epic(
     assert [ticket["id"] for ticket in access["tickets"]] == [1, 2]
     assert [ticket["title"] for ticket in loose["tickets"]] == ["Tidy"]
     first, second = access["tickets"]
-    assert (first["kind"], first["step"], first["waits"]) == ("ticket", "examine", [])
+    assert (first["kind"], first["step"], first["waits"]) == ("ticket", "specify", [])
     assert (second["kind"], second["follows"], second["waits"]) == ("held", [1], [1])
     assert (access["follows"], vault["follows"]) == ([], ["Access"])
     assert (access["done"], access["closed"]) == (0, False)

@@ -16,9 +16,7 @@ one page, the design has grown too much.
 ## The development cycle
 
 1. The user and the Principal discuss what to build and write one or more **epics**.
-2. Epics are split into **tickets**: what is wanted, and the acceptance criteria. If there
-   is an examiner, it reads each ticket before any work and stops it over what a coder
-   would have to guess; the Principal or the user answers, and it goes on.
+2. Epics are split into **tickets**: what is wanted, and the acceptance criteria.
 3. A test-writer agent turns each ticket into **behaviour tests** in Gherkin
    ("given, when, then"), as `.feature` files. If there is a verifier, it looks them over
    first and sends back scenarios that are not about what a user of the product sees.
@@ -30,15 +28,13 @@ one page, the design has grown too much.
 6. The program runs the project's checks: behaviour tests, unit tests and whatever quality
    tools the project lists (complexity, duplication, mutation).
 7. A verifier reads the code and judges how the work is done: cheating, work outside the
-   ticket, poor quality, and whether the connecting code really exercises the product.
-8. QA runs the product as a user would and goes through the acceptance criteria, and the
-   approved behaviour tests, one by one.
-9. The program merges. Rejected work goes back to the coder with the reason. After the
+   ticket, poor quality, and whether the connecting code really exercises the product. It
+   then runs the product as a user would and goes through the acceptance criteria one by one.
+8. The program merges. Rejected work goes back to the coder with the reason. After the
    configured number of failed attempts the ticket stops and the user is told.
 
-Several coders, verifiers and QA agents may exist; tickets run in parallel, merges happen
-one at a time. Who gives the final approval is set per project: QA by default, the user on
-request.
+Several coders and verifiers may exist; tickets run in parallel, merges happen one at a
+time.
 
 ## The pieces
 
@@ -211,8 +207,8 @@ Each step ends with something usable.
   script) is written with `--no-behaviour-tests` and starts at the coder; whoever writes the
   ticket decides, which was the user's choice over letting the test-writer decide. In the
   real trial such a ticket went to the test-writer, whose scenarios the verifier rightly
-  refused, and the user was asked to approve an empty file. It is still checked, verified
-  and tried by QA against its acceptance criteria.
+  refused, and the user was asked to approve an empty file. It is still checked, and verified
+  against its acceptance criteria.
 - A ticket whose test-writer ends with no scenarios goes on to the coder as one that takes
   none, without stopping: the test-writer is told to write none when no user of the product
   would see the change. It used to be sent back for having written nothing. On a real
@@ -370,16 +366,16 @@ Each step ends with something usable.
   being built, an audit of the tests of fifty minutes kept three approved tickets waiting
   with the one coder idle. The auditor already works in its own copy; its report describes
   the project as it was when the audit began, and what it measures shares the machine.
-- An `examiner` reads each ticket first (step `examine`) and ends with `approved` or with
-  its doubts as questions. Unclear tickets used to be found out late: by the tester when it
-  could not write the scenarios, or by a coder who guessed. Nothing new carries the doubt:
-  it stops the ticket as any question does, the Principal answers what the project already
-  decides, the user the rest, and the examiner picks its job up again with the answer. It
-  judges what is asked, never how the ticket is worded.
+- Nobody examines a ticket before the work, and one verifier reads the work and tries it:
+  the steps `examine` and `qa` and their roles are gone, and a ticket has six steps where
+  it had nine. An examiner had been added to find unclear tickets early, and QA tried what
+  the verifier had read. On a real project of three days and sixty tickets, with every step
+  able to stop a ticket, tickets were sent back or stopped 116 times for 32 merged: the
+  examiner alone stopped thirteen, one of them twice in two minutes. A coder that would have to guess asks, as any agent may. A project that still
+  lists an `examiner` or a `qa` agent gives it nothing to do.
 - Whether behaviour tests are written for a ticket is something the ticket says
   (`--no-behaviour-tests`), not the step it starts at: every ticket starts at the first
-  step, and the steps about behaviour tests are skipped for one that takes none. Starting
-  such tickets further along would have carried them past the examiner.
+  step, and the steps about behaviour tests are skipped for one that takes none.
 - A ticket stopped before its behaviour tests are approved can be sent on without them
   (`dk retry N --no-behaviour-tests`), by the user or the Principal, as either may when
   writing it. What its test-writer wrote leaves the ticket's copy, and the scenarios it
@@ -391,8 +387,8 @@ Each step ends with something usable.
   and could only send it back to the test-writer, and it was cancelled to be written again.
 - What the Principal finds out is kept in two places by how long it lasts. A study is one
   file under `docs/discovery/`, written once. `docs/decisions.md` holds only what is decided
-  now and what is open, is rewritten instead of added to, and is the one the examiner and
-  the Principal read for every ticket. Nothing about a single ticket goes in either: that
+  now and what is open, is rewritten instead of added to, and is the one the
+  Principal reads for every ticket. Nothing about a single ticket goes in either: that
   is the ticket's own history. In the real trial the one `docs/discovery.md` reached 898
   lines of decisions, studies and notes on tickets long finished, read whole by the
   examiner for every ticket. The Principal is told to split an older file itself. It is
@@ -435,8 +431,7 @@ Each step ends with something usable.
   before writing tickets for it. An agent that rewrote the Principal's drafts was
   considered and left out: it would know less than the Principal and could change what the
   user had agreed. The user, typing by hand, writes as they like, and so does whoever
-  proposes a ticket: the examiner asks about what a proposal leaves open once it is
-  accepted. The examiner is told what the ticket's epic is for.
+  proposes a ticket.
 
 ## Deliberately left out
 

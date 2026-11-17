@@ -6,7 +6,6 @@ from __future__ import annotations
 import pytest
 from conftest import Project
 from test_behaviour_tests import HELLO
-from test_examine import KEEPS
 
 TICKET = "Wanted: a greeting. Acceptance criteria: - it says hello. Out of scope: goodbyes."
 EPIC = "Goal: polite software. Includes: greetings. Excludes: small talk."
@@ -86,20 +85,3 @@ def test_an_agent_describes_an_epic_before_it_writes_tickets_for_it(project: Pro
     project.dk("epic", "Manners", "--spec", EPIC)
 
     assert "#1 written" in project.dk("add", "Greet", "--spec", TICKET, "--epic", "Manners")
-
-
-def test_the_examiner_is_told_what_the_tickets_epic_is_for(project: Project) -> None:
-    project.configure(coder=HELLO, examiner=KEEPS)
-    project.dk("epic", "Manners", "--spec", EPIC)
-    project.dk("add", "Greet", "--spec", "Say hello.", "--epic", "Manners")
-    project.dk("add", "Tidy", "--spec", "Sweep.")
-
-    project.dk("run")
-
-    seen = (project.root.parent / "tools" / "seen.txt").read_text()
-    assert "Sweep." in seen and "epic" not in seen.split("Read AGENTS.md")[0]
-    project.dk("cancel", "2")
-    project.dk("add", "Bow", "--spec", "Bow politely.", "--epic", "Manners")
-    project.dk("run")
-    seen = (project.root.parent / "tools" / "seen.txt").read_text()
-    assert f"Its epic, Manners:\n{EPIC}\n" in seen

@@ -388,3 +388,21 @@ def test_approved_behaviour_tests_are_not_dropped_by_sending_the_ticket_on(
     refused = project.refused("retry", "1", "--no-behaviour-tests")
 
     assert "#1 is past its behaviour tests" in refused and "dk reject 1" in refused
+
+
+IN_TURN = (
+    "pathlib.Path('log.txt').open('a').write(prompt.split('Ticket #')[1][0])\nprint('RESULT: done')"
+)
+
+
+def test_tickets_without_behaviour_tests_are_still_built_one_on_the_other(
+    project: Project,
+) -> None:
+    project.configure(coder=IN_TURN, tester=TESTER)
+    project.dk("add", "First", "--spec", "a", "--no-behaviour-tests")
+    project.dk("add", "Second", "--spec", "b", "--no-behaviour-tests")
+
+    project.dk("run")
+
+    assert project.merged("log.txt") == "12"
+    assert project.dk("show", "2").count("coder-1 started") == 1
