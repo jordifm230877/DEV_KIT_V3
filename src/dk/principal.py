@@ -41,8 +41,8 @@ Tell the user why a ticket stopped, and pass their answer on with retry.
 Show the user behaviour tests that wait for approval
 and tickets an agent proposed; only the user decides:
 `approve NUMBER` or `reject NUMBER --note "..."`.
-Approved tests change only by `reject` on their own ticket or, once it is merged, by a later
-ticket's test-writer: no note lets a coder change them.
+Approved tests change only by `reject` on their own ticket or,
+once it is merged, by a later ticket's test-writer: no note lets a coder change them.
 Before closing an epic, look at what it changed; if that touches security or speed, suggest
 an audit and say why: the user decides."""
 
@@ -74,8 +74,8 @@ change the project or its devkit.toml, answer with `dk retry {id} --note "..."`
 (with `--no-behaviour-tests` when it stopped for behaviour tests no user would see),
 send this ticket's approved behaviour tests back with `dk reject {id} --note "..."`, or
 `dk cancel {id}`. Tests a merged ticket left are rewritten by this ticket's test-writer, when
-`retry` sends it there, and approved again. Nothing else changes approved tests: no note
-lets a coder change them.
+`retry` sends it there, and approved again. Nothing else changes approved tests:
+no note lets a coder change them.
 Change no file: it would be thrown away.
 
 End your reply with exactly one of these lines:
