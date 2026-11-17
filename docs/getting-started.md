@@ -153,7 +153,8 @@ includes and what it excludes; a ticket what is wanted, its acceptance criteria 
 out of scope. `dk web` shows both. In Herdr the tab you are talking in is named `Principal` for as long as the conversation
 lasts, and you will see a `status` tab that says which agent is on which
 ticket and lists the unfinished tickets,
-and one tab per agent showing what it is doing. Outside Herdr, `dk status --watch` in
+and one tab per agent showing what it is doing. An agent with `tab = false` under its
+`[[agents]]` in `devkit.toml` works without one. Outside Herdr, `dk status --watch` in
 another terminal shows the same board, and `dk web` shows it in your browser, with every
 ticket and its behaviour tests a click away. Next to a working agent the board says how
 many tokens its job has sent to the model and how many the model wrote so far; `dk show

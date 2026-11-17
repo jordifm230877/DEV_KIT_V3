@@ -195,6 +195,9 @@ Each step ends with something usable.
   real trial such a ticket went to the test-writer, whose scenarios the verifier rightly
   refused, and the user was asked to approve an empty file. It is still checked, verified
   and tried by QA against its acceptance criteria.
+- An agent works without a tab when its `[[agents]]` says `tab = false`. The user wanted
+  the tabs of the agents they watch, not one for an auditor or a documenter that works
+  now and then. What it does is still kept in its file under `.devkit/logs/`.
 - An agent's tab shows its work in colour (`dk follow FILE`): the title of each job, the
   tools it uses, errors, its answer, and the bold and code marks it writes. The colour is
   added when the file is shown; the file stays plain text, because agents and the user's

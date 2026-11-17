@@ -105,3 +105,17 @@ def test_outside_herdr_nothing_is_opened(
     project.dk("run")
 
     assert herdr.calls() == []
+
+
+def test_an_agent_set_to_have_no_tab_works_without_one(project: Project, herdr: Herdr) -> None:
+    project.configure(coder=HELLO, verifier=APPROVES)
+    settings = project.root / "devkit.toml"
+    settings.write_text(settings.read_text().replace('"verifier"\n', '"verifier"\ntab = false\n'))
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    created = [call for call in herdr.calls() if call[:2] == ["tab", "create"]]
+    assert [call[call.index("--label") + 1] for call in created] == ["status", "coder-1"]
+    assert project.merged("greeting.txt") == "hello\n"
+    assert "verifier-1" in project.dk("show", "1")

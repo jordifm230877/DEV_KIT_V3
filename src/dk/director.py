@@ -220,9 +220,10 @@ class Director:
         return Stopped(trouble) if trouble else Passed()
 
     def shown(self) -> dict[str, Path]:
-        """For each agent that is given jobs, the file that fills with what it is doing."""
+        """For each agent that is given jobs and has a tab, the file that fills with what it
+        is doing."""
         return {
             label(agent): self.jobs.log(agent)
             for agent in self.config.agents
-            if agent.role != PRINCIPAL or agent.program
+            if agent.tab and (agent.role != PRINCIPAL or agent.program)
         }
