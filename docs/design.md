@@ -135,6 +135,10 @@ Each step ends with something usable.
   worked on another. The director hands the first agent to a ticket itself, in ticket order.
 - The test-writer puts scenarios where the project's `AGENTS.md` says, and under `features/`
   only when it says nothing: a fixed folder clashed with a Rust project's `tests/features/`.
+- Accepting a proposal with `--no-behaviour-tests` writes that it takes none before it
+  becomes a ticket. Written after, a conversation that was going took the ticket up in
+  between, as one that takes them: on a real project the test-writer wrote scenarios nobody
+  wanted, the verifier rejected them, and the ticket spent three attempts before any code.
 - At `merge` the ticket's copy takes in what the project gained meanwhile and the checks
   are run again on the two together, unless all that came is under `docs/` or is
   devkit.toml. On a real project every audit report and documentation run merged meanwhile

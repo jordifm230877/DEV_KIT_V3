@@ -88,8 +88,12 @@ def reopen(tickets: Tickets, epic: str) -> None:
 
 
 def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: bool) -> None:
-    """The user's word on a proposed ticket: it becomes a ticket like any other, or is given up."""
+    """The user's word on a proposed ticket: it becomes a ticket like any other, or is given up.
+    That it takes no behaviour tests is written before it becomes one: a run that is going
+    takes the ticket up at once, as it then is."""
     first = process.start(process.PROCESS) if accepted else process.Position(CANCELLED)
+    if accepted and not tests:
+        tickets.untested(number)
     tickets.move(number, *vars(first).values())
     if not accepted:
         tickets.record(number, f"turned down by the user: {reason}")
@@ -97,7 +101,6 @@ def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: b
         return
     tickets.record(number, "accepted by the user")
     if not tests:
-        tickets.untested(number)
         tickets.record(number, "no behaviour tests: decided when the ticket was accepted")
     print(f"#{number} accepted; it will start at {first.step} on the next run")
 
