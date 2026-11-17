@@ -1,7 +1,7 @@
 """What the user, or the Principal for them, asks of the ticket list with a command: write a
 ticket, send one on, give it up, close an epic, decide on what waits.
 
-A composer: it reads the settings and the process and writes the ticket list. It starts nothing.
+A composer: it reads the process and writes the ticket list. It starts nothing.
 """
 
 from __future__ import annotations
@@ -12,9 +12,8 @@ import io
 import os
 import re
 from collections.abc import Callable
-from pathlib import Path
 
-from dk import agents, audits, config, documents, jobs, process
+from dk import agents, process
 from dk.process import CANCELLED
 from dk.tickets import Ticket, Tickets
 
@@ -192,66 +191,6 @@ def add(args: argparse.Namespace, tickets: Tickets) -> None:
     if args.no_behaviour_tests:
         tickets.record(number, "no behaviour tests: decided when the ticket was written")
     print(f"#{number} written")
-
-
-def _staffed(project: Path, steps: tuple[process.Step, ...]) -> None:
-    """Refuse when the project has nobody for the work these steps begin with."""
-    role = steps[0].role
-    if not config.load(project).with_role(role):
-        raise config.ConfigError(f"no agent has the role '{role}'")
-
-
-def auditor(project: Path) -> None:
-    """Refuse when the project has nobody to carry out an audit."""
-    _staffed(project, process.AUDIT)
-
-
-def _unfinished(tickets: Tickets, title: str) -> list[int]:
-    """The audits or documentation runs of this title that are still to end: those at a
-    step of their own process. A ticket the user gave the same title is neither."""
-    return [
-        ticket.id
-        for ticket in tickets.all()
-        if ticket.title == title and process.of(ticket.step) is not process.PROCESS
-    ]
-
-
-def document(note: str, project: Path, tickets: Tickets) -> None:
-    """Ask for the documentation to be brought up to date; one such run at a time, for two
-    would write the same files."""
-    _staffed(project, process.DOCUMENT)
-    unfinished = _unfinished(tickets, documents.TITLE)
-    if unfinished:
-        raise LookupError(f"#{unfinished[0]} is still unfinished")
-    spec = f"{documents.WANTED}\n{note}".strip()
-    number = tickets.add(documents.TITLE, spec, process.DOCUMENT[0].name, "", [])
-    print(f"#{number} written; it will write under {' and '.join(documents.FOLDERS)}")
-
-
-def audit(kind: str, note: str, project: Path, tickets: Tickets) -> None:
-    auditor(project)
-    title = _audit_title(kind)
-    spec = f"{audits.AUDITS[kind]}\n{note}".strip()
-    number = tickets.add(title, spec, process.AUDIT[0].name, "", [])
-    print(f"#{number} written; its report will be {jobs.report(title)}")
-
-
-def _audit_title(kind: str) -> str:
-    return f"{kind.capitalize()} audit"
-
-
-def night(project: Path, tickets: Tickets, changed: Callable[[str], bool]) -> None:
-    """Write an audit of every kind, except one still unfinished or one whose last report
-    the project has not changed since; `changed` says so for a pattern of report files."""
-    for kind in audits.AUDITS:
-        title = _audit_title(kind)
-        unfinished = _unfinished(tickets, title)
-        if unfinished:
-            print(f"{title}: #{unfinished[0]} is still unfinished")
-        elif not changed(jobs.report(title, "*")):
-            print(f"{title}: nothing changed since its last report")
-        else:
-            audit(kind, "", project, tickets)
 
 
 def asked(tickets: Tickets, order: object) -> str:

@@ -25,6 +25,7 @@ from dk import (
     principal,
     screen,
     starter,
+    upkeep,
     views,
     web,
 )
@@ -147,7 +148,7 @@ def _run(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets) 
 def _nightly(at: str, project: Path) -> None:
     """Set or take away the daily start of the night shift; nothing is started now."""
     if at:
-        orders.auditor(project)
+        upkeep.auditor(project)
         nightly.every_day(
             project, at, [sys.executable, "-m", "dk", "--project", str(project), "night"]
         )
@@ -162,12 +163,17 @@ def _night(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets
         return _nightly(args.at, project)
     director = _director(project, home, tickets, print)
     with _alone(home) as free:
-        orders.night(project, tickets, director.workspace.changed_since)
+        upkeep.night(project, tickets, director.workspace)
         if not free:
             print(f"{BUSY}; it will carry these out")
             return
         with _watching(project, director.shown(), args.no_tabs):
             director.run()
+
+
+def _close(epic: str, project: Path, tickets: Tickets) -> None:
+    orders.close(tickets, epic)
+    upkeep.epic_closed(project, tickets)
 
 
 def _web(port: int, project: Path, home: Path, tickets: Tickets) -> None:
@@ -205,8 +211,8 @@ def _execute(args: argparse.Namespace) -> None:
     commands: dict[str, Callable[[], None]] = {
         "add": lambda: orders.add(args, tickets),
         "propose": lambda: orders.propose(args, tickets),
-        "audit": lambda: orders.audit(args.kind, args.note, project, tickets),
-        "document": lambda: orders.document(args.note, project, tickets),
+        "audit": lambda: upkeep.audit(args.kind, args.note, project, tickets),
+        "document": lambda: upkeep.document(args.note, project, tickets),
         "night": lambda: _night(args, project, home, tickets),
         "check": lambda: _check(project, home),
         "init": lambda: print(*starter.write(project, args.model, args.program), sep="\n"),
@@ -223,7 +229,7 @@ def _execute(args: argparse.Namespace) -> None:
         "retry": lambda: orders.retry(tickets, args.ticket, args.note, not args.no_behaviour_tests),
         "cancel": lambda: orders.cancel(tickets, args.ticket),
         "epic": lambda: orders.epic(tickets, args.name, args.spec),
-        "close": lambda: orders.close(tickets, args.epic),
+        "close": lambda: _close(args.epic, project, tickets),
         "reopen": lambda: orders.reopen(tickets, args.epic),
         "approve": lambda: orders.decide(
             tickets, args.ticket, True, "", not args.no_behaviour_tests

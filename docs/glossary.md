@@ -29,11 +29,11 @@
 - **Protected** — a behaviour-test file the user approved; the program puts it back if a coder changes it.
 - **Waiting** — a ticket stopped at a step that is the user's own decision (`dk approve` / `dk reject`).
 - **Audit** — a look over the whole project for security, for performance or for how well its tests protect it, asked for by the user or by the night shift; it leaves a report in `docs/audits/` and changes nothing else.
-- **Night shift** — `dk night`: every kind of audit whose last report the project has changed since, then the unfinished tickets; `--at HH:MM` has the system start it every day.
+- **Night shift** — `dk night`: every kind of audit whose last report the project has changed since, a documentation run when the last is five days old and the project changed since, then the unfinished tickets; `--at HH:MM` has the system start it every day.
 - **Note** — one line a coder may add to its answer for the user (`RESULT: done: ...`); kept in the ticket's history and shown to no reviewer.
 - **Auditor** — the role of the agent that carries out audits.
 - **Documenter** — the role of the agent that keeps the project's documentation in step with its code.
-- **Documentation run** — one job of the documenter, asked for with `dk document`: it reads and tries the product in a throwaway copy, and only what it leaves in `docs/technical/` (for whoever changes the code) and `docs/howto/` (for whoever uses the product) is kept.
+- **Documentation run** — one job of the documenter, asked for with `dk document`, by closing an epic or by the night shift: it reads and tries the product in a throwaway copy, and only what it leaves in `docs/technical/` (for whoever changes the code) and `docs/howto/` (for whoever uses the product) is kept.
 - **Director** — the piece that decides what happens next to each ticket.
 - **Clash** — a ticket's work collides with work merged while it was in progress; the coder gets the files to resolve.
 - **Board** — the view that redraws itself (`dk status --watch`, the `status` tab): what each agent is doing and the unfinished tickets.

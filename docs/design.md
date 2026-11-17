@@ -50,6 +50,7 @@ request.
 | `director` | Carries out the step each ticket waits for; the only piece that decides | Talk to models or Git directly |
 | `jobs` | The jobs agents are given on a ticket: what each is told and what its answer means; a composer | Decide where a ticket goes next |
 | `orders` | What the user, or the Principal for them, asks of the ticket list with a command: write, send on, give up, close, decide; a composer | Start anything |
+| `upkeep` | Work on the whole project, not one ticket: writes audits and documentation runs for the user, the close of an epic and the night shift; a composer | Start anything |
 | `nightly` | Has the system start a command every day at a set time (systemd timers) | Know what the command does |
 | `principal` | What the Principal is told, in the conversation and about a stopped ticket | Start anything |
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
@@ -361,6 +362,13 @@ Each step ends with something usable.
   the documenter carries out each step before writing it. Nobody reviews what it writes;
   the user reads it. The user asked for it, after the agents of the real trial left
   documents of their own making across `docs/`.
+- Besides `dk document`, closing an epic writes a documentation run, and so does the night
+  shift when the documentation is five days old and the project changed since outside
+  `docs/`; both do nothing where nobody documents, and leave an unfinished run alone. How
+  old it is comes from Git, so DevKit still keeps no clock. A run that finds nothing to
+  change leaves no trace in Git, so the night shift asks again the next night: accepted
+  until it is seen to happen. `upkeep` is a fifth composer: with audits and documentation
+  runs `orders` had reached its 300 lines.
 - What an agent is told is kept short by its tests: under 150 to 300 words for those who
   take a job, under 400 for the Principal, whose two briefs carry the whole list of commands
   and what it may decide. Theirs was 300 until naming one more option left no room to say

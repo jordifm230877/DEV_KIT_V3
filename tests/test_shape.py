@@ -12,6 +12,7 @@ COMPOSERS = {
     "jobs",
     "orders",
     "preflight",
+    "upkeep",
     "views",
     "cli",
     "__main__",

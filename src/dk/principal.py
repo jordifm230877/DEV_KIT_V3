@@ -34,6 +34,7 @@ Your tool for tickets: `{command}`
   close "EPIC"           complete it
   reopen "EPIC"
   audit security|performance|tests [--note "FOCUS"]   a report in docs/audits/
+  document [--note "FOCUS"]   bring docs/technical/ and docs/howto/ up to date
 
 Tell the user why a ticket stopped, and pass their answer on with retry.
 Show the user behaviour tests that wait for approval

@@ -5,6 +5,7 @@ from __future__ import annotations
 TITLE = "Documentation"
 WANTED = "Bring the project's documentation up to date with its code."
 FOLDERS = ("docs/technical", "docs/howto")  # all a documenter may leave behind
+EVERY = 5  # days the night shift lets pass before it has them written again
 
 _DOCUMENTER = """\
 You keep a project's documentation in step with its code. The current directory is a

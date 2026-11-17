@@ -76,6 +76,7 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
         'retry NUMBER --note "TEXT" [--no-behaviour-tests]',
         "when it stopped for behaviour tests and no user sees the change",
         "audit security|performance",
+        'document [--note "FOCUS"]',
     ):
         assert word in brief
     assert "Before closing an epic" in brief and "the user decides" in brief

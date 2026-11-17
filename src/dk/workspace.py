@@ -6,8 +6,10 @@ programs that an agent could have planted.
 
 from __future__ import annotations
 
+import math
 import subprocess
 import threading
+import time
 from pathlib import Path
 
 _SAFE = ("-c", "core.hooksPath=/dev/null")
@@ -61,13 +63,24 @@ class Workspace:
         """The commit the ticket's work started from; `git diff <base>` shows the work."""
         return self._must(self._project, "merge-base", "HEAD", f"ticket/{ticket}")
 
-    def changed_since(self, files: str) -> bool:
-        """Whether the project changed, apart from `files` themselves and the files beside
-        them, since the latest of `files` (a pattern) was written; true when there is none."""
-        last = self._must(self._project, "log", "-1", "--format=%H", "--", f":(glob){files}")
-        beside = f":(exclude){files.rpartition('/')[0]}"
+    def _last(self, what: str, files: tuple[str, ...]) -> str:
+        """`what` (a Git format) of the latest commit that wrote any of `files` (patterns)."""
+        patterns = (f":(glob){one}" for one in files)
+        return self._must(self._project, "log", "-1", f"--format={what}", "--", *patterns)
+
+    def changed_since(self, *files: str, apart: str = "") -> bool:
+        """Whether the project changed, apart from what is under `apart` (the folder of
+        `files` when not given), since the latest of `files` (patterns) was written; true
+        when there is none."""
+        last = self._last("%H", files)
+        beside = f":(exclude){apart or files[0].rpartition('/')[0]}"
         unchanged = ("diff", "--quiet", last, "HEAD", "--", ".", beside)
         return not last or self._git(self._project, *unchanged).returncode != 0
+
+    def days_since(self, *files: str) -> float:
+        """How many days ago the latest of `files` (patterns) was written; never, for none."""
+        written = self._last("%ct", files)
+        return (time.time() - int(written)) / 86400 if written else math.inf
 
     def restore(self, ticket: int) -> None:
         """Throw away anything not saved, such as what a reviewer changed or left behind."""

@@ -3,6 +3,9 @@ reads and tries the product, and only what it writes in the documentation folder
 
 from __future__ import annotations
 
+import time
+
+import pytest
 from conftest import Project
 
 HELLO = "pathlib.Path('greeting.txt').write_text('hello\\n')\nprint('RESULT: done')"
@@ -123,3 +126,111 @@ def test_tickets_go_on_as_before_beside_documentation(project: Project) -> None:
 
     assert project.merged("greeting.txt") == "hello\n"
     assert project.merged("docs/howto/greet.md") == "# Greet\n"
+
+
+def _finished_epic(project: Project, **agents: str) -> None:
+    project.configure(coder=HELLO, **agents)
+    project.dk("add", "Greet", "--spec", "Say hello.", "--epic", "Greetings")
+    project.dk("run")
+
+
+def test_closing_an_epic_asks_for_its_documentation(project: Project) -> None:
+    _finished_epic(project, documenter=DOCUMENTS)
+
+    said = project.dk("close", "Greetings")
+
+    assert "Greetings closed" in said and "#2 written" in said
+    assert "#2 document  Documentation" in project.dk("status")
+
+
+def test_closing_an_epic_asks_for_nothing_where_nobody_documents(project: Project) -> None:
+    _finished_epic(project)
+
+    assert "written" not in project.dk("close", "Greetings")
+    assert "Documentation" not in project.dk("status")
+
+
+def test_closing_an_epic_leaves_an_unfinished_documentation_run_alone(project: Project) -> None:
+    _finished_epic(project, documenter=DOCUMENTS)
+    project.dk("document")
+
+    said = project.dk("close", "Greetings")
+
+    assert "Greetings closed" in said and "Documentation: #2 is still unfinished" in said
+    assert project.dk("status").count("Documentation") == 1
+
+
+AUDITS = """
+import re
+report = pathlib.Path(re.search(r"docs/audits/\\S+\\.md", prompt).group(0))
+report.parent.mkdir(parents=True, exist_ok=True)
+report.write_text('# Findings\\n')
+print('RESULT: done')
+"""
+SIX_DAYS = 6 * 24 * 3600
+
+
+def _change(project: Project) -> None:
+    (project.root / "new.txt").write_text("more\n")
+    project.git("add", "new.txt")
+    project.git("commit", "-qm", "more")
+
+
+def _night_long_ago(project: Project, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A first night shift, six days ago by Git's clock."""
+    project.configure(coder=HELLO, auditor=AUDITS, documenter=DOCUMENTS)
+    for name in ("GIT_COMMITTER_DATE", "GIT_AUTHOR_DATE"):
+        monkeypatch.setenv(name, f"@{int(time.time()) - SIX_DAYS} +0000")
+    project.dk("night")
+    monkeypatch.delenv("GIT_COMMITTER_DATE")
+    monkeypatch.delenv("GIT_AUTHOR_DATE")
+
+
+def test_a_night_shift_writes_documentation_that_was_never_written(project: Project) -> None:
+    project.configure(coder=HELLO, auditor=AUDITS, documenter=DOCUMENTS)
+
+    project.dk("night")
+
+    assert project.merged("docs/howto/greet.md") == "# Greet\n"
+
+
+def test_a_night_shift_leaves_documentation_written_lately(project: Project) -> None:
+    project.configure(coder=HELLO, auditor=AUDITS, documenter=DOCUMENTS)
+    project.dk("night")
+    _change(project)
+
+    said = project.dk("night")
+
+    assert "Documentation: written less than 5 days ago" in said
+    assert project.dk("status").count("Documentation") == 1
+
+
+def test_a_night_shift_documents_again_what_changed_days_ago(
+    project: Project, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _night_long_ago(project, monkeypatch)
+    _change(project)
+
+    project.dk("night")
+
+    assert project.dk("status").count("done  Documentation") == 2
+
+
+def test_a_night_shift_leaves_documentation_of_a_project_that_did_not_change(
+    project: Project, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The reports its audits leave are no change to document."""
+    _night_long_ago(project, monkeypatch)
+
+    said = project.dk("night")
+
+    assert "Documentation: nothing changed since it was written" in said
+    assert project.dk("status").count("Documentation") == 1
+
+
+def test_a_night_shift_says_nothing_of_documentation_where_nobody_documents(
+    project: Project,
+) -> None:
+    project.configure(coder=HELLO, auditor=AUDITS)
+
+    assert "Documentation" not in project.dk("night")
