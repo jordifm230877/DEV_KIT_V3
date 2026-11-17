@@ -1,7 +1,8 @@
 """What the user, or the Principal for them, asks of the ticket list with a command: write a
 ticket, send one on, give it up, close an epic, decide on what waits.
 
-A composer: it reads the process and writes the ticket list. It starts nothing.
+A composer: it reads the process and writes the ticket list, and takes out of a ticket's
+copy the behaviour tests it is to go on without. It starts nothing.
 """
 
 from __future__ import annotations
@@ -14,8 +15,10 @@ import re
 from collections.abc import Callable
 
 from dk import agents, process
+from dk.jobs import BEHAVIOUR_TESTS
 from dk.process import CANCELLED
 from dk.tickets import Ticket, Tickets
+from dk.workspace import Workspace
 
 
 def _stopped(tickets: Tickets, number: int) -> tuple[Ticket, process.Position]:
@@ -32,25 +35,27 @@ def _said(tickets: Tickets, number: int, what: str, words: str) -> None:
     tickets.record(number, f"{what} by the user{': ' + words if words else ''}")
 
 
-def retry(tickets: Tickets, number: int, answer: str, tests: bool = True) -> None:
-    """Send a stopped ticket on; without `tests`, as one that takes no behaviour tests."""
+def retry(tickets: Tickets, number: int, answer: str, drafts: Workspace | None = None) -> None:
+    """Send a stopped ticket on; given the copies as `drafts`, as one that takes no
+    behaviour tests."""
     ticket, position = _stopped(tickets, number)
-    if not tests:
-        _untested(tickets, ticket)
+    if drafts:
+        _untested(tickets, ticket, drafts)
     tickets.move(number, *vars(process.retry(position)).values())
     _said(tickets, number, "sent on", answer)
-    how = f"at {ticket.step}" if tests else "without behaviour tests"
+    how = "without behaviour tests" if drafts else f"at {ticket.step}"
     print(f"#{number} will continue {how} on the next run")
 
 
-def _untested(tickets: Tickets, ticket: Ticket) -> None:
+def _untested(tickets: Tickets, ticket: Ticket, drafts: Workspace) -> None:
     """Have the ticket go on to the coder with no behaviour tests, and none kept read-only:
-    what its test-writer wrote before was never approved."""
+    what its test-writer wrote before was never approved, and leaves the ticket's copy."""
     if not process.unapproved(ticket.step):
         raise LookupError(
             f"#{ticket.id} is past its behaviour tests; "
             f'approved ones change only with: dk reject {ticket.id} --note "..."'
         )
+    drafts.forget(ticket.id, BEHAVIOUR_TESTS)
     tickets.untested(ticket.id)
     tickets.protect(ticket.id, {})
     tickets.record(ticket.id, "no behaviour tests: decided when the ticket was sent on")

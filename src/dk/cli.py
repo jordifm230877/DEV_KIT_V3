@@ -210,6 +210,7 @@ def _execute(args: argparse.Namespace) -> None:
     home.mkdir(exist_ok=True)
     (home / ".gitignore").write_text("*\n")
     tickets = Tickets(home / "tickets.db")
+    copies = Workspace(project, home / "work")
     commands: dict[str, Callable[[], None]] = {
         "add": lambda: orders.add(args, tickets),
         "propose": lambda: orders.propose(args, tickets),
@@ -227,8 +228,10 @@ def _execute(args: argparse.Namespace) -> None:
         ),
         "follow": lambda: views.follow(args.log),
         "web": lambda: _web(args.port, project, home, tickets),
-        "show": lambda: views.show(tickets, Workspace(project, home / "work"), args.ticket),
-        "retry": lambda: orders.retry(tickets, args.ticket, args.note, not args.no_behaviour_tests),
+        "show": lambda: views.show(tickets, copies, args.ticket),
+        "retry": lambda: orders.retry(
+            tickets, args.ticket, args.note, copies if args.no_behaviour_tests else None
+        ),
         "cancel": lambda: orders.cancel(tickets, args.ticket),
         "epic": lambda: orders.epic(tickets, args.name, args.spec),
         "close": lambda: _close(args.epic, project, tickets),

@@ -371,7 +371,9 @@ Each step ends with something usable.
   such tickets further along would have carried them past the examiner.
 - A ticket stopped before its behaviour tests are approved can be sent on without them
   (`dk retry N --no-behaviour-tests`), by the user or the Principal, as either may when
-  writing it. What its test-writer wrote is no longer kept read-only; once tests are
+  writing it. What its test-writer wrote leaves the ticket's copy, and the scenarios it
+  changed or removed come back as they were: on a real project a file the verifier had
+  refused stayed there, for the coder to remove or to be merged unapproved. Once tests are
   approved the command is refused, since only `dk reject` changes those. In a real trial a
   proposal accepted with behaviour tests was reliability work on an existing scenario: its
   one scenario was refused, the test-writer then rightly wrote none, the Principal saw why

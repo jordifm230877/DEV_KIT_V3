@@ -326,6 +326,36 @@ def test_a_ticket_stopped_for_want_of_behaviour_tests_can_go_on_without_them(
     assert shown.count("tester-1 started") == 3
 
 
+def test_scenarios_nobody_approved_do_not_go_on_with_a_ticket_sent_on_without_them(
+    project: Project,
+) -> None:
+    """A real ticket was sent on without behaviour tests after the verifier refused its
+    scenarios; the refused file stayed in its copy, for the coder to remove or to be merged."""
+    drafts = (
+        "pathlib.Path('features/draft.feature').write_text('Feature: Draft\\n')\n"
+        "pathlib.Path('features/old.feature').write_text('Feature: Changed\\n')\n"
+        "pathlib.Path('features/gone.feature').unlink(missing_ok=True)\n"
+        "print('RESULT: done')"
+    )
+    (project.root / "features").mkdir()
+    (project.root / "features" / "old.feature").write_text("Feature: Old\n")
+    (project.root / "features" / "gone.feature").write_text("Feature: Kept\n")
+    project.git("add", "-A")
+    project.git("commit", "-qm", "scenarios an earlier ticket left")
+    project.configure(coder=HELLO, tester=drafts, verifier=REFUSES_SCENARIOS)
+    project.dk("add", "Steady test", "--spec", "Make the timing scenario reliable.")
+    project.dk("run")
+    assert "#1 stopped at specify" in project.dk("status")
+
+    project.dk("retry", "1", "--no-behaviour-tests")
+    project.dk("run")
+
+    assert "#1 done" in project.dk("status") and project.merged("greeting.txt") == "hello\n"
+    assert project.merged("features/draft.feature") is None
+    assert project.merged("features/old.feature") == "Feature: Old\n"
+    assert project.merged("features/gone.feature") == "Feature: Kept\n"
+
+
 def test_approved_behaviour_tests_are_not_dropped_by_sending_the_ticket_on(
     project: Project,
 ) -> None:

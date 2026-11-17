@@ -98,6 +98,14 @@ class Workspace:
         self._must(copy, "checkout", "-q", "--", ".")
         self._must(copy, "clean", "-qfd")
 
+    def forget(self, ticket: int, pattern: str) -> None:
+        """Have the files matching `pattern` be in the copy as the ticket found them: those
+        it wrote go, those it changed or removed come back."""
+        copy = self._copy(ticket)
+        self._must(copy, "rm", "-rqf", "--ignore-unmatch", "--", pattern)
+        self._git(copy, "checkout", "-q", self.base(ticket), "--", pattern)  # none is no trouble
+        self.save(ticket, "Remove behaviour tests nobody approved")
+
     def fingerprints(self, ticket: int, pattern: str) -> dict[str, str]:
         """The files this ticket wrote that match `pattern`, each with its content's identity."""
         copy = self._copy(ticket)
