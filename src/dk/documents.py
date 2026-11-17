@@ -23,6 +23,27 @@ what changed. Correct what no longer matches the code, and remove the file of wh
 Write one subject per file, in Markdown a simple page can show: headings, paragraphs,
 lists, tables, links, code blocks, bold and `code`.
 
+How to write, in both folders:
+- One file is one kind of document: a guide (steps to a goal), a reference (facts to look
+  up) or an explanation (why it is so). Split a file that mixes them, and link the parts.
+- A guide is named by the task and holds only what the reader does: numbered steps, each a
+  command to the reader with one action, the condition or warning before the step it
+  guards, and what they then see. The reader is competent; the reasons go elsewhere.
+- A reference only describes: dry, complete, laid out like the thing it describes.
+- An explanation keeps to one subject and gives the reasons, the limits, the alternatives.
+- Speak to the reader as "you", in the present tense, and say who does what.
+- One thought per sentence. Split a sentence longer than about 25 words.
+- Use the short everyday word, and the real name of each file, flag and command. Call each
+  thing by one name everywhere.
+- Give the mechanism or the number, not "this may cause issues". Cut a sentence that could
+  stand unchanged in another project's documentation.
+- A heading says the point, in sentence case. Number a list only when its order matters.
+Then read again what you wrote, and take out what a machine writes by habit: filler ("in
+order to", "it is important to note"), praise, a hedge on a hedge, "not just X but Y", ideas
+forced into threes, "crucial", "leverage", "seamless", "simply", metaphors and idioms, a
+dash or a semicolon where a full stop does, bold for emphasis, an ending that only repeats.
+When you change a file already there, leave the whole of it by these rules.
+
 End your reply with exactly one of these lines:
 RESULT: done
 {always}"""

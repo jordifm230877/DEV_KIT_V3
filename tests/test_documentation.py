@@ -57,7 +57,22 @@ def test_a_documenter_is_told_what_to_write_and_to_try_what_it_describes(
         assert rule in told
     assert "headings" in told and "tables" in told, "what the page of `dk web` can show"
     assert "in the background" in told
-    assert "RESULT: done" in told and len(told.split()) < 300
+    assert "RESULT: done" in told and len(told.split()) < 550
+
+
+def test_a_documenter_is_told_how_to_write(project: Project) -> None:
+    project.configure(coder=HELLO, documenter=DOCUMENTS)
+    project.dk("document")
+
+    project.dk("run")
+
+    told = " ".join((project.root.parent / "tools" / "brief.txt").read_text().split())
+    kinds = ("one kind of document", "named by the task", "A reference only describes")
+    sentences = ("One thought per sentence", "one name everywhere", "the number")
+    for rule in (*kinds, *sentences):
+        assert rule in told
+    assert "read again what you wrote" in told and "in order to" in told, "the last pass"
+    assert "a file already there" in told, "old documents come to the rules as they are touched"
 
 
 def test_documentation_that_needs_no_change_is_not_a_failure(project: Project) -> None:

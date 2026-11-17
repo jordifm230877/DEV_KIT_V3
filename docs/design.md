@@ -406,6 +406,17 @@ Each step ends with something usable.
   the documenter carries out each step before writing it. Nobody reviews what it writes;
   the user reads it. The user asked for it, after the agents of the real trial left
   documents of their own making across `docs/`.
+- The documenter is told how to write, not only what goes where: one file is one kind of
+  document (a guide, a reference or an explanation), a guide is named by its task and holds
+  only steps, one thought per sentence, one name per thing, and a last reading that takes
+  out what a machine writes by habit. A file it changes is left whole by these rules, so
+  the old documents come to them as they are touched. The user asked for it, with two
+  published sets of rules to draw on (Cursor's `technical-writing` and `unslop` skills,
+  MIT); the rules are written anew and much shorter, and none is fetched when it works.
+  What it had written for the real trial showed the lack: a 1,310-word `testing.md` that
+  mixed how to run the tests, what they need and how to read their results. Its brief may
+  now reach 550 words where it kept under 300; it is the only word it gets, since nobody
+  reviews it, and it works a few times a week.
 - Besides `dk document`, closing an epic writes a documentation run, and so does the night
   shift when the documentation is five days old and the project changed since outside
   `docs/`; both do nothing where nobody documents, and leave an unfinished run alone. How
