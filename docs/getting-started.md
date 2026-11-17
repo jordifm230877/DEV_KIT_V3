@@ -185,7 +185,7 @@ Herdr shows a notification, and `dk status` shows the ticket as stopped with the
 | `question: ...` or `blocked: ...` | Tell the Principal your answer, or `dk retry N --note "answer"`; the agent goes on from where it stopped |
 | `question: ...` at the step `examine` | The examiner found the ticket unclear. Answer its questions the same way; it reads the ticket again with your answer |
 | a check or review failed too many times | Read `dk show N`, then `dk retry N --note "hint"` for a fresh set of attempts |
-| `wrote no behaviour tests`, for a change no user of the product sees | `dk retry N --no-behaviour-tests`: the ticket goes on to the coder without them, and what the test-writer had written for it is thrown away |
+| it stopped before its behaviour tests were approved, for a change no user of the product sees | `dk retry N --no-behaviour-tests`: the ticket goes on to the coder without them, and what the test-writer had written for it is thrown away |
 | `the merge could not be done` | Usually your own uncommitted changes are in the way. Commit or move them, then `dk retry N` |
 | `the behaviour tests are ready for you` | See the next section |
 | a coder says an approved scenario is wrong | `dk reject N --note "what to change"`: the test-writer rewrites it and you approve again |

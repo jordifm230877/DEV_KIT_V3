@@ -178,8 +178,9 @@ class Jobs:
         if not isinstance(outcome, Passed):
             return outcome
         tests = self.workspace.fingerprints(ticket.id, BEHAVIOUR_TESTS)
-        if not tests:
-            return Failed(f"{agent.name} wrote no behaviour tests ({BEHAVIOUR_TESTS} files)")
+        if not tests:  # nothing a user would see: the ticket goes on as one that takes none
+            self.tickets.untested(ticket.id)
+            self.tickets.record(ticket.id, f"no behaviour tests: {agent.name} found none to write")
         self.tickets.protect(ticket.id, tests)
         return Passed()
 

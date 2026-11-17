@@ -59,20 +59,21 @@ If one of them is wrong, do not change it: answer blocked and say why.
 """
 
 _TESTER = """\
-You write behaviour tests. The current directory is your own copy of the project.
+You write behaviour tests. The current directory is your copy of the project.
 
 {ticket}{note}
 Describe the behaviour this ticket asks for as Gherkin scenarios, in .feature files
 where this project keeps them: its AGENTS.md says where, or else under features/.
-Read the project's scenarios first: write none for what one already checks.
-Write one scenario for each thing the ticket asks for, in plain words that someone who does
-not program can check. Give a rule its telling cases, not every value: the coder tests
-those in code. Scenarios are kept and must stay true while later tickets change the
+Read the project's scenarios first: write none for what one already checks,
+and none when no user of the product would see the change.
+Write one scenario for each thing the ticket asks for, in plain words a non-programmer can
+check. Give a rule its telling cases, not every value: the coder tests
+those in code. Scenarios must stay true while later tickets change the
 product: describe what a user of the product sees, never this change itself ("nothing else
 changed", "the checks pass").
 No scenario may need the project's whole test suite run: it runs them.
 No line of free text starts with a Gherkin keyword (`Scenarios`, `Examples`, `Rule`).
-Write only .feature files: no code and no step definitions.
+Write only .feature files: no code, no step definitions.
 {mine}Do not commit or change anything outside this directory.
 
 End your reply with exactly one of these lines:

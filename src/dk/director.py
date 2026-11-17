@@ -176,7 +176,7 @@ class Director:
         if step.kind == "merge":
             with self._merging:
                 return self._merge(ticket, logs)
-        if step.behaviour and not ticket.behaviour:
+        if step.behaviour and not self.tickets.get(ticket.id).behaviour:
             return Skipped()
         if step.role not in self._free:
             if step.required:

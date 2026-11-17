@@ -103,18 +103,22 @@ def test_a_coder_may_add_scenarios_of_its_own(project: Project) -> None:
     assert project.dk("show", "1").count("coder-1 started") == 1
 
 
-def test_a_tester_that_writes_no_behaviour_tests_has_not_done_its_job(project: Project) -> None:
+def test_a_ticket_whose_test_writer_finds_nothing_to_describe_goes_on_to_the_coder(
+    project: Project,
+) -> None:
+    """Four real tickets about work no user of the product sees stopped here, and each
+    waited for the user only to be sent on without behaviour tests or given up."""
     project.configure(
-        coder=HELLO,
-        tester="pathlib.Path('notes.txt').write_text('x')\nprint('RESULT: done')",
-        max_attempts=1,
+        coder=HELLO, tester="pathlib.Path('notes.txt').write_text('x')\nprint('RESULT: done')"
     )
     project.dk("add", "Greet", "--spec", "Say hello.")
 
     project.dk("run")
 
-    status = project.dk("status")
-    assert "#1 stopped at specify" in status and "wrote no behaviour tests" in status
+    shown = project.dk("show", "1")
+    assert "#1 done" in shown and project.merged("greeting.txt") == "hello\n"
+    assert "no behaviour tests: tester-1 found none to write" in shown
+    assert shown.count("tester-1 started") == 1
 
 
 def test_the_verifier_checks_that_behaviour_tests_really_exercise_the_product(
@@ -249,6 +253,8 @@ def test_the_test_writer_is_told_not_to_repeat_what_is_already_checked(project: 
 
     brief = (project.root.parent / "tools" / "brief.txt").read_text()
     assert "write none for what one already checks" in brief
+    # Told only to write scenarios, it wrote some for upkeep no user sees; all were refused.
+    assert "none when no user of the product would see the change" in brief
     assert "telling cases, not every value" in brief and "the coder tests" in brief
     assert len(brief.split()) < 200
 
@@ -305,13 +311,27 @@ REFUSES_SCENARIOS = (
 )
 
 
-def test_a_ticket_stopped_for_want_of_behaviour_tests_can_go_on_without_them(
+def test_a_ticket_whose_scenarios_were_all_refused_goes_on_without_them(
     project: Project,
 ) -> None:
     """A real ticket made an approved scenario reliable under load, which no user of the
     product sees. Its one scenario was refused, the test-writer then wrote none, and the
     ticket ran out of attempts with no way left but to cancel it and write it again."""
     project.configure(coder=HELLO, tester=WITHDRAWS, verifier=REFUSES_SCENARIOS)
+    project.dk("add", "Steady test", "--spec", "Make the timing scenario reliable.")
+
+    project.dk("run")
+
+    shown = project.dk("show", "1")
+    assert "#1 done" in shown and project.merged("greeting.txt") == "hello\n"
+    assert shown.count("tester-1 started") == 2
+    assert project.merged("features/run.feature") is None
+
+
+def test_a_ticket_stopped_before_its_behaviour_tests_can_be_sent_on_without_them(
+    project: Project,
+) -> None:
+    project.configure(coder=HELLO, tester="print('RESULT: blocked: no user sees this')")
     project.dk("add", "Steady test", "--spec", "Make the timing scenario reliable.")
     project.dk("run")
     assert "#1 stopped at specify" in project.dk("status")
@@ -323,7 +343,6 @@ def test_a_ticket_stopped_for_want_of_behaviour_tests_can_go_on_without_them(
     shown = project.dk("show", "1")
     assert "#1 done" in shown and project.merged("greeting.txt") == "hello\n"
     assert "no behaviour tests: decided when the ticket was sent on" in shown
-    assert shown.count("tester-1 started") == 3
 
 
 def test_scenarios_nobody_approved_do_not_go_on_with_a_ticket_sent_on_without_them(

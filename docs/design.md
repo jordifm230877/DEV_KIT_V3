@@ -209,6 +209,13 @@ Each step ends with something usable.
   real trial such a ticket went to the test-writer, whose scenarios the verifier rightly
   refused, and the user was asked to approve an empty file. It is still checked, verified
   and tried by QA against its acceptance criteria.
+- A ticket whose test-writer ends with no scenarios goes on to the coder as one that takes
+  none, without stopping: the test-writer is told to write none when no user of the product
+  would see the change. It used to be sent back for having written nothing. On a real
+  project four tickets of upkeep died there in a day: the verifier refused every scenario as
+  not being about the product, the test-writer then rightly wrote none, and the program
+  refused that until the attempts ran out. Two rules that could not both be met left the
+  ticket to the user each time. Whoever writes the ticket may still say so beforehand.
 - An agent works without a tab when its `[[agents]]` says `tab = false`. The user wanted
   the tabs of the agents they watch, not one for an auditor or a documenter that works
   now and then. What it does is still kept in its file under `.devkit/logs/`.
