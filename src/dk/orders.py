@@ -33,11 +33,28 @@ def _said(tickets: Tickets, number: int, what: str, words: str) -> None:
     tickets.record(number, f"{what} by the user{': ' + words if words else ''}")
 
 
-def retry(tickets: Tickets, number: int, answer: str) -> None:
+def retry(tickets: Tickets, number: int, answer: str, tests: bool = True) -> None:
+    """Send a stopped ticket on; without `tests`, as one that takes no behaviour tests."""
     ticket, position = _stopped(tickets, number)
+    if not tests:
+        _untested(tickets, ticket)
     tickets.move(number, *vars(process.retry(position)).values())
     _said(tickets, number, "sent on", answer)
-    print(f"#{number} will continue at {ticket.step} on the next run")
+    how = f"at {ticket.step}" if tests else "without behaviour tests"
+    print(f"#{number} will continue {how} on the next run")
+
+
+def _untested(tickets: Tickets, ticket: Ticket) -> None:
+    """Have the ticket go on to the coder with no behaviour tests, and none kept read-only:
+    what its test-writer wrote before was never approved."""
+    if not process.unapproved(ticket.step):
+        raise LookupError(
+            f"#{ticket.id} is past its behaviour tests; "
+            f'approved ones change only with: dk reject {ticket.id} --note "..."'
+        )
+    tickets.untested(ticket.id)
+    tickets.protect(ticket.id, {})
+    tickets.record(ticket.id, "no behaviour tests: decided when the ticket was sent on")
 
 
 def cancel(tickets: Tickets, number: int) -> None:

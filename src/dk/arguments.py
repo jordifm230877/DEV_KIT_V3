@@ -55,6 +55,11 @@ def parser(audits: list[str], programs: list[str]) -> argparse.ArgumentParser:
     retry = commands.add_parser("retry", help="send a stopped ticket on again")
     retry.add_argument("ticket", type=int)
     retry.add_argument("--note", default="", help="an answer or instruction for the agent")
+    retry.add_argument(
+        "--no-behaviour-tests",
+        action="store_true",
+        help="go on to the coder: the ticket changes nothing a user of the product can see",
+    )
     commands.add_parser("cancel", help="give a ticket up and throw its work away").add_argument(
         "ticket", type=int
     )

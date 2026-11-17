@@ -267,3 +267,56 @@ def test_a_ticket_written_without_behaviour_tests_goes_straight_to_the_coder(
     assert "no behaviour tests: decided when the ticket was written" in shown
     assert project.merged("features/greet.feature") is None
     assert "#2 stopped at approve" in project.dk("status"), "other tickets still get theirs"
+
+
+# The test-writer's one scenario is refused, and it then rightly writes none.
+WITHDRAWS = (
+    "marker = pathlib.Path(sys.argv[0]).with_name('wrote.txt')\n"
+    "feature = pathlib.Path('features/run.feature')\n"
+    "if marker.exists():\n"
+    "    feature.unlink(missing_ok=True)\n"
+    "else:\n"
+    "    feature.parent.mkdir(exist_ok=True)\n"
+    "    feature.write_text('Feature: Run\\n  Scenario: The suite passes under load\\n')\n"
+    "marker.write_text('once'); print('RESULT: done')"
+)
+REFUSES_SCENARIOS = (
+    "vetting = 'not yet shown to the user' in prompt\n"
+    "print('RESULT: rejected: it is about the test run' if vetting else 'RESULT: approved')"
+)
+
+
+def test_a_ticket_stopped_for_want_of_behaviour_tests_can_go_on_without_them(
+    project: Project,
+) -> None:
+    """A real ticket made an approved scenario reliable under load, which no user of the
+    product sees. Its one scenario was refused, the test-writer then wrote none, and the
+    ticket ran out of attempts with no way left but to cancel it and write it again."""
+    project.configure(coder=HELLO, tester=WITHDRAWS, verifier=REFUSES_SCENARIOS)
+    project.dk("add", "Steady test", "--spec", "Make the timing scenario reliable.")
+    project.dk("run")
+    assert "#1 stopped at specify" in project.dk("status")
+
+    said = project.dk("retry", "1", "--no-behaviour-tests", "--note", "reliability work")
+    project.dk("run")
+
+    assert "#1 will continue without behaviour tests" in said
+    shown = project.dk("show", "1")
+    assert "#1 done" in shown and project.merged("greeting.txt") == "hello\n"
+    assert "no behaviour tests: decided when the ticket was sent on" in shown
+    assert shown.count("tester-1 started") == 3
+
+
+def test_approved_behaviour_tests_are_not_dropped_by_sending_the_ticket_on(
+    project: Project,
+) -> None:
+    project.configure(coder="print('RESULT: question: which language?')", tester=TESTER)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+    project.dk("approve", "1")
+    project.dk("run")
+    assert "#1 stopped at code" in project.dk("status")
+
+    refused = project.refused("retry", "1", "--no-behaviour-tests")
+
+    assert "#1 is past its behaviour tests" in refused and "dk reject 1" in refused

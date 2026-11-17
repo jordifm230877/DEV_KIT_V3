@@ -73,6 +73,7 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
         '--spec "Wanted: ... Acceptance criteria: ... Out of scope: ..."',
         "the epic first",
         "--no-behaviour-tests",
+        'retry NUMBER --note "TEXT" [--no-behaviour-tests]',
         "audit security|performance",
     ):
         assert word in brief

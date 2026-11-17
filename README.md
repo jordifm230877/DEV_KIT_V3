@@ -89,7 +89,7 @@ dk run            # work on every unfinished ticket
 dk status         # one line per ticket; --watch keeps showing agents and unfinished tickets
 dk show 1         # the ticket and everything that happened to it
 dk web            # the same in your browser: agents, epics, tickets and their behaviour tests; with the key it prints, approve and answer there
-dk retry 1 --note "an answer"   # send a stopped ticket on again
+dk retry 1 --note "an answer"   # send a stopped ticket on again; --no-behaviour-tests if it stopped for them and needs none
 dk cancel 1       # give a ticket up; its unmerged work is thrown away
 dk epic "EPIC" --spec "Goal: ... Includes: ... Excludes: ..."   # say what an epic is for; without --spec, show it
 dk close "EPIC"   # mark an epic complete, once all its tickets are finished

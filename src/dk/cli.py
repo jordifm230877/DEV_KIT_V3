@@ -219,7 +219,7 @@ def _execute(args: argparse.Namespace) -> None:
         "follow": lambda: views.follow(args.log),
         "web": lambda: _web(args.port, project, home, tickets),
         "show": lambda: views.show(tickets, Workspace(project, home / "work"), args.ticket),
-        "retry": lambda: orders.retry(tickets, args.ticket, args.note),
+        "retry": lambda: orders.retry(tickets, args.ticket, args.note, not args.no_behaviour_tests),
         "cancel": lambda: orders.cancel(tickets, args.ticket),
         "epic": lambda: orders.epic(tickets, args.name, args.spec),
         "close": lambda: orders.close(tickets, args.epic),

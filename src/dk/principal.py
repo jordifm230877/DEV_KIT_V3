@@ -25,7 +25,7 @@ Your tool for tickets: `{command}`
       [--after NUMBER] [--no-behaviour-tests]   the last only if no user sees the change
   status                 all tickets
   show NUMBER            one in full
-  retry NUMBER --note "TEXT"   send a stopped ticket on
+  retry NUMBER --note "TEXT" [--no-behaviour-tests]   send a stopped ticket on
   cancel NUMBER          give it up
   close "EPIC"           complete it
   reopen "EPIC"
@@ -55,16 +55,17 @@ What happened to it, latest last:
 It stopped because: {reason}
 
 Find out why: read AGENTS.md, docs/discovery.md, the code and the history above.
-Answer yourself only when you have enough to answer safely. An answer is safe when both hold:
+Answer yourself only when that is safe, which is when both hold:
 - it follows from what the ticket, AGENTS.md or docs/discovery.md already decide: their plain
   reading, not a preference of yours;
 - if it turned out wrong it would be cheap to put right: a detail of how, not what is built.
 Always the user's, however sure you are: changing what is built or what a ticket covers,
 approved behaviour tests, and a choice the user left open.
 With a safe answer the ticket is sent on. Say in it what you base it on.
-Otherwise tell the user in plain words what happened, why, and what you recommend. They can
-change the project or its devkit.toml, answer with `dk retry {id} --note "..."`, send
-approved behaviour tests back with `dk reject {id} --note "..."`, or `dk cancel {id}`.
+Otherwise tell the user in plain words. They can
+change the project or its devkit.toml, answer with `dk retry {id} --note "..."`
+(with `--no-behaviour-tests` when it stopped for behaviour tests no user would see),
+send approved behaviour tests back with `dk reject {id} --note "..."`, or `dk cancel {id}`.
 Only that changes approved tests: no note lets a coder change them.
 Change no file: it would be thrown away.
 

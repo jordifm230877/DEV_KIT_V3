@@ -92,6 +92,8 @@ def test_the_principal_is_told_the_ticket_what_happened_and_why_it_stopped(
     assert "RESULT: done: " in brief and "RESULT: question: " in brief
     # It advised an exception for a coder; the program undid that coder's changes three times.
     assert "no note lets a coder change them" in brief
+    # It sent a ticket with nothing for a user to see back to the test-writer, three times.
+    assert "`--no-behaviour-tests` when it stopped for behaviour tests" in brief
     assert len(brief.split()) < 300
 
 

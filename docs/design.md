@@ -335,6 +335,13 @@ Each step ends with something usable.
   (`--no-behaviour-tests`), not the step it starts at: every ticket starts at the first
   step, and the steps about behaviour tests are skipped for one that takes none. Starting
   such tickets further along would have carried them past the examiner.
+- A ticket stopped before its behaviour tests are approved can be sent on without them
+  (`dk retry N --no-behaviour-tests`), by the user or the Principal, as either may when
+  writing it. What its test-writer wrote is no longer kept read-only; once tests are
+  approved the command is refused, since only `dk reject` changes those. In a real trial a
+  proposal accepted with behaviour tests was reliability work on an existing scenario: its
+  one scenario was refused, the test-writer then rightly wrote none, the Principal saw why
+  and could only send it back to the test-writer, and it was cancelled to be written again.
 - What agents write has a fixed form, kept by the program and not by a model: a ticket
   says `Wanted:`, `Acceptance criteria:` and `Out of scope:`, an epic `Goal:`, `Includes:`
   and `Excludes:` (`dk epic NAME --spec ...`, which also replaces what was said). `dk`

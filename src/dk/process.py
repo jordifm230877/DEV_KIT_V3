@@ -128,6 +128,12 @@ def advance(
     return Position(_rework(process, position.step), attempts, outcome.reason, spent)
 
 
+def unapproved(step: str) -> bool:
+    """Whether a ticket at this step has yet to get behaviour tests the user approved."""
+    names = [one.name for one in PROCESS]
+    return step in names and any(one.behaviour for one in PROCESS[names.index(step) :])
+
+
 def retry(position: Position) -> Position:
     """The user sends a stopped ticket on again, with a fresh set of attempts."""
     return Position(position.step, 0, position.note)
