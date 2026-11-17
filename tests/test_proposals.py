@@ -113,4 +113,4 @@ def test_the_principal_is_told_that_proposals_are_the_users_to_accept(project: P
 
     brief = (project.root / "brief.txt").read_text()
     assert "proposed" in brief and "only the user" in brief
-    assert len(brief.split()) < 300
+    assert len(brief.split()) < 400

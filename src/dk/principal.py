@@ -25,7 +25,8 @@ Your tool for tickets: `{command}`
       [--after NUMBER] [--no-behaviour-tests]   the last only if no user sees the change
   status                 all tickets
   show NUMBER            one in full
-  retry NUMBER --note "TEXT" [--no-behaviour-tests]   send a stopped ticket on
+  retry NUMBER --note "TEXT" [--no-behaviour-tests]   send a stopped ticket on; the last
+      when it stopped for behaviour tests and no user sees the change
   cancel NUMBER          give it up
   close "EPIC"           complete it
   reopen "EPIC"

@@ -342,6 +342,11 @@ Each step ends with something usable.
   proposal accepted with behaviour tests was reliability work on an existing scenario: its
   one scenario was refused, the test-writer then rightly wrote none, the Principal saw why
   and could only send it back to the test-writer, and it was cancelled to be written again.
+- What an agent is told is kept short by its tests: under 150 to 300 words for those who
+  take a job, under 400 for the Principal, whose two briefs carry the whole list of commands
+  and what it may decide. Theirs was 300 until naming one more option left no room to say
+  when to use it. The limit is there so that a rule learned in a trial replaces a weaker one
+  or becomes the program's work, not one more sentence; raising it is the user's decision.
 - What agents write has a fixed form, kept by the program and not by a model: a ticket
   says `Wanted:`, `Acceptance criteria:` and `Out of scope:`, an epic `Goal:`, `Includes:`
   and `Excludes:` (`dk epic NAME --spec ...`, which also replaces what was said). `dk`

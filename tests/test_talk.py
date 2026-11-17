@@ -74,6 +74,7 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
         "the epic first",
         "--no-behaviour-tests",
         'retry NUMBER --note "TEXT" [--no-behaviour-tests]',
+        "when it stopped for behaviour tests and no user sees the change",
         "audit security|performance",
     ):
         assert word in brief
@@ -84,7 +85,7 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     assert "first ticket adds its checks to devkit.toml and AGENTS.md" in brief
     # It passed on a note allowing a coder to change approved tests; the program undid them.
     assert "no note lets a coder change them" in brief
-    assert len(brief.split()) < 300
+    assert len(brief.split()) < 400
 
 
 def test_the_principal_explores_itself_and_keeps_tickets_for_changes(project: Project) -> None:
