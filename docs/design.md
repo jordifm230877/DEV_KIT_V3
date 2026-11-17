@@ -394,6 +394,11 @@ Each step ends with something usable.
   change leaves no trace in Git, so the night shift asks again the next night: accepted
   until it is seen to happen. `upkeep` is a fifth composer: with audits and documentation
   runs `orders` had reached its 300 lines.
+- The page of `dk web` lists the reports of the audits apart, under *Audits*, by the day
+  each was made and the latest first, and no longer among the documents. The user asked
+  for it: after three nights a real project had nine reports in one alphabetical list among
+  its other documents. The day is read from the name `jobs` gives a report, so the name is
+  still decided in one place; a file in `docs/audits/` without a day stays a document.
 - What an agent is told is kept short by its tests: under 150 to 300 words for those who
   take a job, under 400 for the Principal, whose two briefs carry the whole list of commands
   and what it may decide. Theirs was 300 until naming one more option left no room to say

@@ -203,6 +203,19 @@ function documents(data) {
   ]);
 }
 
+// The reports the audits left, by the day each was made, the latest first.
+function audits(data) {
+  const reports = data.days.flatMap((day) => day.reports);
+  where.textContent = `${reports.length} audit reports`;
+  if (!reports.length) return [h("div", { class: "empty card" }, "No audit has left a report yet.")];
+  const long = { weekday: "long", day: "numeric", month: "long", year: "numeric" };
+  return data.days.map((day) => [
+    h("h2", {}, new Date(`${day.day}T12:00`).toLocaleDateString(undefined, long)),
+    h("div", { class: "card" }, day.reports.map((one) =>
+      h("a", { class: "row plain", href: `#/doc/${one.path}` }, one.name))),
+  ]);
+}
+
 const built = (node) => (typeof node === "string" ? node
   : h(node.tag, node.attrs, node.children.map(built)));
 
@@ -217,6 +230,7 @@ function asked() {
   const file = /^#\/doc\/(.+)$/.exec(location.hash);
   if (number) return [`ticket/${number[1]}`, ticket];
   if (file) return [`doc/${file[1]}`, documentPage];
+  if (location.hash === "#/audits") return ["audits", audits];
   return location.hash === "#/docs" ? ["docs", documents] : ["board", board];
 }
 

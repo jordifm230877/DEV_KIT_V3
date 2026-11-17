@@ -151,7 +151,7 @@ def test_the_page_and_its_parts_are_served(project: Project, site: Site) -> None
     assert "<title>DevKit</title>" in page
     assert "api/" in site("/page.js") and "body" in site("/page.css")
     assert "markdown.js" in page and "function markdown" in site("/markdown.js")
-    assert 'href="#/docs"' in page
+    assert 'href="#/docs"' in page and 'href="#/audits"' in page
 
 
 def test_the_site_answers_other_computers_of_the_network(project: Project, site: Site) -> None:
@@ -177,11 +177,49 @@ def test_the_site_lists_the_documents_of_the_project(project: Project, site: Sit
 
     assert site("/api/docs") == {
         "files": [
-            "docs/audits/2026-11-17-security-audit.md",
             "docs/decisions.md",
             "docs/howto/greet.md",
         ]
     }
+
+
+def test_the_site_lists_the_reports_of_the_audits_by_day_the_latest_first(
+    project: Project, site: Site
+) -> None:
+    project.configure(coder=HELLO)
+    audits = project.root / "docs" / "audits"
+    audits.mkdir(parents=True)
+    for name in (
+        "2026-11-16-security-audit",
+        "2026-11-17-tests-audit",
+        "2026-11-17-performance-audit",
+        "how-we-audit",
+    ):
+        (audits / f"{name}.md").write_text("# Findings\n")
+
+    def report(name: str) -> dict[str, str]:
+        return {"path": f"docs/audits/{name}.md", "name": name[11:].replace("-", " ")}
+
+    assert site("/api/audits") == {
+        "days": [
+            {
+                "day": "2026-11-17",
+                "reports": [
+                    report("2026-11-17-performance-audit"),
+                    report("2026-11-17-tests-audit"),
+                ],
+            },
+            {"day": "2026-11-16", "reports": [report("2026-11-16-security-audit")]},
+        ]
+    }
+    assert site("/api/docs") == {"files": ["docs/audits/how-we-audit.md"]}, "no day: a document"
+    assert site("/api/doc/docs/audits/2026-11-16-security-audit.md")["text"] == "# Findings\n"
+
+
+def test_a_project_never_audited_has_no_days(project: Project, site: Site) -> None:
+    project.configure(coder=HELLO)
+
+    assert site("/api/audits") == {"days": []}
 
 
 def test_a_project_without_documents_has_an_empty_list(project: Project, site: Site) -> None:

@@ -5,17 +5,19 @@ A composer: it reads the ticket list, the configuration, the process and a ticke
 
 from __future__ import annotations
 
+import re
 import sys
 import time
 from collections.abc import Collection, Iterator, Sequence
 from pathlib import Path
 
 from dk import config, paint, process, spent
-from dk.jobs import PRINCIPAL
+from dk.jobs import PRINCIPAL, report
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 
 _LOOK_EVERY = 0.1
+_REPORT = re.compile(report("(.+)", r"(\d{4}-\d\d-\d\d)"))  # an audit's report: its day, its kind
 Row = tuple[str, str]  # what kind of line it is, and its words
 
 
@@ -173,11 +175,24 @@ def _documents(project: Path) -> list[str]:
     return sorted(file.relative_to(project).as_posix() for file in found if file.is_file())
 
 
+def _audits(project: Path) -> list[dict[str, object]]:
+    """The reports the audits left, by the day each was made, the latest day first."""
+    days: dict[str, list[dict[str, str]]] = {}
+    for path in _documents(project):
+        if found := _REPORT.fullmatch(path):
+            name = found[2].replace("-", " ")
+            days.setdefault(found[1], []).append({"path": path, "name": name})
+    return [{"day": day, "reports": days[day]} for day in sorted(days, reverse=True)]
+
+
 def data(what: str, project: Path, tickets: Tickets, workspace: Workspace) -> object:
-    """What the page asks for: `board`, `ticket/N`, `docs`, or `doc/PATH` for one of them."""
+    """What the page asks for: `board`, `ticket/N`, `audits`, `docs`, or `doc/PATH` for one
+    of either."""
     kind, _, number = what.partition("/")
-    if what == "docs":
-        return {"files": _documents(project)}
+    if what == "audits":
+        return {"days": _audits(project)}
+    if what == "docs":  # the reports of the audits have their own page
+        return {"files": [path for path in _documents(project) if not _REPORT.fullmatch(path)]}
     if kind == "doc":
         if number not in _documents(project):  # also keeps the page to the project's documents
             raise LookupError(f"there is no document {number}")
