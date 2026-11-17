@@ -272,6 +272,9 @@ folders is kept:
 It is carried out like a ticket and only one runs at a time. Nobody reviews what it writes:
 read it yourself. When it finds nothing to change, the run ends as done.
 
+Everything under `docs/` is easiest to read in the page of `dk web`, under *Documentation*:
+the decisions, the studies, the audit reports, the technical pages and the guides.
+
 Where a project has a documenter, two things ask for a run without you: closing an epic
 (`dk close`), and the night shift once the documentation is five days old and the project,
 apart from `docs/`, changed since it was written.

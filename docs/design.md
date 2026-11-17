@@ -262,6 +262,17 @@ Each step ends with something usable.
   out, not stored, so it cannot disagree with the tickets. Looked at with the real trial
   project in a browser, wide and narrow. It answers every computer of the network, because
   the user looks at it from another one; anyone on that network can read the tickets.
+- The page has a part for documentation: every Markdown file under `docs/`, by folder,
+  each drawn as a page; the user asked for it because documents are hard to read in a
+  terminal. So decisions, studies, audit reports, technical pages and guides are read in
+  one place. The page reads Markdown with a small reader of its own (`pages/markdown.js`:
+  headings, paragraphs, lists, tables, quotes, rules, code, bold, italic, links), chosen
+  over a library fetched from the web, which would not work without a connection and would
+  be the project's first dependency. Anything else in a document stays the text it is;
+  nothing a document says is run, and a link is followed only to the web or to another
+  document. The reader builds a tree and touches no page, so its tests run it with Node,
+  and are skipped where there is none. Looked at in a browser with the documents a real
+  documenter wrote for the trial project.
 - From the page the user approves or sends back behaviour tests, answers a stopped ticket,
   accepts or turns down a proposal and gives a ticket up: the same orders as the commands,
   carried out by the same code. They need a key that `dk web` makes anew each time it

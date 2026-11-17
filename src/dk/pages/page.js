@@ -187,9 +187,41 @@ function ticket(data) {
   ];
 }
 
-async function look() {
+// The documents of the project, by the folder of `docs` each is in.
+function documents(data) {
+  where.textContent = `${data.files.length} documents`;
+  const folders = new Map();
+  for (const path of data.files) {
+    const [, folder, name] = /^docs\/(?:(.*)\/)?([^/]+)\.md$/.exec(path);
+    folders.set(folder || "", [...(folders.get(folder || "") || []), { path, name }]);
+  }
+  if (!data.files.length) return [h("div", { class: "empty card" }, "This project has no documents under docs/.")];
+  return [...folders].map(([folder, files]) => [
+    h("h2", {}, folder || "docs"),
+    h("div", { class: "card" }, files.map((file) =>
+      h("a", { class: "row plain", href: `#/doc/${file.path}` }, file.name))),
+  ]);
+}
+
+const built = (node) => (typeof node === "string" ? node
+  : h(node.tag, node.attrs, node.children.map(built)));
+
+function documentPage(data) {
+  where.textContent = data.path;
+  return [h("article", { class: "doc card" }, markdown(data.text, data.path).map(built))];
+}
+
+// What the address asks for, and how to draw the answer.
+function asked() {
   const number = /^#\/ticket\/(\d+)$/.exec(location.hash);
-  const what = number ? `ticket/${number[1]}` : "board";
+  const file = /^#\/doc\/(.+)$/.exec(location.hash);
+  if (number) return [`ticket/${number[1]}`, ticket];
+  if (file) return [`doc/${file[1]}`, documentPage];
+  return location.hash === "#/docs" ? ["docs", documents] : ["board", board];
+}
+
+async function look() {
+  const [what, draw] = asked();
   try {
     const answer = await fetch(`api/${what}`);
     const text = await answer.text();
@@ -198,7 +230,7 @@ async function look() {
     if (what + text === drawn) return;
     drawn = what + text;
     const data = JSON.parse(text);
-    app.replaceChildren(...(answer.ok ? (number ? ticket(data) : board(data))
+    app.replaceChildren(...(answer.ok ? draw(data)
       : [h("div", { class: "empty card" }, data.error)]).flat(3).filter(Boolean));
   } catch {
     fresh.className = "lost";

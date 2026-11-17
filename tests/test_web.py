@@ -150,6 +150,8 @@ def test_the_page_and_its_parts_are_served(project: Project, site: Site) -> None
 
     assert "<title>DevKit</title>" in page
     assert "api/" in site("/page.js") and "body" in site("/page.css")
+    assert "markdown.js" in page and "function markdown" in site("/markdown.js")
+    assert 'href="#/docs"' in page
 
 
 def test_the_site_answers_other_computers_of_the_network(project: Project, site: Site) -> None:
@@ -162,3 +164,53 @@ def test_the_site_answers_other_computers_of_the_network(project: Project, site:
 
     assert address.startswith(f"http://{mine}:"), "the address it gives is one others can use"
     assert site("/api/board")["agents"][0]["name"] == "coder-1"
+
+
+def test_the_site_lists_the_documents_of_the_project(project: Project, site: Site) -> None:
+    project.configure(coder=HELLO)
+    (project.root / "docs" / "howto").mkdir(parents=True)
+    (project.root / "docs" / "audits").mkdir()
+    (project.root / "docs" / "howto" / "greet.md").write_text("# Greet\n")
+    (project.root / "docs" / "audits" / "2026-11-17-security-audit.md").write_text("# Findings\n")
+    (project.root / "docs" / "decisions.md").write_text("# Decisions\n")
+    (project.root / "docs" / "notes.txt").write_text("not a document\n")
+
+    assert site("/api/docs") == {
+        "files": [
+            "docs/audits/2026-11-17-security-audit.md",
+            "docs/decisions.md",
+            "docs/howto/greet.md",
+        ]
+    }
+
+
+def test_a_project_without_documents_has_an_empty_list(project: Project, site: Site) -> None:
+    project.configure(coder=HELLO)
+
+    assert site("/api/docs") == {"files": []}
+
+
+def test_a_document_is_handed_out_as_it_was_written(project: Project, site: Site) -> None:
+    project.configure(coder=HELLO)
+    (project.root / "docs" / "howto").mkdir(parents=True)
+    (project.root / "docs" / "howto" / "instal·lació pas 1.md").write_text("# Instal·lació\n")
+
+    document = site("/api/doc/docs/howto/instal%C2%B7laci%C3%B3%20pas%201.md")
+
+    assert document == {"path": "docs/howto/instal·lació pas 1.md", "text": "# Instal·lació\n"}
+
+
+def test_only_the_documents_of_the_project_are_handed_out(project: Project, site: Site) -> None:
+    project.configure(coder=HELLO)
+    (project.root / "docs").mkdir()
+    (project.root / "docs" / "decisions.md").write_text("# Decisions\n")
+
+    for path in (
+        "docs/none.md",
+        "devkit.toml",
+        "docs/../devkit.toml",
+        "/etc/hostname",
+        "README.md",
+    ):
+        code, said = refused(site, f"/api/doc/{path}")
+        assert code == 404 and "there is no document" in said, path

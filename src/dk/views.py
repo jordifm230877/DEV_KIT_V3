@@ -167,9 +167,21 @@ def _team(team: Sequence[config.Agent], tickets: list[Ticket]) -> Iterator[dict[
         }
 
 
+def _documents(project: Path) -> list[str]:
+    """The documents of the project that the page shows: the Markdown files under `docs`."""
+    found = (project / "docs").rglob("*.md")
+    return sorted(file.relative_to(project).as_posix() for file in found if file.is_file())
+
+
 def data(what: str, project: Path, tickets: Tickets, workspace: Workspace) -> object:
-    """What the page asks for: `board`, or `ticket/N`."""
+    """What the page asks for: `board`, `ticket/N`, `docs`, or `doc/PATH` for one of them."""
     kind, _, number = what.partition("/")
+    if what == "docs":
+        return {"files": _documents(project)}
+    if kind == "doc":
+        if number not in _documents(project):  # also keeps the page to the project's documents
+            raise LookupError(f"there is no document {number}")
+        return {"path": number, "text": (project / number).read_text()}
     listed = tickets.all()
     if what == "board":
         agents = [*_team(config.load(project).agents, listed)]

@@ -12,7 +12,7 @@ import threading
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 _PARTS = Path(__file__).with_name("pages")
 _KINDS = {".html": "text/html", ".css": "text/css", ".js": "text/javascript"}
@@ -44,7 +44,7 @@ class _Answers(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         path = urlsplit(self.path).path
         if path.startswith("/api/"):
-            return self._data(path.removeprefix("/api/"))
+            return self._data(unquote(path.removeprefix("/api/")))
         parts = {part.name: part for part in _PARTS.iterdir()}
         part = parts.get(path.removeprefix("/") or "index.html")
         if part is None:
