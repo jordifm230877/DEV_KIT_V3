@@ -100,6 +100,9 @@ def test_the_principal_explores_itself_and_keeps_tickets_for_changes(project: Pr
     assert "`docs/decisions.md`" in brief and "rewrite it" in brief
     assert "`docs/discovery/DATE-topic.md`" in brief
     assert "docs/discovery.md` is yours to split" in brief
+    # Told only where not to write it, it wrote what it found about one ticket there anyway.
+    about_one = brief[brief.index("about one ticket") :]
+    assert about_one.index("`retry` note") < about_one.index("docs/discovery.md` is yours")
 
 
 def test_the_principal_cannot_approve_for_the_user(project: Project) -> None:

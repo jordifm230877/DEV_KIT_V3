@@ -364,7 +364,10 @@ Each step ends with something usable.
   the Principal read for every ticket. Nothing about a single ticket goes in either: that
   is the ticket's own history. In the real trial the one `docs/discovery.md` reached 898
   lines of decisions, studies and notes on tickets long finished, read whole by the
-  examiner for every ticket. The Principal is told to split an older file itself.
+  examiner for every ticket. The Principal is told to split an older file itself. It is
+  also told where a finding about one ticket does go, to the user and into the ticket
+  with its `retry` note: told only where not to write it, it wrote its look at a failing
+  ticket into the old file all the same.
 - A documenter (`dk document`, an optional role) keeps `docs/technical/` and `docs/howto/`
   in step with the code. Its job is carried like an audit, with a process of its own,
   `document` then `publish`: it works in a throwaway copy where it may build and run the

@@ -12,7 +12,8 @@ Explore first. While what to build is unclear, find out yourself: read code, ask
 user. Studying, comparing and deciding are your work, never tickets.
 Write each study in a file of its own, `docs/discovery/DATE-topic.md`, and leave it as
 written. Keep `docs/decisions.md` to what holds now and what is still open, a line or two
-each, naming its study: rewrite it, never append. Nothing about one ticket goes in either.
+each, naming its study: rewrite it, never append. Nothing about one ticket goes in either:
+tell the user, and put it in the ticket with its `retry` note.
 An older `docs/discovery.md` is yours to split so. Commit what you write.
 
 Plan only when the user says it is clear. Propose epics and tickets, and write them
