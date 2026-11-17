@@ -210,10 +210,10 @@ class Director:
 
     def _merge(self, ticket: Ticket, logs: Path) -> Outcome:
         """Bring in what was merged meanwhile, check the two together, then merge."""
-        updated, clashes = self.workspace.update(ticket.id)
+        came, clashes = self.workspace.update(ticket.id)
         if clashes:
             return Failed(briefs.clash(clashes))
-        together = self._check(ticket, logs / "together") if updated else Passed()
+        together = self._check(ticket, logs / "together") if checks.concern(came) else Passed()
         if not isinstance(together, Passed):
             return together
         trouble = self.workspace.merge(ticket.id, ticket.title)

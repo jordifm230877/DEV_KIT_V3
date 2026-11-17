@@ -135,6 +135,12 @@ Each step ends with something usable.
   worked on another. The director hands the first agent to a ticket itself, in ticket order.
 - The test-writer puts scenarios where the project's `AGENTS.md` says, and under `features/`
   only when it says nothing: a fixed folder clashed with a Rust project's `tests/features/`.
+- At `merge` the ticket's copy takes in what the project gained meanwhile and the checks
+  are run again on the two together, unless all that came is under `docs/` or is
+  devkit.toml. On a real project every audit report and documentation run merged meanwhile
+  had a ticket's whole suite, minutes long, run a second time. The checks of a run are
+  those it started with, so devkit.toml cannot change them; that no check reads `docs/` is
+  assumed, as reports and documentation already join the project unchecked.
 - Before a test-writer or coder starts, the ticket's copy takes in what the project gained
   since; a collision goes to the coder as files to resolve. Twice a ticket was sent on after
   the user had committed the fix, and its copy, made earlier, could not see it.

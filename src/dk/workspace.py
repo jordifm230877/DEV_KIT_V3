@@ -125,16 +125,17 @@ class Workspace:
             (copy / name).write_text(content)
         self.save(ticket, "Put back approved behaviour tests")
 
-    def update(self, ticket: int) -> tuple[bool, list[str]]:
-        """Bring into the copy what the project gained since. Returns whether anything came,
-        and the files left with conflict markers for the coder to resolve."""
+    def update(self, ticket: int) -> tuple[list[str], list[str]]:
+        """Bring into the copy what the project gained since. Returns the files that came,
+        and those left with conflict markers for the coder to resolve."""
         copy = self._copy(ticket)
         project = self._must(self._project, "rev-parse", "HEAD")
         if self._git(copy, "merge-base", "--is-ancestor", project, "HEAD").returncode == 0:
-            return False, []
+            return [], []
+        came = self._must(copy, "diff", "--name-only", f"HEAD...{project}").splitlines()
         if self._git(copy, "merge", "-q", "--no-edit", project).returncode == 0:
-            return True, []
-        return True, self._must(copy, "diff", "--name-only", "--diff-filter=U").splitlines()
+            return came, []
+        return came, self._must(copy, "diff", "--name-only", "--diff-filter=U").splitlines()
 
     def unsaved(self) -> list[str]:
         """The project's files that Git does not hold as they are now; copies lack them."""

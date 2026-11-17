@@ -11,6 +11,12 @@ from dk import child
 _TAIL_LINES = 30
 
 
+def concern(files: Sequence[str]) -> bool:
+    """Whether files the project gained could change what its checks say. Its documents
+    could not, nor devkit.toml: the checks of a run are those it started with."""
+    return any(not file.startswith("docs/") and file != "devkit.toml" for file in files)
+
+
 def run(
     checks: Mapping[str, Sequence[str]],
     cwd: Path,

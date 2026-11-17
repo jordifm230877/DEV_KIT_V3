@@ -275,6 +275,36 @@ def test_work_already_checked_is_not_checked_again_before_merging(project: Proje
     assert counted.read_text() == "x", "the project gained nothing meanwhile"
 
 
+@pytest.mark.parametrize(
+    ("gained", "checked"),
+    [("docs/audits/report.md", "x"), ("devkit.toml", "x"), ("docs.md", "xx")],
+)
+def test_only_what_could_change_the_checks_has_the_work_checked_again(
+    project: Project, gained: str, checked: str
+) -> None:
+    """A report or a documentation run merged meanwhile had every ticket's whole suite run
+    twice; the checks read neither `docs/` nor, once started, devkit.toml."""
+    counted = project.root.parent / "checked.txt"
+    meanwhile = (
+        "import subprocess\n"
+        f"new = pathlib.Path({str(project.root)!r}) / {gained!r}\n"
+        "new.parent.mkdir(parents=True, exist_ok=True)\n"
+        "new.open('a').write('# gained meanwhile\\n')\n"
+        "for git in (['add', '-A'], ['commit', '-qm', 'meanwhile']):\n"
+        f"    subprocess.run(['git', '-C', {str(project.root)!r}, *git], check=True)\n"
+    )
+    project.configure(
+        coder=meanwhile + WRITES_GREETING, check=f"open({str(counted)!r}, 'a').write('x')"
+    )
+    project.dk("add", "Greet", "--spec", "Create greeting.txt.")
+
+    project.dk("run")
+
+    assert "#1 done" in project.dk("status")
+    assert project.merged(gained) and project.merged("greeting.txt")
+    assert counted.read_text() == checked
+
+
 def test_a_run_says_so_when_the_project_has_no_checks(project: Project) -> None:
     """A project begun from nothing had none, and its tickets were merged unproved."""
     project.configure(coder=WRITES_GREETING)
