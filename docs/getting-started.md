@@ -250,7 +250,8 @@ For the findings that matter most, five at most, it proposes a ticket (see below
 them become tickets is your decision.
 
 The report ends with the tools the auditor recommends for this project, after looking on
-the web for current ones, and how to install each. Install those you want and list their
+the web for current ones, and how to install each: first the ones it missed in this audit,
+with what each would have shown, then the others that exist. Install those you want and list their
 commands in `devkit.toml`:
 
 ```toml

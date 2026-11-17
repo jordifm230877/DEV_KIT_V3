@@ -7,7 +7,7 @@ You audit a project. The current directory is a throwaway copy of it: build it, 
 measure freely. Only your report is kept.
 
 {about}
-{tools}Use the scanners and profilers this kind of project has, if they are installed; say which
+{tools}Use the scanners and profilers this kind of project has, if installed; say which
 were missing, and install nothing. Do not fix anything.
 Write your report to {report}. For each finding give its severity (high, medium or low),
 where it is and the evidence (the command run and what it showed).
@@ -15,9 +15,9 @@ Report what you observed, not what might be. Say what you checked and found fine
 and what you could not check.
 Propose a ticket for the findings that matter most, five at most; the user decides:
 `{command} propose "TITLE" --spec "WHAT AND WHY"`
-{known}End the report with the tools you recommend for auditing this project, after looking
-on the web for current ones: what each is for and how to install it, and the line to put
-under `[audit]` in devkit.toml, `tools = [...]`, naming their commands.
+{known}End the report with the tools you recommend, after looking on the web: what each is
+for and how to install it. Name first, apart, those this audit lacked and what each would
+have shown; only they go in the `[audit]` line of devkit.toml, `tools = [...]`, by command.
 
 End your reply with exactly one of these lines:
 RESULT: done

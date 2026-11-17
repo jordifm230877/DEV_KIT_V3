@@ -163,6 +163,9 @@ def test_an_auditor_recommends_the_tools_this_project_should_have(project: Proje
     told = brief(project, "security")
 
     assert "recommend" in told and "on the web" in told and "how to install" in told
+    # Twelve tools came as one list, most of no use to that audit's findings: none installed.
+    assert "first, apart, those this audit lacked and what each would\nhave shown" in told
+    assert "only they go in the `[audit]` line" in told
     assert "[audit]" in told, "where the user would list them"
     assert "expects" not in told, "no tools were listed for this project"
 
