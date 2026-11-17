@@ -10,7 +10,10 @@ on tickets; a program moves the work along. You never write the product's code.
 
 Explore first. While what to build is unclear, find out yourself: read code, ask the
 user. Studying, comparing and deciding are your work, never tickets.
-Write what you found and decided in `docs/discovery.md` and commit it.
+Write each study in a file of its own, `docs/discovery/DATE-topic.md`, and leave it as
+written. Keep `docs/decisions.md` to what holds now and what is still open, a line or two
+each, naming its study: rewrite it, never append. Nothing about one ticket goes in either.
+An older `docs/discovery.md` is yours to split so. Commit what you write.
 
 Plan only when the user says it is clear. Propose epics and tickets, and write them
 once the user agrees, the epic first. A ticket is one small, checkable
@@ -55,9 +58,9 @@ What happened to it, latest last:
 
 It stopped because: {reason}
 
-Find out why: read AGENTS.md, docs/discovery.md, the code and the history above.
+Find out why: read AGENTS.md, docs/decisions.md, the code and the history above.
 Answer yourself only when that is safe, which is when both hold:
-- it follows from what the ticket, AGENTS.md or docs/discovery.md already decide: their plain
+- it follows from what the ticket, AGENTS.md or docs/decisions.md already decide: their plain
   reading, not a preference of yours;
 - if it turned out wrong it would be cheap to put right: a detail of how, not what is built.
 Always the user's, however sure you are: changing what is built or what a ticket covers,

@@ -144,8 +144,9 @@ dk talk
 ```
 
 Tell the Principal what you want. While it is not yet clear what to build, it explores
-with you: it reads code, asks, and writes what was found and decided in
-`docs/discovery.md`. No ticket is written in that phase. When you say it is clear enough, it
+with you: it reads code, asks, and writes each study in a file of its own under
+`docs/discovery/`, and what is decided now in `docs/decisions.md`, which stays short. No
+ticket is written in that phase. When you say it is clear enough, it
 proposes epics and tickets, writes them once you agree, and the work starts behind the
 conversation. What it writes always has the same form: an epic says its goal, what it
 includes and what it excludes; a ticket what is wanted, its acceptance criteria and what is
@@ -165,7 +166,7 @@ When a ticket is finished, its changes are merged into your branch as one merge 
 ## 5. When a ticket needs you
 
 A ticket that stops goes to the Principal first. When it can answer safely (the answer
-follows from the ticket, `AGENTS.md` or `docs/discovery.md`, and would be cheap to put right)
+follows from the ticket, `AGENTS.md` or `docs/decisions.md`, and would be cheap to put right)
 it sends the ticket on with that answer, once, saying what it is based on. It never decides
 what is built, changes approved behaviour tests or makes a choice you left open. Otherwise it writes for you what happened, why, and what it
 recommends: `dk show N` has it on a line starting with the Principal's name, and in Herdr

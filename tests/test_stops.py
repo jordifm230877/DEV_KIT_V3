@@ -50,7 +50,7 @@ def seen(pi: Path) -> list[str]:
 def test_the_principal_answers_what_is_already_decided_and_the_ticket_goes_on(
     project: Project, pi: Path
 ) -> None:
-    says(pi, "print('RESULT: done: use blue, as docs/discovery.md says')")
+    says(pi, "print('RESULT: done: use blue, as docs/decisions.md says')")
     project.configure(coder=ASKS, settings=PRINCIPAL)
     project.dk("add", "Paint", "--spec", "Paint it.")
 
@@ -59,7 +59,7 @@ def test_the_principal_answers_what_is_already_decided_and_the_ticket_goes_on(
     assert project.merged("colour.txt") == "blue\n"
     shown = project.dk("show", "1")
     assert "#1 done" in shown
-    assert "sent on by principal: use blue, as docs/discovery.md says" in shown
+    assert "sent on by principal: use blue, as docs/decisions.md says" in shown
 
 
 def test_the_principal_explains_to_the_user_what_it_cannot_answer(
@@ -90,6 +90,7 @@ def test_the_principal_is_told_the_ticket_what_happened_and_why_it_stopped(
     for part in ("Ticket #1: Paint", "Paint it nicely.", "coder-1 started", "which colour?"):
         assert part in brief
     assert "RESULT: done: " in brief and "RESULT: question: " in brief
+    assert "docs/decisions.md" in brief and "discovery" not in brief
     # It advised an exception for a coder; the program undid that coder's changes three times.
     assert "no note lets a coder change them" in brief
     # It sent a ticket with nothing for a user to see back to the test-writer, three times.

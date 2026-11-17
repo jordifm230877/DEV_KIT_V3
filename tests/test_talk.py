@@ -95,7 +95,10 @@ def test_the_principal_explores_itself_and_keeps_tickets_for_changes(project: Pr
 
     brief = (project.root / "brief.txt").read_text()
     assert brief.index("Explore") < brief.index("never tickets") < brief.index("Plan")
-    assert "docs/discovery.md" in brief
+    # One file for everything reached 13,500 words that every examiner read for every ticket.
+    assert "`docs/decisions.md`" in brief and "rewrite it" in brief
+    assert "`docs/discovery/DATE-topic.md`" in brief
+    assert "docs/discovery.md` is yours to split" in brief
 
 
 def test_the_principal_cannot_approve_for_the_user(project: Project) -> None:

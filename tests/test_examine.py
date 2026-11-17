@@ -70,6 +70,7 @@ def test_the_examiner_is_told_the_ticket_and_what_makes_one_unclear(project: Pro
     for looked_for in ("would have to guess", "nobody could check", "contradict", "more than one"):
         assert looked_for in seen
     assert "RESULT: approved" in seen and "RESULT: question:" in seen
+    assert "docs/decisions.md" in seen and "discovery" not in seen
     assert len(seen.split()) < 200
 
 

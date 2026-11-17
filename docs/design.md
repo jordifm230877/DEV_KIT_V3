@@ -117,7 +117,7 @@ Each step ends with something usable.
   by asking `dk`, and Herdr notifies the user when a ticket needs them.
 - Closing the conversation stops work in progress; that step is redone next time.
 - Exploring is not a ticket. Before it is clear what to build, the Principal studies and
-  asks in the conversation itself and writes the result in `docs/discovery.md`; tickets are
+  asks in the conversation itself and writes the result under `docs/`; tickets are
   only for changes to the project that can be checked. A first trial turned "survey this
   repository" into tickets, and the test-writer wrote behaviour tests for a survey.
 - `dk cancel` gives a ticket up wherever it is; any agent may run it. A job in progress is
@@ -155,7 +155,7 @@ Each step ends with something usable.
 - A ticket that stops is handed to the Principal before the user (not the wait for approval,
   which is no problem to explain). It is a separate read-only job, not the open conversation:
   a program cannot speak into that. It may send the ticket on once with an answer of its own when that is safe: the answer
-  follows from what the ticket, `AGENTS.md` or `docs/discovery.md` decide, and would be cheap
+  follows from what the ticket, `AGENTS.md` or `docs/decisions.md` decide, and would be cheap
   to put right if wrong. What is built, approved behaviour tests and choices left open stay
   the user's, and it says what the answer is based on. A second stop is the user's. In the real
   trial every stop reached the user as one raw line, and somebody outside DevKit had to
@@ -342,6 +342,13 @@ Each step ends with something usable.
   proposal accepted with behaviour tests was reliability work on an existing scenario: its
   one scenario was refused, the test-writer then rightly wrote none, the Principal saw why
   and could only send it back to the test-writer, and it was cancelled to be written again.
+- What the Principal finds out is kept in two places by how long it lasts. A study is one
+  file under `docs/discovery/`, written once. `docs/decisions.md` holds only what is decided
+  now and what is open, is rewritten instead of added to, and is the one the examiner and
+  the Principal read for every ticket. Nothing about a single ticket goes in either: that
+  is the ticket's own history. In the real trial the one `docs/discovery.md` reached 898
+  lines of decisions, studies and notes on tickets long finished, read whole by the
+  examiner for every ticket. The Principal is told to split an older file itself.
 - What an agent is told is kept short by its tests: under 150 to 300 words for those who
   take a job, under 400 for the Principal, whose two briefs carry the whole list of commands
   and what it may decide. Theirs was 300 until naming one more option left no room to say
