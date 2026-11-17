@@ -182,10 +182,10 @@ def programs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Programs:
     return Programs(folder)
 
 
-def team(project: Project, program: str, *roles: str, settings: str = "") -> None:
+def team(project: Project, program: str, *roles: str, settings: str = "", each: str = "") -> None:
     agents = settings + "".join(
         f'[[agents]]\nname = "{role}-1"\nrole = "{role}"\nprogram = "{program}"\n'
-        f'model = "some-model"\n\n'
+        f'model = "some-model"\n{each}\n'
         for role in roles
     )
     (project.root / "devkit.toml").write_text(f'{agents}[checks]\nunit = ["true"]\n')

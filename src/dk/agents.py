@@ -41,6 +41,7 @@ class _Program:
     offline: tuple[str, ...]  # what takes the web away
     talk: tuple[str, ...]  # a conversation with the user
     again: str  # what, followed by a session, picks up the job that session remembers
+    reasoning: tuple[str, ...]  # what sets how hard it thinks; `{reasoning}` stands for how
 
 
 PROGRAMS = {
@@ -51,6 +52,7 @@ PROGRAMS = {
         ("--exclude-tools", "codex_search,*web*"),
         ("pi", "--model", "{model}", "--append-system-prompt", INSTRUCTIONS),
         "--session",
+        ("--thinking", "{reasoning}"),
     ),
     "claude": _Program(
         ("claude", "-p", "--output-format", "stream-json")
@@ -61,6 +63,7 @@ PROGRAMS = {
         ("--disallowedTools", "WebSearch,WebFetch"),
         ("claude", "--model", "{model}", _FREE["claude"], "--append-system-prompt", INSTRUCTIONS),
         "--resume",
+        ("--effort", "{reasoning}"),
     ),
     "codex": _Program(
         ("codex", "exec", "--json", "--skip-git-repo-check") + ("-m", "{model}", _FREE["codex"]),
@@ -68,6 +71,7 @@ PROGRAMS = {
         ("-c", 'web_search="disabled"'),
         ("codex", "-m", "{model}", _FREE["codex"], INSTRUCTIONS),
         "resume",
+        ("-c", 'model_reasoning_effort="{reasoning}"'),
     ),
 }
 
@@ -90,8 +94,18 @@ def _known(program: str) -> _Program:
     return PROGRAMS[program]
 
 
+def _thinking(known: _Program, reasoning: str) -> tuple[str, ...]:
+    """What tells the program how hard to think; nothing leaves it to its own default."""
+    return tuple(part.replace("{reasoning}", reasoning) for part in known.reasoning if reasoning)
+
+
 def command(
-    program: str, model: str, writes: bool, web: bool = True, session: str = ""
+    program: str,
+    model: str,
+    writes: bool,
+    web: bool = True,
+    session: str = "",
+    reasoning: str = "",
 ) -> tuple[str, ...]:
     """The command line for a known agent program; a reviewer gets no tools that write.
     With `session`, the job that session remembers is picked up again."""
@@ -102,13 +116,17 @@ def command(
     )
     tools = ",".join(filter(None, (known.reading, known.web if web else "")))
     narrowed = () if writes or not known.reading else ("--tools", tools)
-    return (*base, *narrowed, *(() if web else known.offline), "--", INSTRUCTIONS)
+    less = () if web else known.offline
+    return (*base, *_thinking(known, reasoning), *narrowed, *less, "--", INSTRUCTIONS)
 
 
-def conversation(program: str, model: str, web: bool = True) -> tuple[str, ...]:
+def conversation(
+    program: str, model: str, web: bool = True, reasoning: str = ""
+) -> tuple[str, ...]:
     """The command line that opens a known agent program for talking with the user."""
     known = _known(program)
-    talk = (known.talk[0], *(() if web else known.offline), *known.talk[1:])
+    options = (*_thinking(known, reasoning), *(() if web else known.offline))
+    talk = (known.talk[0], *options, *known.talk[1:])
     return tuple(part.replace("{model}", model) for part in talk)
 
 

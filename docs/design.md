@@ -233,6 +233,9 @@ Each step ends with something usable.
   Codex search by themselves; Pi does through an extension (`pi-codex-search`, or any tool
   with `web` in its name), which DevKit does not install. Agents could already reach the
   network with shell commands, so this opens nothing new.
+- How hard an agent thinks is set per agent (`reasoning`), and is the program's default when
+  left out. DevKit passes the word on as written, each program in its own way, and keeps
+  no list of levels: the programs' lists differ and change, as the tools table would.
 - Each agent job is a fresh run of the agent program with no memory of earlier jobs; what it
   needs to know is in its brief. The one exception: an agent that stops its job to ask picks
   that job up again when the ticket is sent on, and is told only what was added to the ticket

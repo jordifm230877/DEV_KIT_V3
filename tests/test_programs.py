@@ -304,3 +304,44 @@ def test_a_first_configuration_can_name_the_program(project: Project) -> None:
 
     written = (project.root / "devkit.toml").read_text()
     assert written.count('program = "claude"') == 6 and '"pi"' not in written
+
+
+HOW_EACH_IS_TOLD = [
+    ("pi", ["--thinking", "high"]),
+    ("claude", ["--effort", "high"]),
+    ("codex", ["-c", 'model_reasoning_effort="high"']),
+]
+REASONS = 'reasoning = "high"\n'
+
+
+def within(call: list[str], wanted: list[str]) -> bool:
+    return any(call[at : at + len(wanted)] == wanted for at in range(len(call)))
+
+
+@pytest.mark.parametrize(("program", "told"), HOW_EACH_IS_TOLD)
+def test_an_agent_is_started_with_the_reasoning_it_is_set_to(
+    project: Project, programs: Programs, program: str, told: list[str]
+) -> None:
+    programs.does(program, "print('RESULT: done')")
+    team(project, program, "coder", "principal", each=REASONS)
+    project.dk("add", "Greet", "--spec", "Create greeting.txt.")
+
+    project.dk("run")
+    project.dk("talk", "--no-tabs")
+
+    job, talk = programs.calls(program)[0], programs.calls(program)[-1]
+    assert within(job, told) and job.index(told[0]) < job.index("--")
+    assert within(talk, told) and "Your tool for tickets" in talk[-1]
+
+
+@pytest.mark.parametrize(("program", "told"), HOW_EACH_IS_TOLD)
+def test_an_agent_with_no_reasoning_set_is_left_to_its_programs_own(
+    project: Project, programs: Programs, program: str, told: list[str]
+) -> None:
+    programs.does(program, "print('RESULT: done')")
+    team(project, program, "coder")
+    project.dk("add", "Greet", "--spec", "Create greeting.txt.")
+
+    project.dk("run")
+
+    assert told[0] not in programs.calls(program)[0][:-1]

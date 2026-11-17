@@ -110,6 +110,11 @@ Things to know:
   at once. The same works for verifiers and QA. Behaviour tests for later tickets are
   written while the coders are busy.
 - **Each agent can use a different model.** A smaller model for reviews, for example.
+- **Each agent can think more or less.** `reasoning = "high"` under an agent is passed to
+  its program in that program's own way (Pi `--thinking`, Claude `--effort`, Codex
+  `model_reasoning_effort`), so use a level that program knows: `low`, `medium`, `high`
+  and `xhigh` in all three. Left out, the program uses its default. Codex refuses a level
+  it does not know, which `dk check` shows; Pi and Claude warn and use their default.
 - **Checks** are whatever proves your project works: tests, lint, a build. DevKit runs them
   itself in the ticket's copy of the code; it never takes an agent's word for it.
 - **DevKit makes the commits**, one per step, with the ticket's title as the message. Agents

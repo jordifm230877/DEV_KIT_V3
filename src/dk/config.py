@@ -19,6 +19,7 @@ class Agent:
     role: str
     program: str = ""
     model: str = ""
+    reasoning: str = ""  # how hard it thinks, in its program's own words; empty for its default
     command: tuple[str, ...] = ()
     minutes: float = 0  # how long one job of its may take; 0 for the project's `agent_minutes`
     tab: bool = True  # whether its work is shown in a Herdr tab; it works the same without

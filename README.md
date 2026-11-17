@@ -29,6 +29,7 @@ max_attempts = 3            # failed attempts before a ticket stops and waits fo
 # agent_minutes = 90        # how long one job of an agent may take before it is cut off and done again;
                             # an agent may have its own: `minutes = 120` under its [[agents]]
                             # `tab = false` under an [[agents]] has it work without a Herdr tab
+                            # `reasoning = "high"` under an [[agents]] sets how hard it thinks; its program's default if left out
 # check_minutes = 30        # how long one of the project's checks may take before it counts as failed
 # quality_rules = false     # coders are told how to work well (tests first, crapper, dryer, mutator); this leaves it out
 # web = false               # agents may look things up on the web; this takes it away

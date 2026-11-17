@@ -46,7 +46,9 @@ def _team(settings: Config, conversing: str, log: Path) -> Iterator[Finding]:
     for agent in settings.agents:
         if agent.role == conversing and agent.command:
             continue  # a conversation of the user's own; it cannot be asked a question here
-        argv = agent.command or agents.command(agent.program, agent.model, False, settings.web)
+        argv = agent.command or agents.command(
+            agent.program, agent.model, False, settings.web, reasoning=agent.reasoning
+        )
         if argv not in asked:
             asked[argv] = _reach(agent, argv, log)
         yield not asked[argv], f"{agent.name}: {asked[argv]}" if asked[argv] else agent.name

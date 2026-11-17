@@ -38,6 +38,7 @@
 - **Clash** — a ticket's work collides with work merged while it was in progress; the coder gets the files to resolve.
 - **Board** — the view that redraws itself (`dk status --watch`, the `status` tab): what each agent is doing and the unfinished tickets.
 - **Tab** — a Herdr tab that shows one agent's work as it happens; nothing typed there reaches the agent. An agent may be set to have none (`tab = false`).
+- **Reasoning** — how hard an agent's model thinks before it answers, set per agent (`reasoning = "high"`) in its program's own words; the program's default when left out.
 - **Principal** — the agent the user talks with; it explores, writes tickets and reports, and does no work on tickets itself.
 - **Conversation** — a `dk talk` session; the director works behind it and stops when it ends.
 - **Spent** — the tokens a job has sent to its model and the tokens the model wrote, as the agent's program reports them; every call sends again what came before, so it measures cost, not how full the model's memory is.

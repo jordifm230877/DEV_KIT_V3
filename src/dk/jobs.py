@@ -68,7 +68,7 @@ class Jobs:
         self, agent: Agent, writes: bool, brief: str, ticket: Ticket, session: str = ""
     ) -> agents.Reply:
         argv = agent.command or agents.command(
-            agent.program, agent.model, writes, self.config.web, session
+            agent.program, agent.model, writes, self.config.web, session, agent.reasoning
         )
         copy = self.workspace.prepare(ticket.id)
         self.tickets.record(ticket.id, f"{agent.name} started")
