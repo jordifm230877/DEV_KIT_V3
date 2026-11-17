@@ -86,6 +86,8 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     assert "first ticket adds its checks to devkit.toml and AGENTS.md" in brief
     # It passed on a note allowing a coder to change approved tests; the program undid them.
     assert "no note lets a coder change them" in brief
+    # It advised `reject` on a ticket for tests a merged ticket had left; there was none to send.
+    assert "once it is merged, by a later ticket's test-writer" in brief
     assert len(brief.split()) < 400
 
 

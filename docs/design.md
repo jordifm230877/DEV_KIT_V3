@@ -147,6 +147,10 @@ Each step ends with something usable.
 - `dk reject` also works on a ticket stopped after approval: approved behaviour tests that
   turn out wrong go back to the test-writer and are approved again. A coder had stopped on
   an approved scenario that could not be met, and there was no way to change it.
+- Approved behaviour tests of a merged ticket are changed by a later ticket: its test-writer
+  rewrites them and the user approves them again, as that ticket's own. Both Principal
+  briefs say so. They said "only by reject", and the Principal advised `dk reject` on a
+  ticket at `examine` for a scenario an earlier ticket had merged; there was none to send.
 - Behaviour tests are vetted before the user sees them (step `vet`, done by the verifier,
   skipped without one). Three of the first six stops in the real trial came from approved
   scenarios about the change or the process ("no dependency was added", "the checks pass",

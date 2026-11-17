@@ -173,6 +173,25 @@ def test_approved_behaviour_tests_that_turn_out_wrong_can_be_sent_back(project: 
     assert "good morning" in (project.merged("features/greet.feature") or "")
 
 
+def test_a_later_ticket_changes_what_a_merged_one_had_approved(project: Project) -> None:
+    project.configure(coder=HELLO, tester=TESTER)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+    project.dk("approve", "1")
+    project.dk("run")
+    assert project.merged("features/greet.feature") == APPROVED_TEXT
+
+    project.dk("add", "Greet early", "--spec", "Make it say good morning.")
+    project.dk("run")
+    # Sending them back was tried on the later ticket, which had none of its own to send.
+    shown = project.dk("show", "2")
+    assert "#2 stopped at approve" in shown and "Then it says good morning" in shown
+    project.dk("approve", "2")
+    project.dk("run")
+
+    assert "good morning" in (project.merged("features/greet.feature") or "")
+
+
 def test_a_ticket_that_is_still_being_worked_on_cannot_be_sent_back(project: Project) -> None:
     project.configure(coder=HELLO, tester=TESTER)
     project.dk("add", "Greet", "--spec", "Say hello.")
