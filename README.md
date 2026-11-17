@@ -62,6 +62,12 @@ role = "auditor"
 program = "pi"
 model = "provider/model-name"
 
+[[agents]]                  # optional: carries out `dk document`
+name = "documenter-1"
+role = "documenter"
+program = "pi"
+model = "provider/model-name"
+
 [[agents]]                  # optional: writes Gherkin behaviour tests before any code
 name = "tester-1"
 role = "tester"
@@ -96,6 +102,7 @@ dk close "EPIC"   # mark an epic complete, once all its tickets are finished
 dk reopen "EPIC"  # open a closed epic again
 dk audit security # or performance, or tests: an `auditor` agent reports on the whole project in
                   # docs/audits/ and proposes tickets for what matters most
+dk document       # a `documenter` agent brings docs/technical/ and docs/howto/ up to date with the code
 dk night          # every audit that has something new to look at; `--at 02:30` starts it every day
 dk approve 1      # accept the behaviour tests shown by `dk show 1`; only you can, no agent
 dk reject 1 --note "what to change"

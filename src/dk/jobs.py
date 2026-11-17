@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from dk import agents, audits, briefs, shown, spent
+from dk import agents, audits, briefs, documents, shown, spent
 from dk.config import Agent, Config
 from dk.process import (
     DONE,
@@ -117,23 +117,45 @@ class Jobs:
         _, clashes = self.workspace.update(ticket.id)
         return f"{note}\n{briefs.clash(clashes)}".strip() if clashes else note
 
-    def _produce(
-        self, agent: Agent, brief: str, ticket: Ticket, only: str = "", note: str = ""
-    ) -> Outcome:
-        """Have the agent do work and save it; with `only`, nothing but that one file."""
+    def _work(
+        self, agent: Agent, brief: str, ticket: Ticket, only: tuple[str, ...] = (), note: str = ""
+    ) -> Outcome | None:
+        """Have the agent do work; with `only`, nothing but what is at those paths is left
+        of it. Returns why the work is not done, or None when the agent says that it is."""
         reply = self._resumed(agent, True, brief, ticket, note)
         if only:
-            self.workspace.keep_only(ticket.id, only)
+            self.workspace.keep_only(ticket.id, *only)
         if reply.kind in ("blocked", "question"):
             return Stopped(f"{reply.kind}: {reply.text}")
         if reply.kind != "done":
             return _unclear(agent, reply)
         if reply.text:  # for the user and the Principal; no reviewer is shown it
             self.tickets.record(ticket.id, f"{agent.name} noted: {reply.text}")
-        if not self.workspace.save(ticket.id, f"Ticket #{ticket.id}: {ticket.title}"):
-            missing = f"wrote no report at {only}" if only else "changed nothing"
-            return Failed(f"{agent.name} said it was done but {missing}")
-        return Passed()
+        return None
+
+    def _saved(self, ticket: Ticket) -> bool:
+        """Record what an agent left. Returns whether the ticket has any work to show."""
+        return self.workspace.save(ticket.id, f"Ticket #{ticket.id}: {ticket.title}")
+
+    def _produce(
+        self, agent: Agent, brief: str, ticket: Ticket, only: str = "", note: str = ""
+    ) -> Outcome:
+        """Have the agent do work that must leave something; with `only`, that one file."""
+        trouble = self._work(agent, brief, ticket, (only,) if only else (), note)
+        if trouble or self._saved(ticket):
+            return trouble or Passed()
+        missing = f"wrote no report at {only}" if only else "changed nothing"
+        return Failed(f"{agent.name} said it was done but {missing}")
+
+    def document(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
+        """Have the documentation brought up to date; of what the documenter leaves, only
+        its two folders are kept. Finding nothing to change is a job done."""
+        about = briefs.about(ticket.id, ticket.title, ticket.spec, position.note) + briefs.LONG
+        brief = documents.brief(about, briefs.ALWAYS)
+        trouble = self._work(agent, brief, ticket, documents.FOLDERS)
+        if not trouble and not self._saved(ticket):
+            self.tickets.record(ticket.id, f"{agent.name} found the documentation up to date")
+        return trouble or Passed()
 
     def audit(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         """Have the project looked over; of what the auditor leaves, only its report is kept."""

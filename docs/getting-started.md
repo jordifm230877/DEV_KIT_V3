@@ -256,6 +256,22 @@ The auditor is then told to use them, and `dk check` names those that are not in
 DevKit installs nothing itself. When you ask the Principal
 to close an epic, it suggests an audit if what the epic changed gives a reason.
 
+### Documentation
+
+`dk document` (add `--note "..."` to say what to write or correct in particular) has the
+project's documentation brought up to date with its code. It needs an agent with the role
+`documenter` in `devkit.toml`, written like the auditor above. The documenter works in a
+throwaway copy, where it may build and run the product, and only what it leaves in two
+folders is kept:
+
+- `docs/technical/` — for whoever will change the code: the parts of the product, how they
+  fit together, how to build, run and test it.
+- `docs/howto/` — for whoever uses the product: one guide for each thing they do with it,
+  taken from the approved behaviour tests and tried by the documenter before it is written.
+
+It is carried out like a ticket and only one runs at a time. Nobody reviews what it writes:
+read it yourself. When it finds nothing to change, the run ends as done.
+
 ### Proposed tickets and a coder's notes
 
 An auditor, and a coder that comes across work its ticket does not cover, propose a ticket

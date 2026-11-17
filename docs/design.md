@@ -57,6 +57,7 @@ request.
 | `spent` | Counts the tokens a job sends its model and the ones the model writes, from what Pi, Claude and Codex print | Start anything |
 | `briefs` | The short instructions each role receives | — |
 | `audits` | The kinds of audit and what an auditor is told | — |
+| `documents` | What a documenter is asked for and told, and the folders it may write | — |
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
 | `checks` | Runs the project's check commands | Interpret results |
 | `screen` | One Herdr tab per agent, showing what it is doing, and one for the board; watch-only | Affect the run |
@@ -349,6 +350,17 @@ Each step ends with something usable.
   is the ticket's own history. In the real trial the one `docs/discovery.md` reached 898
   lines of decisions, studies and notes on tickets long finished, read whole by the
   examiner for every ticket. The Principal is told to split an older file itself.
+- A documenter (`dk document`, an optional role) keeps `docs/technical/` and `docs/howto/`
+  in step with the code. Its job is carried like an audit, with a process of its own,
+  `document` then `publish`: it works in a throwaway copy where it may build and run the
+  product, and only those two folders are kept of what it leaves. It looks at the whole
+  project and at what was merged since it last wrote, rather than being a step of every
+  ticket: one writer cannot collide with itself, most tickets change nothing to document,
+  and a step would cost every ticket a job. Only one run exists at a time. Finding nothing
+  to change is a job done. Guides for users start from the approved behaviour tests, and
+  the documenter carries out each step before writing it. Nobody reviews what it writes;
+  the user reads it. The user asked for it, after the agents of the real trial left
+  documents of their own making across `docs/`.
 - What an agent is told is kept short by its tests: under 150 to 300 words for those who
   take a job, under 400 for the Principal, whose two briefs carry the whole list of commands
   and what it may decide. Theirs was 300 until naming one more option left no room to say

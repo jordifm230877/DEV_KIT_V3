@@ -206,6 +206,7 @@ def _execute(args: argparse.Namespace) -> None:
         "add": lambda: orders.add(args, tickets),
         "propose": lambda: orders.propose(args, tickets),
         "audit": lambda: orders.audit(args.kind, args.note, project, tickets),
+        "document": lambda: orders.document(args.note, project, tickets),
         "night": lambda: _night(args, project, home, tickets),
         "check": lambda: _check(project, home),
         "init": lambda: print(*starter.write(project, args.model, args.program), sep="\n"),

@@ -1,7 +1,7 @@
 # Glossary
 
 - **Agent** — a program driven by a language model that is given one job at a time.
-- **Role** — what an agent is for: coder, verifier, QA, test-writer, examiner, auditor, Principal.
+- **Role** — what an agent is for: coder, verifier, QA, test-writer, examiner, auditor, documenter, Principal.
 - **Examiner** — the role of the agent that reads a ticket before any work and stops it over what would have to be guessed: words with two readings, a criterion nobody could check, a contradiction, two pieces of work in one.
 - **Epic** — a large piece of work agreed between the user and the Principal. It is described under three headings: its goal, what it includes and what it excludes.
 - **Closed** — an epic marked complete with `dk close`; it shows as one line and takes no more tickets.
@@ -32,6 +32,8 @@
 - **Night shift** — `dk night`: every kind of audit whose last report the project has changed since, then the unfinished tickets; `--at HH:MM` has the system start it every day.
 - **Note** — one line a coder may add to its answer for the user (`RESULT: done: ...`); kept in the ticket's history and shown to no reviewer.
 - **Auditor** — the role of the agent that carries out audits.
+- **Documenter** — the role of the agent that keeps the project's documentation in step with its code.
+- **Documentation run** — one job of the documenter, asked for with `dk document`: it reads and tries the product in a throwaway copy, and only what it leaves in `docs/technical/` (for whoever changes the code) and `docs/howto/` (for whoever uses the product) is kept.
 - **Director** — the piece that decides what happens next to each ticket.
 - **Clash** — a ticket's work collides with work merged while it was in progress; the coder gets the files to resolve.
 - **Board** — the view that redraws itself (`dk status --watch`, the `status` tab): what each agent is doing and the unfinished tickets.

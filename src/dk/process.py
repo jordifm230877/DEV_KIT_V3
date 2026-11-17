@@ -42,11 +42,17 @@ AUDIT: tuple[Step, ...] = (
     Step("audit", "work", "auditor", required=True),
     Step("report", "merge"),
 )
+# So is bringing the documentation up to date: a documenter writes it, and it joins too.
+DOCUMENT: tuple[Step, ...] = (
+    Step("document", "work", "documenter", required=True),
+    Step("publish", "merge"),
+)
 
 
 def of(step: str) -> tuple[Step, ...]:
     """The process that a ticket at this step is going through."""
-    return AUDIT if step in [known.name for known in AUDIT] else PROCESS
+    apart = (one for one in (AUDIT, DOCUMENT) if step in [known.name for known in one])
+    return next(apart, PROCESS)
 
 
 @dataclass(frozen=True)
