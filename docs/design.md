@@ -416,7 +416,10 @@ Each step ends with something usable.
   What it had written for the real trial showed the lack: a 1,310-word `testing.md` that
   mixed how to run the tests, what they need and how to read their results. Its brief may
   now reach 550 words where it kept under 300; it is the only word it gets, since nobody
-  reviews it, and it works a few times a week.
+  reviews it, and it works a few times a week. Tried with a real documenter on a copy of
+  the trial project: `testing.md` came out a plain reference, 300 words shorter, but the
+  paragraph on what a passing check does not prove was dropped instead of moved, so the
+  brief now says that what does not fit a file's kind moves to a file of its own.
 - Besides `dk document`, closing an epic writes a documentation run, and so does the night
   shift when the documentation is five days old and the project changed since outside
   `docs/`; both do nothing where nobody documents, and leave an unfinished run alone. How

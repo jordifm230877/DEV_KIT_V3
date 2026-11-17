@@ -25,7 +25,8 @@ lists, tables, links, code blocks, bold and `code`.
 
 How to write, in both folders:
 - One file is one kind of document: a guide (steps to a goal), a reference (facts to look
-  up) or an explanation (why it is so). Split a file that mixes them, and link the parts.
+  up) or an explanation (why it is so). Split a file that mixes them and link the parts:
+  what does not fit the kind moves into a file of its own kind, and none of it is lost.
 - A guide is named by the task and holds only what the reader does: numbered steps, each a
   command to the reader with one action, the condition or warning before the step it
   guards, and what they then see. The reader is competent; the reasons go elsewhere.
