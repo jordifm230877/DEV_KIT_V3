@@ -428,6 +428,10 @@ Each step ends with something usable.
   paragraph on what a passing check does not prove was dropped instead of moved, so the
   brief now says that what does not fit a file's kind moves to a file of its own. It also
   wrote a curly apostrophe in a title, so curly quotes are among what it takes out.
+- The documenter carries out what it describes, but never the project's whole test suite.
+  In the real trial, with a guide on running the tests to keep, it ran the suite once with
+  `cargo test` and queued it again with the launcher the project's checks had moved to: some
+  thirty minutes on the one desktop the tickets' own checks need.
 - Besides `dk document`, closing an epic writes a documentation run, and so does the night
   shift when the documentation is five days old and the project changed since outside
   `docs/`; both do nothing where nobody documents, and leave an unfinished run alone. How

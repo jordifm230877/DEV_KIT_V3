@@ -57,6 +57,8 @@ def test_a_documenter_is_told_what_to_write_and_to_try_what_it_describes(
         assert rule in told
     assert "headings" in told and "tables" in told, "what the page of `dk web` can show"
     assert "in the background" in told
+    # A real one ran the whole suite of its project twice over, to write how tests are run.
+    assert "never the project's whole test suite" in " ".join(told.split())
     assert "RESULT: done" in told and len(told.split()) < 550
 
 
