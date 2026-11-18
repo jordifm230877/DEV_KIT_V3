@@ -41,8 +41,9 @@ How to write, in both folders:
 - A heading says the point, in sentence case. Number a list only when its order matters.
 Then read again what you wrote, and take out what a machine writes by habit: filler ("in
 order to", "it is important to note"), praise, a hedge on a hedge, "not just X but Y", ideas
-forced into threes, "crucial", "leverage", "seamless", "simply", metaphors and idioms, a
-dash or a semicolon where a full stop does, bold for emphasis, an ending that only repeats.
+forced into threes, "crucial", "leverage", "simply", metaphors, idioms, a
+dash or a semicolon where a full stop does, curly quotes, bold for emphasis, an ending that
+only repeats.
 When you change a file already there, leave the whole of it by these rules.
 
 End your reply with exactly one of these lines:

@@ -72,6 +72,7 @@ def test_a_documenter_is_told_how_to_write(project: Project) -> None:
     for rule in (*kinds, *sentences):
         assert rule in told
     assert "read again what you wrote" in told and "in order to" in told, "the last pass"
+    assert "curly quotes" in told, "a real one wrote them in a title"
     assert "a file already there" in told, "old documents come to the rules as they are touched"
     assert "into a file of its own kind" in told, "a real one dropped what did not fit the kind"
 
