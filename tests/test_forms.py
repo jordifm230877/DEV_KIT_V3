@@ -21,7 +21,7 @@ def agent(project: Project, monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.usefixtures("agent")
 def test_a_ticket_an_agent_writes_is_laid_out_under_its_three_headings(project: Project) -> None:
-    project.dk("add", "Greet", "--spec", TICKET)
+    project.dk("add", "Greet", "--spec", TICKET, "--behaviour-tests")
 
     shown = project.dk("show", "1")
 
@@ -45,6 +45,27 @@ def test_an_agent_is_refused_a_ticket_that_lacks_a_part(project: Project, spec: 
     said = project.refused("add", "Greet", "--spec", spec)
 
     assert "Wanted: ... Acceptance criteria: ... Out of scope: ..." in said
+    assert project.dk("status") == ""
+
+
+@pytest.mark.usefixtures("agent")
+def test_an_agent_says_whether_a_ticket_takes_behaviour_tests(project: Project) -> None:
+    said = project.refused("add", "Greet", "--spec", TICKET)
+
+    assert "--behaviour-tests or --no-behaviour-tests" in said
+    assert "a user of the product" in said
+    assert project.dk("status") == ""
+    assert "#1 written" in project.dk("add", "Greet", "--spec", TICKET, "--behaviour-tests")
+    assert "#2 written" in project.dk("add", "Tidy", "--spec", TICKET, "--no-behaviour-tests")
+    assert "no behaviour tests" not in project.dk("status").splitlines()[0]
+    assert "Tidy  [no behaviour tests]" in project.dk("status")
+
+
+@pytest.mark.usefixtures("agent")
+def test_a_ticket_cannot_both_take_behaviour_tests_and_take_none(project: Project) -> None:
+    with pytest.raises(SystemExit):
+        project.dk("add", "Greet", "--spec", TICKET, "--behaviour-tests", "--no-behaviour-tests")
+
     assert project.dk("status") == ""
 
 
@@ -84,4 +105,5 @@ def test_an_agent_describes_an_epic_before_it_writes_tickets_for_it(project: Pro
 
     project.dk("epic", "Manners", "--spec", EPIC)
 
-    assert "#1 written" in project.dk("add", "Greet", "--spec", TICKET, "--epic", "Manners")
+    written = project.dk("add", "Greet", "--spec", TICKET, "--epic", "Manners", "--behaviour-tests")
+    assert "#1 written" in written

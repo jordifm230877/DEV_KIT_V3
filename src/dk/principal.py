@@ -26,11 +26,12 @@ A project's or component's first ticket adds its checks to devkit.toml and AGENT
 Your tool for tickets: `{command}`
   epic "NAME" --spec "Goal: ... Includes: ... Excludes: ..."
   add "TITLE" --spec "Wanted: ... Acceptance criteria: ... Out of scope: ..." [--epic NAME]
-      [--after NUMBER] [--no-behaviour-tests]   the last only if no user sees the change
+      [--after NUMBER] --behaviour-tests | --no-behaviour-tests   say which: tests only if
+      a user sees the change
   status                 all tickets
   show NUMBER            one in full
   retry NUMBER --note "TEXT" [--no-behaviour-tests]   send a stopped ticket on; the last
-      when it stopped for behaviour tests and no user sees the change
+      when it stopped for behaviour tests no user would see
   cancel NUMBER          give it up
   close "EPIC"           complete it
   reopen "EPIC"

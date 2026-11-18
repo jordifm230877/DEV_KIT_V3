@@ -71,10 +71,10 @@ def test_a_ticket_cancelled_while_an_agent_works_on_it_is_never_merged(project: 
         "pathlib.Path(number + '.txt').write_text('x')\nprint('RESULT: done')"
     )
     talk = PRINCIPAL + (
-        "dk('add', 'Unwanted', '--spec', spec('x'))\n"
+        "dk('add', 'Unwanted', '--spec', spec('x'), '--behaviour-tests')\n"
         "wait_for('coder-1 started')\n"
         "dk('cancel', '1')\n"
-        "dk('add', 'Wanted', '--spec', spec('y'))\n"
+        "dk('add', 'Wanted', '--spec', spec('y'), '--behaviour-tests')\n"
         "wait_for('#2 done', '2')\n"
     )
     project.configure(coder=coder, principal=talk)

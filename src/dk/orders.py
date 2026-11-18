@@ -193,6 +193,11 @@ def add(args: argparse.Namespace, tickets: Tickets) -> None:
         raise LookupError(
             f'say first what the epic is for: epic "{args.epic}" --spec "{_form(EPIC)}"'
         )
+    if os.environ.get(agents.WHO) and not (args.behaviour_tests or args.no_behaviour_tests):
+        raise LookupError(
+            "say whether a user of the product sees the change: "
+            "--behaviour-tests or --no-behaviour-tests"
+        )
     first = process.start(process.PROCESS).step
     tests = not args.no_behaviour_tests
     number = tickets.add(args.title, spec, first, args.epic, args.after, tests)

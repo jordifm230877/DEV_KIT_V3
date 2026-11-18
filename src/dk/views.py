@@ -24,6 +24,8 @@ Row = tuple[str, str]  # what kind of line it is, and its words
 def line(ticket: Ticket, steps: dict[int, str]) -> str:
     where = f"stopped at {ticket.step}" if ticket.stopped else ticket.step
     line = f"#{ticket.id} {where}  {ticket.title}"
+    if not ticket.behaviour:
+        line += "  [no behaviour tests]"
     if ticket.attempts:
         line += f"  [{ticket.attempts} attempt{'s' if ticket.attempts > 1 else ''}]"
     if ticket.stopped:
@@ -129,6 +131,7 @@ def _facts(ticket: Ticket, steps: dict[int, str]) -> dict[str, object]:
         **{name: getattr(ticket, name) for name in ("id", "title", "step", "attempts", "epic")},
         **{name: getattr(ticket, name) for name in ("follows", "worker", "since")},
         "kind": kind,
+        "behaviour": ticket.behaviour,
         "note": ticket.note if ticket.stopped else "",
         "waits": process.held_by(ticket.follows, steps) if kind == "held" else [],
     }

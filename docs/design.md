@@ -209,6 +209,13 @@ Each step ends with something usable.
   real trial such a ticket went to the test-writer, whose scenarios the verifier rightly
   refused, and the user was asked to approve an empty file. It is still checked, and verified
   against its acceptance criteria.
+- An agent that writes a ticket says which it is, `--behaviour-tests` or
+  `--no-behaviour-tests`, and is refused one that says neither; the user, typing by hand,
+  may still leave it unsaid and gets a ticket that takes them. A ticket that takes none
+  says so on its line in the list and on its page. The user asked for the mark. Left to
+  say nothing, the Principal of the real trial sent work no user sees to the test-writer:
+  of 76 tickets it marked nine, the verifier refused the scenarios of others 27 times, and
+  seven times the test-writer wrote none.
 - A ticket whose test-writer ends with no scenarios goes on to the coder as one that takes
   none, without stopping: the test-writer is told to write none when no user of the product
   would see the change. It used to be sent back for having written nothing. On a real

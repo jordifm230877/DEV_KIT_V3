@@ -170,6 +170,7 @@ function ticket(data) {
     h("div", { class: "meta" },
       !["done", "cancelled", "proposed"].includes(data.kind) && h("span", {}, `at ${data.step}`),
       data.attempts > 0 && h("span", {}, `${data.attempts} attempt${data.attempts > 1 ? "s" : ""}`),
+      !data.behaviour && h("span", {}, "no behaviour tests"),
       data.worker && h("span", {}, `${data.worker} since ${data.since.slice(11)}`),
       data.follows.length > 0 && h("span", {}, "after ", listed(data.follows)),
       data.waits.length > 0 && h("span", {}, "waits for ", listed(data.waits))),

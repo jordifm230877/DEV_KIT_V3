@@ -42,7 +42,8 @@ def test_a_ticket_the_principal_writes_is_done_while_the_conversation_is_open(
 ) -> None:
     talk = PRINCIPAL + (
         "dk('epic', 'Manners', '--spec', 'Goal: g. Includes: i. Excludes: e.')\n"
-        "dk('add', 'Greet', '--spec', spec('Say hello.'), '--epic', 'Manners')\n"
+        "dk('add', 'Greet', '--spec', spec('Say hello.'), '--behaviour-tests',"
+        " '--epic', 'Manners')\n"
         "wait_for('#1 done')\n"
         "notes.write_text('saw it done')"
     )
@@ -74,7 +75,7 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
         "the epic first",
         "--no-behaviour-tests",
         'retry NUMBER --note "TEXT" [--no-behaviour-tests]',
-        "when it stopped for behaviour tests and no user sees the change",
+        "when it stopped for behaviour tests no user would see",
         "audit security|performance",
         'document [--note "FOCUS"]',
     ):
@@ -89,6 +90,8 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     # It advised `reject` on a ticket for tests a merged ticket had left; there was none to send.
     # Told that only a test-writer changes those, it refused a ticket to delete old scenarios.
     assert "once it is merged, any later ticket may change or remove them" in brief
+    # Left to say nothing, it sent work no user sees to the test-writer: 27 scenarios refused.
+    assert "--behaviour-tests | --no-behaviour-tests" in brief and "say which" in brief
     assert len(brief.split()) < 400
 
 
@@ -115,7 +118,7 @@ def test_the_principal_cannot_approve_for_the_user(project: Project) -> None:
         "print('RESULT: done')"
     )
     talk = PRINCIPAL + (
-        "dk('add', 'Greet', '--spec', spec('Say hello.'))\n"
+        "dk('add', 'Greet', '--spec', spec('Say hello.'), '--behaviour-tests')\n"
         "wait_for('stopped at approve')\n"
         "code, said = dk('approve', '1')\n"
         "notes.write_text(f'{code} {said}')"
@@ -153,7 +156,7 @@ def test_an_answer_given_during_the_conversation_lets_the_ticket_continue(
         "    print('RESULT: question: which language?')"
     )
     talk = PRINCIPAL + (
-        "dk('add', 'Greet', '--spec', spec('Say hello.'))\n"
+        "dk('add', 'Greet', '--spec', spec('Say hello.'), '--behaviour-tests')\n"
         "wait_for('which language?')\n"
         "dk('retry', '1', '--note', 'Catalan')\n"
         "wait_for('#1 done')\n"
@@ -167,7 +170,11 @@ def test_an_answer_given_during_the_conversation_lets_the_ticket_continue(
 
 def test_closing_the_conversation_stops_the_work_without_judging_it(project: Project) -> None:
     slow = "import time; time.sleep(60)\nprint('RESULT: done')"
-    talk = PRINCIPAL + "dk('add', 'Slow', '--spec', spec('x'))\nwait_for('coder-1 started')\n"
+    talk = (
+        PRINCIPAL
+        + "dk('add', 'Slow', '--spec', spec('x'), '--behaviour-tests')\n"
+        + "wait_for('coder-1 started')\n"
+    )
     project.configure(coder=slow, principal=talk)
     started = time.monotonic()
 
@@ -187,7 +194,11 @@ def test_talking_needs_a_principal(project: Project) -> None:
 def test_inside_herdr_the_user_is_told_when_a_ticket_needs_them(
     project: Project, herdr: Herdr
 ) -> None:
-    talk = PRINCIPAL + "dk('add', 'Vague', '--spec', spec('x'))\nwait_for('stopped at code')\n"
+    talk = (
+        PRINCIPAL
+        + "dk('add', 'Vague', '--spec', spec('x'), '--behaviour-tests')\n"
+        + "wait_for('stopped at code')\n"
+    )
     project.configure(coder="print('RESULT: question: which language?')", principal=talk)
 
     project.dk("talk")

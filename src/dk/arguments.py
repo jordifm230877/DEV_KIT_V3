@@ -15,7 +15,13 @@ def parser(audits: list[str], programs: list[str]) -> argparse.ArgumentParser:
     add.add_argument("title")
     add.add_argument("--spec", required=True, help="what is wanted and how to tell it is done")
     add.add_argument("--epic", default="", help="the larger piece of work this belongs to")
-    add.add_argument(
+    tests = add.add_mutually_exclusive_group()
+    tests.add_argument(
+        "--behaviour-tests",
+        action="store_true",
+        help="for a ticket that changes what a user of the product sees; so it is, unsaid",
+    )
+    tests.add_argument(
         "--no-behaviour-tests",
         action="store_true",
         help="for a ticket that changes nothing a user of the product can see",
