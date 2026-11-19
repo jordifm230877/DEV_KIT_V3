@@ -185,7 +185,11 @@ def test_an_auditor_proposes_tickets_for_what_matters_most(project: Project) -> 
     told = brief(project, "security")
 
     assert f"--project {project.root} propose" in told
-    assert "five at most" in told and "the user decides" in told
+    told = " ".join(told.split())
+    # Seventeen audits of a real project proposed 41 tickets; the user gave up 16 of them.
+    assert "two at most, or none" in told and "the user decides" in told
+    # One asked for stalls under 100 ms, as measured there: a graphics driver cost a day.
+    assert "holds only on this computer" in told and "what grows with what" in told
 
 
 def test_an_auditor_is_told_what_is_already_asked_for_or_was_turned_down(project: Project) -> None:

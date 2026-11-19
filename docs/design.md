@@ -272,7 +272,7 @@ Each step ends with something usable.
 - An agent can propose a ticket (`dk propose`), which waits at the step `proposed` until the
   user accepts it or turns it down; `dk` refuses that decision to any agent, as with
   behaviour tests. Coders are told to propose work their ticket does not cover instead of
-  doing it, and auditors to propose their most important findings, five at most, knowing
+  doing it, and auditors to propose their most important findings, two at most or none, knowing
   the titles already asked for or turned down. Agents are given the command rather than a
   format to write proposals in: a command either works or fails, and nothing has to be
   read out of a model's prose.
@@ -463,6 +463,11 @@ Each step ends with something usable.
   its scenarios refused six times and its work four, each time for one or two new faults,
   some already there the time before: every rejection of the work cost an hour of coding,
   ten minutes of checks and ten of review, and the ticket took a working day.
+- An auditor proposes two tickets at most, where it was five, and asks in none for what
+  holds only on the computer it measured on. On a real project seventeen audits proposed
+  41 tickets, of which the user gave up 16; and one asked for stalls "under about 100 ms"
+  as measured there, so a ticket lost a round, and its rows their pressed look, to 110 ms
+  that a graphics driver spends once whatever the product does.
 
 ## Deliberately left out
 

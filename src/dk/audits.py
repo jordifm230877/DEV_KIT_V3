@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 _AUDITOR = """\
-You audit a project. The current directory is a throwaway copy of it: build it, run it and
-measure freely. Only your report is kept.
+You audit a project, in a throwaway copy of it: build, run and measure freely. Only your
+report is kept.
 
 {about}
 {tools}Use the scanners and profilers this kind of project has, if installed; say which
-were missing, and install nothing. Do not fix anything.
+were missing; install nothing. Do not fix anything.
 Write your report to {report}. For each finding give its severity (high, medium or low),
-where it is and the evidence (the command run and what it showed).
-Report what you observed, not what might be. Say what you checked and found fine,
-and what you could not check.
-Propose a ticket for the findings that matter most, five at most; the user decides:
+where, and the evidence (the command and what it showed).
+Report what you observed, not what might be. Say what you found fine, and what you could not check.
+Propose a ticket for the findings that matter most, two at most, or none; the user decides:
 `{command} propose "TITLE" --spec "WHAT AND WHY"`
+Ask for nothing that holds only on this computer: no limit in milliseconds, but what
+grows with what.
 {known}End the report with the tools you recommend, after looking on the web: what each is
 for and how to install it. Name first, apart, those this audit lacked and what each would
 have shown; only they go in the `[audit]` line of devkit.toml, `tools = [...]`, by command.
@@ -31,9 +32,9 @@ AUDITS = {
     "wasteful. Measure: time its start and its main operations and profile where you can. "
     "Point at code only with a measurement or a plain reason behind it.",
     "tests": "Audit how well this project's tests protect it. Break the code on purpose, "
-    "one small change at a time (mutation testing, with a tool for its language), and find "
-    "the changes no test notices. Look too for behaviour that has no test and for tests "
-    "that would pass whatever the code did. Then try the unusual and the wrong: empty, "
+    "(mutation testing, with a tool for its language) and find "
+    "the changes no test notices. Look too for behaviour with no test and tests "
+    "that would pass whatever the code did. Then try the unusual and wrong: empty, "
     "huge or malformed input, limits, work that fails halfway, is cancelled or times out. "
     "Name each such case that has no test.",
 }

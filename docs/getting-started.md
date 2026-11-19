@@ -234,7 +234,7 @@ The auditor works in a throwaway copy, where it may build, run and measure, and 
 scanners and profilers it finds installed (`cargo audit`, `trivy`, ...). It fixes nothing.
 Its report arrives in `docs/audits/`, with the severity and the evidence of each finding.
 The page of `dk web` lists the reports under *Audits*, by the day of each, the latest first.
-For the findings that matter most, five at most, it proposes a ticket (see below); which of
+For the findings that matter most, two at most, it proposes a ticket (see below); which of
 them become tickets is your decision.
 
 The report ends with the tools the auditor recommends for this project, after looking on
