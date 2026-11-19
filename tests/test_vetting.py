@@ -52,6 +52,8 @@ def test_the_reviewer_is_told_what_makes_a_scenario_good(project: Project) -> No
     assert "features/greet.feature" in brief and "Say hello." in brief
     for rule in ("a user of the product", "stay true", "the ticket asks for"):
         assert rule in brief
+    # A real one refused the scenarios of one ticket six times, each time for something new.
+    assert "names all that must change" in brief and "not the first fault found" in brief
 
 
 def test_the_reviewer_refuses_scenarios_that_would_stop_the_ticket_later(

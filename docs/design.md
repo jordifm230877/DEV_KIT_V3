@@ -458,6 +458,11 @@ Each step ends with something usable.
   considered and left out: it would know less than the Principal and could change what the
   user had agreed. The user, typing by hand, writes as they like, and so does whoever
   proposes a ticket.
+- A verifier is told that a rejection names all that must change, not the first fault
+  found, both for the work and for the behaviour tests. On a real project one ticket had
+  its scenarios refused six times and its work four, each time for one or two new faults,
+  some already there the time before: every rejection of the work cost an hour of coding,
+  ten minutes of checks and ten of review, and the ticket took a working day.
 
 ## Deliberately left out
 

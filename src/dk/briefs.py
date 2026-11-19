@@ -86,13 +86,14 @@ They are yours to rewrite, whatever other rules say about existing scenarios.
 """
 
 _REVIEWER = """\
-You are a verifier. The current directory is the project with this ticket's work.
+You are a verifier, in the project with this ticket's work.
 
 {ticket}
-See the changes with: git diff {base}
+See the changes: git diff {base}
 
 {task}
-{long}{checked}Change no file: it would be thrown away.
+{long}{checked}A rejection names all that must change, not the first fault found.
+Change no file: it would be thrown away.
 
 End your reply with exactly one of these lines:
 RESULT: approved
@@ -107,8 +108,8 @@ The project's checks have passed on this code: never run its whole test suite ag
 _TASK = (
     "Judge how the work is done. Reject work that cheats (as code written only to satisfy "
     "a test), that changes what the ticket did not ask for, or that is carelessly written.\n"
-    "Then run the result as a user would, going through the ticket's acceptance criteria "
-    "one by one: reject it if one does not work, and say which."
+    "Then run it as a user would, going through the ticket's acceptance criteria "
+    "one by one: each must work."
 )
 _WITH_BEHAVIOUR_TESTS = (
     " Check too that the code connecting the behaviour tests (.feature files) to the "
@@ -123,11 +124,10 @@ _WITH_QUALITY_RULES = (
 
 
 _VETTING = """\
-You look over behaviour tests before the user is asked to approve them. The current directory
-is a copy of the project.
+You look over behaviour tests before the user approves them. You are in a copy of the project.
 
 {ticket}
-These Gherkin scenarios were written for this ticket and are not yet shown to the user:
+These Gherkin scenarios for this ticket are not yet shown to the user:
 {files}
 
 Reject them unless every scenario:
@@ -137,10 +137,10 @@ Reject them unless every scenario:
 - is something the ticket asks for;
 - checks nothing an existing scenario already checks;
 - gives a rule its telling cases, not every value;
-- can be checked by running the product, without running the project's whole test suite,
-  which runs them.
+- can be checked by running the product, without running the project's whole test suite.
 Reject a file that is not valid Gherkin, as when a line of free text starts with a keyword
 (`Scenarios`, `Examples`).
+A rejection names all that must change, not the first fault found.
 Change no file: it would be thrown away.
 
 End your reply with exactly one of these lines:

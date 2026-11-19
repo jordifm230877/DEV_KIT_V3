@@ -26,12 +26,14 @@ def test_the_verifier_judges_how_the_work_is_done_and_whether_it_works(
     brief = told(project, "verifier")
     for part in ("how the work is done", "cheats", "did not ask for", "carelessly"):
         assert part in brief
-    assert "acceptance criteria" in brief and "one by one" in brief and "say which" in brief
+    assert "acceptance criteria" in brief and "one by one: each must work" in brief
     for rule in QUALITY:
         assert rule in brief
     # coder, verifier and QA each ran a suite of 15 minutes the program had just run
     assert "checks have passed on this code" in brief and "whole test suite again" in brief
     assert ".feature" not in brief, "there are no behaviour tests in this project"
+    # A real one named a fault or two each time: four rejections, an hour of coding after each.
+    assert "names all that must change" in brief and "not the first fault found" in brief
     assert len(brief.split()) < 200
 
 
