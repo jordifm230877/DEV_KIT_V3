@@ -15,6 +15,7 @@ import pytest
 
 from dk.cli import main
 
+EPIC = "Work"  # the epic of a ticket whose test names none
 GIT = ["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid"]
 
 
@@ -63,6 +64,8 @@ class Project:
         self.git("commit", "-qm", "configure devkit")
 
     def dk(self, *args: str) -> str:
+        if args[0] == "add" and "--epic" not in args:  # every ticket is written in an epic
+            args = (*args, "--epic", EPIC)
         code = main(["--project", str(self.root), *args])
         output = self._capsys.readouterr().out
         assert code == 0, output

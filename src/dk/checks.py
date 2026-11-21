@@ -17,6 +17,25 @@ def concern(files: Sequence[str]) -> bool:
     return any(not file.startswith("docs/") and file != "devkit.toml" for file in files)
 
 
+FEATURES = "{features}"  # where a behaviour check takes the files it is to run
+
+
+def behaviour(
+    commands: Mapping[str, Sequence[str]], features: Sequence[str]
+) -> dict[str, tuple[str, ...]]:
+    """The checks that run these behaviour-test files, and none when there is no file. The
+    files take the place of a `{features}` word, or go inside a longer one, with spaces."""
+
+    def given(word: str) -> Sequence[str]:
+        return features if word == FEATURES else [word.replace(FEATURES, " ".join(features))]
+
+    return {
+        f"behaviour {name}": tuple(part for word in argv for part in given(word))
+        for name, argv in commands.items()
+        if features
+    }
+
+
 def run(
     checks: Mapping[str, Sequence[str]],
     cwd: Path,

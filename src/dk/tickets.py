@@ -137,6 +137,15 @@ class Tickets:
         """Add to what the ticket asks for; every agent that works on it from now on sees it."""
         self._run("UPDATE ticket SET spec = spec || ? WHERE id = ?", f"\n\n{text}", ticket)
 
+    def file(self, ticket: int, epic: str) -> None:
+        """Put the ticket in an epic; in none, with ""."""
+        self._run("UPDATE ticket SET epic = ? WHERE id = ?", epic, ticket)
+
+    def follow(self, ticket: int, earlier: int) -> None:
+        """Have the ticket wait for one more ticket to be finished."""
+        follows = [*self.get(ticket).follows, earlier]
+        self._run("UPDATE ticket SET follows = ? WHERE id = ?", json.dumps(follows), ticket)
+
     def protect(self, ticket: int, files: dict[str, str]) -> None:
         self._run("UPDATE ticket SET protected = ? WHERE id = ?", json.dumps(files), ticket)
 

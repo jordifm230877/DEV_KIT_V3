@@ -34,7 +34,7 @@ def test_the_board_lists_the_agents_and_the_tickets_of_each_epic(
     project.dk("add", "Sign in", "--spec", "a", "--epic", "Access")
     project.dk("add", "Sign out", "--spec", "b", "--epic", "Access", "--after", "1")
     project.dk("add", "List items", "--spec", "c", "--epic", "Vault", "--after", "2")
-    project.dk("add", "Tidy", "--spec", "d")
+    project.dk("propose", "Tidy", "--spec", "d")
 
     board = site("/api/board")
 
@@ -58,7 +58,7 @@ def test_the_board_has_what_each_epic_is_for(project: Project, site: Site) -> No
     project.configure(coder=HELLO)
     project.dk("epic", "Access", "--spec", "Goal: people get in.")
     project.dk("add", "Sign in", "--spec", "a", "--epic", "Access")
-    project.dk("add", "Tidy", "--spec", "d")
+    project.dk("propose", "Tidy", "--spec", "d")
 
     loose, access = site("/api/board")["epics"]
 

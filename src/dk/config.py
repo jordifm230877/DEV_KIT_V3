@@ -28,7 +28,9 @@ class Agent:
 @dataclass(frozen=True)
 class Config:
     agents: tuple[Agent, ...]
-    checks: dict[str, tuple[str, ...]]
+    checks: dict[str, tuple[str, ...]]  # run on every ticket's work
+    behaviour: dict[str, tuple[str, ...]]  # run on a ticket's own behaviour tests
+    suite: dict[str, tuple[str, ...]]  # the whole test suite, run before an epic is closed
     max_attempts: int = 3
     agent_minutes: float = 90  # 30 cut off a coder twice on a ticket that builds slowly
     check_minutes: float = 30  # 10 was short for a Rust project's whole test suite
@@ -38,6 +40,15 @@ class Config:
 
     def with_role(self, role: str) -> tuple[Agent, ...]:
         return tuple(agent for agent in self.agents if agent.role == role)
+
+
+def _table(listed: dict[str, object], name: str) -> bool:
+    """Whether `[checks.NAME]` is a group of commands; a list under that name is one check."""
+    return isinstance(listed.get(name), dict)
+
+
+def _commands(listed: dict[str, list[str]]) -> dict[str, tuple[str, ...]]:
+    return {name: tuple(argv) for name, argv in listed.items()}
 
 
 def load(project: Path) -> Config:
@@ -50,8 +61,10 @@ def load(project: Path) -> Config:
             Agent(**{**entry, "command": tuple(entry.get("command", ()))})
             for entry in raw.pop("agents", [])
         )
-        checks = {name: tuple(argv) for name, argv in raw.pop("checks", {}).items()}
+        listed = raw.pop("checks", {})
+        behaviour = _commands(listed.pop("behaviour", {}) if _table(listed, "behaviour") else {})
+        suite = _commands(listed.pop("epic", {}) if _table(listed, "epic") else {})
         tools = tuple(raw.pop("audit", {}).get("tools", ()))
-        return Config(agents, checks, audit_tools=tools, **raw)
+        return Config(agents, _commands(listed), behaviour, suite, audit_tools=tools, **raw)
     except (tomllib.TOMLDecodeError, TypeError) as error:
         raise ConfigError(f"{path}: {error}") from error

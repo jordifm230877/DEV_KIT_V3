@@ -25,13 +25,15 @@ one page, the design has grown too much.
    says so and the user decides.
 5. A coder writes the code, its own tests and the code that connects the Gherkin sentences
    to the product.
-6. The program runs the project's checks: behaviour tests, unit tests and whatever quality
-   tools the project lists (complexity, duplication, mutation).
+6. The program runs the project's checks on the ticket's work: the build, the unit tests
+   and the behaviour tests of that ticket alone.
 7. A verifier reads the code and judges how the work is done: cheating, work outside the
    ticket, poor quality, and whether the connecting code really exercises the product. It
    then runs the product as a user would and goes through the acceptance criteria one by one.
 8. The program merges. Rejected work goes back to the coder with the reason. After the
    configured number of failed attempts the ticket stops and the user is told.
+9. When the tickets of an epic are finished the user closes it: the program runs the
+   project's whole test suite, and what fails becomes a ticket of the epic.
 
 Several coders and verifiers may exist; tickets run in parallel, merges happen one at a
 time.
@@ -445,9 +447,10 @@ Each step ends with something usable.
   its other documents. The day is read from the name `jobs` gives a report, so the name is
   still decided in one place; a file in `docs/audits/` without a day stays a document.
 - What an agent is told is kept short by its tests: under 150 to 300 words for those who
-  take a job, under 400 for the Principal, whose two briefs carry the whole list of commands
+  take a job, under 450 for the Principal, whose two briefs carry the whole list of commands
   and what it may decide. Theirs was 300 until naming one more option left no room to say
-  when to use it. The limit is there so that a rule learned in a trial replaces a weaker one
+  when to use it, and 400 until `move` made it 413: the user chose more room over
+  sentences cut so short that their meaning could be lost. The limit is there so that a rule learned in a trial replaces a weaker one
   or becomes the program's work, not one more sentence; raising it is the user's decision.
 - What agents write has a fixed form, kept by the program and not by a model: a ticket
   says `Wanted:`, `Acceptance criteria:` and `Out of scope:`, an epic `Goal:`, `Includes:`
@@ -468,6 +471,32 @@ Each step ends with something usable.
   41 tickets, of which the user gave up 16; and one asked for stalls "under about 100 ms"
   as measured there, so a ticket lost a round, and its rows their pressed look, to 110 ms
   that a graphics driver spends once whatever the product does.
+- A proposal is accepted only inside an epic, and `dk move N --epic NAME` or `--no-epic`
+  puts it in one or takes it out; the user and the Principal may, no other agent, and only
+  a proposal is moved. The user asked for it: an auditor proposes outside every epic, and
+  the whole test suite is to run when an epic is closed, which a ticket outside every epic
+  would never meet. For the same reason `dk add` refuses a ticket that names no epic:
+  it starts at once, and `move` could not put it in one later.
+- A verifier is told to run no behaviour test: the program has run them. The user saw the
+  verifiers of real projects run the scenarios again, although told the checks had passed.
+- No ticket has the project's whole test suite run on its work. After the coder the
+  program runs `[checks]`, meant for the build and the unit tests, and `[checks.behaviour]`
+  with the `.feature` files of that ticket alone, put where the command says `{features}`;
+  a ticket that takes no behaviour tests skips the second. The whole suite, `[checks.epic]`,
+  is run when an epic is closed. The user asked for it: on real projects the suite took
+  from fifteen minutes to hours and was run on every ticket. The price is known and
+  accepted: a ticket can break a scenario of an earlier one, and it shows only when the
+  epic is closed. A list named `behaviour` under `[checks]` is still one check of every
+  ticket, as projects written before have it.
+- Closing an epic is carried like a ticket where the project has a whole test suite:
+  `dk close` writes `Close EPIC` in the epic, with a process of one step, `suite`. The suite
+  is run in a fresh copy of the project as it is then; if it passes the epic is closed
+  and documented. If it fails the program writes a ticket in the epic with what failed,
+  which takes no behaviour tests and goes to a coder without the user accepting it, since
+  the epic cannot close without it; the run waits for that ticket and is done again once
+  it is merged. It is a job and not the command's own work because the suite can take an
+  hour, the Principal's tool cuts a command off at ten minutes, and the board should show
+  it. A project without `[checks.epic]` closes an epic at once, as before.
 
 ## Deliberately left out
 

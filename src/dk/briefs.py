@@ -102,7 +102,7 @@ RESULT: rejected: <what must change, concretely>
 
 # Coder, verifier and QA each ran a suite of fifteen minutes that the program runs anyway.
 _CHECKED = """\
-The project's checks have passed on this code: never run its whole test suite again.
+The project's checks have passed on this code: never run its whole test suite.
 """
 
 _TASK = (
@@ -113,7 +113,8 @@ _TASK = (
 )
 _WITH_BEHAVIOUR_TESTS = (
     " Check too that the code connecting the behaviour tests (.feature files) to the "
-    "product really exercises the product."
+    "product really exercises the product. The program has run those tests and they "
+    "pass: run no behaviour test yourself."
 )
 _WITH_QUALITY_RULES = (
     " Reject it too if new behaviour has no test, or if `crapper --no-coverage FILES` "

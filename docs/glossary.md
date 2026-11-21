@@ -4,7 +4,7 @@
 - **Role** — what an agent is for: coder, verifier, test-writer, auditor, documenter, Principal.
 - **Examiner** — the role of the agent that reads a ticket before any work and stops it over what would have to be guessed: words with two readings, a criterion nobody could check, a contradiction, two pieces of work in one.
 - **Epic** — a large piece of work agreed between the user and the Principal. It is described under three headings: its goal, what it includes and what it excludes.
-- **Closed** — an epic marked complete with `dk close`; it shows as one line and takes no more tickets.
+- **Closed** — an epic marked complete with `dk close`, once the whole test suite has passed where the project has one; it shows as one line and takes no more tickets.
 - **Ticket** — one unit of work, under three headings: what is wanted, its acceptance criteria and what is out of scope.
 - **Process** — the ordered list of steps every ticket goes through.
 - **Step** — one stage of the process, carried out by an agent, by the program or by the user.
@@ -13,7 +13,7 @@
 - **Stopped** — a ticket that waits at its step for the user: out of attempts, blocked, a question, or a merge that could not be done. `dk retry` sends it on.
 - **Stop review** — the Principal's look at a ticket that has just stopped: it sends it on once with an answer that is safe to give (it follows from what is decided and is cheap to put right), or explains the stop to the user. Shown in the `team_forum` tab.
 - **Cancelled** — a ticket given up with `dk cancel`; nobody works on it again and its unmerged work is thrown away.
-- **Proposed** — a ticket an agent suggested (`dk propose`) for work nobody asked for; nothing happens to it until the user accepts it (`dk approve`) or turns it down (`dk reject`).
+- **Proposed** — a ticket an agent suggested (`dk propose`) for work nobody asked for; nothing happens to it until the user accepts it (`dk approve`) or turns it down (`dk reject`). It is accepted only inside an epic, where the user or the Principal puts it (`dk move`).
 - **Exploring** — finding out what to build, done by the Principal in the conversation; never a ticket. Each study is written once in `docs/discovery/`.
 - **Decisions** — `docs/decisions.md`: what holds now for the project and what is still open, a line or two each. The Principal rewrites it; the Principal reads it for every ticket.
 - **Follows** — a ticket that builds on another (`--after`) and is not started until that one is merged or cancelled.
@@ -23,7 +23,8 @@
 - **Brief** — the instructions an agent receives for one job.
 - **Answer** — the last line of an agent's reply: done, blocked or question.
 - **Copy** — a ticket's own working copy of the project (a Git worktree on branch `ticket/<n>`).
-- **Checks** — the project's own commands that must succeed; run by the program, never trusted from an agent.
+- **Checks** — the project's own commands that must succeed; run by the program, never trusted from an agent. Those under `[checks]` are run on every ticket's work, those under `[checks.behaviour]` with the ticket's own behaviour tests.
+- **Whole test suite** — the commands under `[checks.epic]`: everything the project can test, run only when an epic is closed. What fails becomes a ticket of that epic, and the suite is run again once it is merged.
 - **Behaviour test** — a Gherkin scenario written before the code and approved by the user.
 - **Without behaviour tests** — a ticket written, accepted or sent on with `--no-behaviour-tests` because it changes nothing a user of the product can see; it goes to the coder with no test-writer.
 - **Protected** — a behaviour-test file the user approved; the program puts it back if a coder changes it.

@@ -72,12 +72,17 @@ program = "pi"
 model = "openai-codex/gpt-6.1-sol"
 
 [checks]                # REPLACE with your project's own commands; each must exit 0
-unit = ["python3", "-m", "unittest", "-q"]
-behaviour = ["behave"]  # the command that runs the behaviour tests
+unit = ["python3", "-m", "unittest", "-q"]   # on every ticket: the build and the unit tests
+
+[checks.behaviour]      # on a ticket's work, with the .feature files of that ticket alone
+run = ["behave", "{features}"]
+
+[checks.epic]           # the whole test suite, only when an epic is closed
+all = ["behave"]
 ```
 
-The two checks above only fit a Python project. A Rust project would have, for example,
-`unit = ["cargo", "test"]` and `lint = ["cargo", "clippy", "--", "-D", "warnings"]`. A check
+The checks above only fit a Python project. A Rust project would have, for example,
+`unit = ["cargo", "test", "--lib"]` and `lint = ["cargo", "clippy", "--", "-D", "warnings"]`. A check
 whose command is not installed fails every ticket, so never leave the example as it is.
 
 Then commit it:
@@ -90,8 +95,14 @@ Things to know:
 
 - **Only the coder is required.** Leave out the verifier and the review is skipped.
   Leave out the principal and you write tickets yourself with `dk add`. Leave out the
-  tester, together with the `behaviour` check, and tickets go straight to the coder.
-- **The `behaviour` check** is `behave` for Python, your Cucumber command for Java.
+  tester, together with `[checks.behaviour]`, and tickets go straight to the coder.
+- **`[checks.behaviour]`** is `behave` for Python, your Cucumber command for Java. DevKit
+  puts the ticket's own `.feature` files where the command says `"{features}"`, and runs
+  it after the coder. Inside a longer word, as in `"FEATURES={features}"`, they go there
+  with spaces between them. A ticket without behaviour tests skips it.
+- **`[checks.epic]`** is everything the project can test. No ticket waits for it: it is
+  run when you close an epic, so keep what is slow there and `[checks]` quick. Until then
+  a ticket can break a scenario of an earlier one without anybody noticing.
 - **Commit everything agents must see.** Each ticket is worked on in a copy of what Git
   holds; uncommitted files, `AGENTS.md` included, do not exist for the agents.
 - **More agents is more lines.** Add `coder-2` with `role = "coder"` and two tickets advance
@@ -183,9 +194,14 @@ afterwards reads it.
 A ticket you no longer want: `dk cancel N`, or tell the Principal. Its unmerged work is
 thrown away.
 
-An epic whose tickets are all finished: `dk close "EPIC NAME"`, or tell the Principal. It
-then takes one line in `dk status` and accepts no more tickets. `dk reopen "EPIC NAME"`
-undoes it.
+An epic whose tickets are all finished: `dk close "EPIC NAME"`, or tell the Principal.
+Where the project has a whole test suite (`[checks.epic]`), closing writes a run of it,
+listed in the epic as `Close EPIC NAME` and carried out by `dk run`, `dk talk` or
+`dk night`. If the suite passes, the epic is closed. If it fails, the program writes a
+ticket in the epic with what failed, which goes straight to a coder, and runs the suite
+again once that ticket is merged. `dk cancel` on the run gives the closing up.
+A closed epic takes one line in `dk status` and accepts no more tickets.
+`dk reopen "EPIC NAME"` undoes it.
 
 ## 6. Behaviour tests
 
@@ -283,13 +299,16 @@ it until you decide:
 
 ```bash
 dk show 14                             # what is proposed, by whom, and on which ticket
+dk move 14 --epic "Accounts"           # put it in an epic; --no-epic takes it out of one
 dk approve 14                          # it becomes a ticket like any other; add
                                        # --no-behaviour-tests if a user of the product sees nothing of it
 dk reject 14 --note "why not"          # it is given up
 ```
 
-Only you can: ask the Principal to explain a proposal or to look into it first, but `dk`
-refuses the decision to any agent. A coder may also end its work with one line for you, such
+A proposal is accepted only inside an epic. One an auditor makes belongs to none, so you
+or the Principal move it first; no other agent can, and only a proposal is moved.
+Only you can decide: ask the Principal to explain a proposal or to look into it first, but
+`dk` refuses the decision to any agent. A coder may also end its work with one line for you, such
 as where it departed from the ticket or what it is unsure of; `dk show N` has it as
 `coder-1 noted: ...`. The reviewers are not shown it.
 
@@ -317,10 +336,10 @@ ticket by a scanner under `[checks]` than by an audit now and then.
 ## 8. Without the conversation
 
 ```bash
-dk add "Title" --spec "What is wanted and how to tell it is done" --epic "Optional group"
-dk add "Next" --spec "..." --after 1    # not started until ticket 1 is merged
-dk epic "Optional group" --spec "Goal: ... Includes: ... Excludes: ..."   # what the epic is for
-dk add "Test server" --spec "..." --no-behaviour-tests   # changes nothing a user can see
+dk add "Title" --spec "What is wanted and how to tell it is done" --epic "Accounts"   # every ticket names its epic
+dk add "Next" --spec "..." --epic "Accounts" --after 1    # not started until ticket 1 is merged
+dk epic "Accounts" --spec "Goal: ... Includes: ... Excludes: ..."   # what the epic is for
+dk add "Test server" --spec "..." --epic "Accounts" --no-behaviour-tests   # changes nothing a user can see
 dk run            # work on every unfinished ticket, then exit
 dk status
 dk show 1

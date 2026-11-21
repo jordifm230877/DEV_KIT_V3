@@ -11,7 +11,7 @@ HELLO = "pathlib.Path('greeting.txt').write_text('hello\\n')\nprint('RESULT: don
 
 def proposed(project: Project, *more: str) -> str:
     project.configure(coder=HELLO)
-    return project.dk("propose", "Greet", "--spec", "Say hello.", *more)
+    return project.dk("propose", "Greet", "--spec", "Say hello.", "--epic", "Manners", *more)
 
 
 def test_a_proposed_ticket_is_listed_and_not_worked_on(project: Project) -> None:
@@ -20,7 +20,7 @@ def test_a_proposed_ticket_is_listed_and_not_worked_on(project: Project) -> None
     project.dk("run")
 
     assert "#1 proposed" in said and "waits for the user" in said
-    assert project.dk("status") == "#1 proposed  Greet\n"
+    assert project.dk("status").splitlines() == ["Manners", "  #1 proposed  Greet"]
     assert project.merged("greeting.txt") is None
 
 
@@ -40,7 +40,7 @@ def test_the_user_accepts_a_proposal_and_it_becomes_a_ticket_like_any_other(
 def test_a_proposal_can_be_accepted_as_one_that_needs_no_behaviour_tests(project: Project) -> None:
     tester = "print('RESULT: blocked: nothing a user can see')"
     project.configure(coder=HELLO, tester=tester)
-    project.dk("propose", "Greet", "--spec", "Say hello.")
+    project.dk("propose", "Greet", "--spec", "Say hello.", "--epic", "Manners")
 
     project.dk("approve", "1", "--no-behaviour-tests")
     project.dk("run")
@@ -103,7 +103,7 @@ def test_the_board_shows_a_proposal_as_waiting_for_the_user(project: Project) ->
 
     views.board(config.load(project.root).agents, tickets.all())
 
-    assert "\033[33m#1 proposed  Greet\033[0m" in project._capsys.readouterr().out
+    assert "\033[33m  #1 proposed  Greet\033[0m" in project._capsys.readouterr().out
 
 
 def test_the_principal_is_told_that_proposals_are_the_users_to_accept(project: Project) -> None:
@@ -113,4 +113,4 @@ def test_the_principal_is_told_that_proposals_are_the_users_to_accept(project: P
 
     brief = (project.root / "brief.txt").read_text()
     assert "proposed" in brief and "only the user" in brief
-    assert len(brief.split()) < 400
+    assert len(brief.split()) < 450

@@ -7,13 +7,13 @@ from conftest import Project
 
 def test_the_status_groups_tickets_under_their_epic(project: Project) -> None:
     project.dk("add", "Log in", "--spec", "a", "--epic", "Accounts")
-    project.dk("add", "Fix typo", "--spec", "b")
+    project.dk("propose", "Fix typo", "--spec", "b")
     project.dk("add", "Log out", "--spec", "c", "--epic", "Accounts")
 
     lines = project.dk("status").splitlines()
 
     assert lines == [
-        "#2 specify  Fix typo",
+        "#2 proposed  Fix typo",
         "Accounts",
         "  #1 specify  Log in",
         "  #3 specify  Log out",

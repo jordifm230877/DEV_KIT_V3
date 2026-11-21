@@ -19,6 +19,7 @@ from dk.config import Agent, Config, ConfigError
 from dk.jobs import PRINCIPAL, Jobs, label
 from dk.process import (
     CANCELLED,
+    PROCESS,
     Failed,
     Outcome,
     Passed,
@@ -26,11 +27,13 @@ from dk.process import (
     Skipped,
     Step,
     Stopped,
+    Waiting,
     advance,
     building,
     held_by,
     of,
     retry,
+    start,
 )
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
@@ -53,6 +56,7 @@ class Director:
     notify: Callable[[str, str], object] = lambda title, body: None
     stop: threading.Event = field(default_factory=threading.Event)
     command: str = "dk"  # how an agent reaches this program
+    closed: Callable[[str], object] = lambda epic: None  # told the epic whose suite passed
 
     _free: dict[str, Queue[Agent]] = field(default_factory=dict)
     _merging: threading.Lock = field(default_factory=threading.Lock)
@@ -131,6 +135,8 @@ class Director:
             if not isinstance(outcome, Passed):
                 self.tickets.record(ticket.id, f"{step.name}: {outcome.reason}")
             self.say(f"#{ticket.id} {step.name} {type(outcome).__name__.lower()}")
+            if isinstance(outcome, Waiting):
+                return
             if position.stopped:
                 position, helped = self._halt(step, ticket, position, helped), True
 
@@ -174,6 +180,8 @@ class Director:
         logs = self.logs / f"ticket-{ticket.id}" / f"attempt-{position.attempts + 1}"
         if step.kind == "checks":
             return self._check(ticket, logs)
+        if step.kind == "suite":
+            return self._suite(ticket, logs)
         if step.kind == "merge":
             with self._merging:
                 return self._merge(ticket, logs)
@@ -197,6 +205,38 @@ class Director:
             self._free[step.role].put(agent)
 
     def _check(self, ticket: Ticket, logs: Path) -> Outcome:
+        mine = sorted(self.tickets.get(ticket.id).protected)
+        every = {**self.config.checks, **checks.behaviour(self.config.behaviour, mine)}
+        failure = self._checked(ticket, every, logs)
+        return Failed(failure) if failure else Passed()
+
+    def _suite(self, ticket: Ticket, logs: Path) -> Outcome:
+        """Run the whole test suite on the project as it is now; the epic closes if it
+        passes, and what fails becomes a ticket of the epic that this run then waits for."""
+        try:
+            failure = self._checked(ticket, self.config.suite, logs)
+        finally:
+            self.workspace.discard(ticket.id)
+        if self.stop.is_set() or self.tickets.get(ticket.id).step == CANCELLED:
+            return Waiting("cut short or given up")  # its result is not judged
+        if not failure:
+            self.closed(ticket.epic)
+            return Passed()
+        spec = (
+            f"Wanted:\nThe project's whole test suite passes. Run when closing {ticket.epic}, "
+            f"it failed.\n\nAcceptance criteria:\n- What fails below passes.\n\n{failure}\n\n"
+            f"The whole output is under {logs}."
+        )
+        first = start(PROCESS).step
+        fix = self.tickets.add(
+            "Make the whole test suite pass", spec, first, ticket.epic, [], False
+        )
+        self.tickets.record(fix, "no behaviour tests: written by the program for a failing suite")
+        self.tickets.follow(ticket.id, fix)
+        return Waiting(f"the whole test suite failed: #{fix} written")
+
+    def _checked(self, ticket: Ticket, every: dict[str, tuple[str, ...]], logs: Path) -> str | None:
+        """Run these checks in the ticket's copy. Returns None, or what failed."""
         copy = self.workspace.prepare(ticket.id)
         seconds = self.config.check_minutes * 60
 
@@ -204,10 +244,9 @@ class Director:
             self.tickets.assign(ticket.id, f"check {name}")
 
         try:
-            failure = checks.run(self.config.checks, copy, logs, seconds, self.stop, starting)
+            return checks.run(every, copy, logs, seconds, self.stop, starting)
         finally:
             self.tickets.assign(ticket.id, "")
-        return Failed(failure) if failure else Passed()
 
     def _merge(self, ticket: Ticket, logs: Path) -> Outcome:
         """Bring in what was merged meanwhile, check the two together, then merge."""

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import fcntl
+import io
 import os
 import secrets
 import shlex
@@ -58,7 +60,14 @@ def _director(project: Path, home: Path, tickets: Tickets, say: Callable[[str], 
     settings = config.load(project)
     if not settings.checks:  # a project begun from nothing had none: its tickets merged unproved
         say(_NO_CHECKS)
-    return Director(settings, tickets, workspace, logs, say, notify, command=_command(project))
+
+    def closed(epic: str) -> None:
+        with contextlib.redirect_stdout(io.StringIO()) as printed:
+            _closed(epic, project, tickets)
+        say(printed.getvalue().strip())
+
+    command = _command(project)
+    return Director(settings, tickets, workspace, logs, say, notify, command=command, closed=closed)
 
 
 @contextmanager
@@ -173,9 +182,24 @@ def _night(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets
             director.run()
 
 
-def _close(epic: str, project: Path, tickets: Tickets) -> None:
-    orders.close(tickets, epic)
+def _closed(epic: str, project: Path, tickets: Tickets) -> None:
+    tickets.close(epic)
+    print(f"{epic} closed")
     upkeep.epic_closed(project, tickets)
+
+
+def _close(epic: str, project: Path, tickets: Tickets) -> None:
+    """Close an epic: at once, or by a run of the whole test suite where the project has one."""
+    suite = bool(config.load(project).suite)
+    orders.close(tickets, epic, suite)
+    if not suite:
+        upkeep.epic_closed(project, tickets)
+
+
+def _trusted(project: Path) -> bool:
+    """Whether the command comes from the user or the Principal, not another agent."""
+    who = os.environ.get(agents.WHO, "")
+    return not who or who in {agent.name for agent in config.load(project).with_role(PRINCIPAL)}
 
 
 def _web(port: int, project: Path, home: Path, tickets: Tickets) -> None:
@@ -214,6 +238,7 @@ def _execute(args: argparse.Namespace) -> None:
     commands: dict[str, Callable[[], None]] = {
         "add": lambda: orders.add(args, tickets),
         "propose": lambda: orders.propose(args, tickets),
+        "move": lambda: orders.move(tickets, args.ticket, args.epic, _trusted(project)),
         "audit": lambda: upkeep.audit(args.kind, args.note, project, tickets),
         "document": lambda: upkeep.document(args.note, project, tickets),
         "night": lambda: _night(args, project, home, tickets),

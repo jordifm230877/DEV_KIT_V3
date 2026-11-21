@@ -73,8 +73,14 @@ model = "provider/model-name"
 [audit]                     # optional: what an audit should have; `dk check` names the missing ones
 tools = ["cargo-audit", "gitleaks"]
 
-[checks]                    # run by the program in the ticket's copy; all must exit 0
-unit = ["pytest", "-q"]
+[checks]                    # run by the program on every ticket's work: the build and the unit tests; all must exit 0
+unit = ["pytest", "-q", "tests/unit"]
+
+[checks.behaviour]          # optional: run on a ticket's work with that ticket's own .feature files
+run = ["behave", "{features}"]
+
+[checks.epic]               # optional: the whole test suite, run only when an epic is closed
+all = ["pytest", "-q"]
 ```
 
 Then either talk:
@@ -86,7 +92,7 @@ dk talk           # a conversation with the Principal; work goes on behind it un
 or use the commands yourself:
 
 ```bash
-dk add "Greeting" --spec "Create greeting.txt containing hello."   # optionally --epic NAME, --after N, --no-behaviour-tests
+dk add "Greeting" --spec "Create greeting.txt containing hello." --epic "Manners"   # optionally --after N, --no-behaviour-tests
 dk run            # work on every unfinished ticket
 dk status         # one line per ticket; --watch keeps showing agents and unfinished tickets
 dk show 1         # the ticket and everything that happened to it
@@ -94,7 +100,8 @@ dk web            # the same in your browser: agents, epics, tickets and their b
 dk retry 1 --note "an answer"   # send a stopped ticket on again; --no-behaviour-tests if it stopped for them and needs none
 dk cancel 1       # give a ticket up; its unmerged work is thrown away
 dk epic "EPIC" --spec "Goal: ... Includes: ... Excludes: ..."   # say what an epic is for; without --spec, show it
-dk close "EPIC"   # mark an epic complete, once all its tickets are finished; a documenter then documents it
+dk close "EPIC"   # close an epic once all its tickets are finished: the whole test suite (`[checks.epic]`) is run on the
+                  # next run, the epic closes if it passes, and what fails becomes a ticket of the epic; a documenter then documents it
 dk reopen "EPIC"  # open a closed epic again
 dk audit security # or performance, or tests: an `auditor` agent reports on the whole project in
                   # docs/audits/ and proposes tickets for what matters most
@@ -103,6 +110,7 @@ dk night          # every audit that has something new to look at; `--at 02:30` 
 dk approve 1      # accept the behaviour tests shown by `dk show 1`; only you can, no agent
 dk reject 1 --note "what to change"
 dk propose "Title" --spec "..."   # an agent suggests a ticket; it waits until you `dk approve N` or `dk reject N`
+dk move 1 --epic "EPIC"   # put a proposed ticket in an epic, where alone it is accepted; --no-epic takes it out
 ```
 
 A ticket that stops is looked at by the Principal first: it sends the ticket on with an answer
@@ -115,8 +123,10 @@ argument) and must end its output with one line: `RESULT: done` (a coder or test
 `RESULT: question: <what>`.
 
 Behaviour tests are `.feature` files, kept where the project's `AGENTS.md` says (under
-`features/` if it says nothing). DevKit does not run them itself: add
-your project's own command for them (Cucumber, behave, ...) to `[checks]`.
+`features/` if it says nothing). DevKit does not know how to run them: give your project's
+own command for them (Cucumber, behave, ...) under `[checks.behaviour]`, with `"{features}"`
+where the files go. After the coder, the program runs it with the `.feature` files of that
+ticket alone; every other scenario waits for `[checks.epic]`.
 
 Started inside [Herdr](https://herdr.dev), `dk run` opens a `status` tab and one tab per agent showing what it
 is doing, and closes them when the run ends (`--no-tabs` to skip). The same text stays in

@@ -14,7 +14,7 @@ def parser(audits: list[str], programs: list[str]) -> argparse.ArgumentParser:
     add = commands.add_parser("add", help="write a new ticket")
     add.add_argument("title")
     add.add_argument("--spec", required=True, help="what is wanted and how to tell it is done")
-    add.add_argument("--epic", default="", help="the larger piece of work this belongs to")
+    add.add_argument("--epic", default="", help="the epic it belongs to; every ticket has one")
     tests = add.add_mutually_exclusive_group()
     tests.add_argument(
         "--behaviour-tests",
@@ -37,6 +37,11 @@ def parser(audits: list[str], programs: list[str]) -> argparse.ArgumentParser:
     propose.add_argument("title")
     propose.add_argument("--spec", required=True, help="what is wanted and why")
     propose.add_argument("--epic", default="", help="the larger piece of work this belongs to")
+    move = commands.add_parser("move", help="put a proposed ticket in an epic, or take it out")
+    move.add_argument("ticket", type=int)
+    where = move.add_mutually_exclusive_group(required=True)
+    where.add_argument("--epic", default="", help="the epic it joins")
+    where.add_argument("--no-epic", action="store_true", help="it belongs to no epic")
     audit = commands.add_parser("audit", help="have the whole project audited; leaves a report")
     audit.add_argument("kind", choices=audits)
     audit.add_argument("--note", default="", help="what to look at in particular")

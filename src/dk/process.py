@@ -20,7 +20,7 @@ class Step:
     the rest are done by the program."""
 
     name: str
-    kind: Literal["work", "review", "user", "checks", "merge"]
+    kind: Literal["work", "review", "user", "checks", "merge", "suite"]
     role: str = ""
     required: bool = False  # a step whose role nobody has is skipped, unless required
     behaviour: bool = False  # about behaviour tests; skipped for a ticket that takes none
@@ -47,9 +47,14 @@ DOCUMENT: tuple[Step, ...] = (
 )
 
 
+# So is closing an epic: the project's whole test suite is run, and the epic closes if it
+# passes. What fails becomes a ticket, and the suite waits for it.
+CLOSING: tuple[Step, ...] = (Step("suite", "suite"),)
+
+
 def of(step: str) -> tuple[Step, ...]:
     """The process that a ticket at this step is going through."""
-    apart = (one for one in (AUDIT, DOCUMENT) if step in [known.name for known in one])
+    apart = (one for one in (AUDIT, DOCUMENT, CLOSING) if step in [known.name for known in one])
     return next(apart, PROCESS)
 
 
@@ -84,7 +89,14 @@ class Stopped:
     reason: str
 
 
-Outcome = Passed | Failed | Lost | Stopped
+@dataclass(frozen=True)
+class Waiting:
+    """The step cannot end until other tickets are finished; it is done again then."""
+
+    reason: str
+
+
+Outcome = Passed | Failed | Lost | Stopped | Waiting
 
 
 @dataclass(frozen=True)
@@ -120,6 +132,8 @@ def advance(
     """Where the ticket goes after the step at `position` ended with `outcome`."""
     if isinstance(outcome, Stopped):
         return replace(position, note=outcome.reason, stopped=True)
+    if isinstance(outcome, Waiting):
+        return position
     if isinstance(outcome, Passed):
         names = [step.name for step in process]
         following = names.index(position.step) + 1

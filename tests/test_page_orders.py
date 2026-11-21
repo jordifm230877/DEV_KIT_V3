@@ -93,7 +93,7 @@ def test_a_stopped_ticket_is_answered_from_the_page(project: Project, site: Site
 def test_a_proposal_is_accepted_or_turned_down_from_the_page(project: Project, site: Site) -> None:
     project.configure(coder=HELLO, tester="print('RESULT: blocked: nothing a user can see')")
     for title in ("Greet", "Wave", "Bow"):
-        project.dk("propose", title, "--spec", "Say hello.")
+        project.dk("propose", title, "--spec", "Say hello.", "--epic", "Manners")
 
     accepted = order(project, do="approve", ticket=1)
     plain = order(project, do="approve", ticket=2, tests=False)

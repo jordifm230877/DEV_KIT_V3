@@ -15,6 +15,9 @@ DK = shlex.split(re.search(r"`([^`]*-m dk[^`]*)`", prompt).group(1))
 notes = pathlib.Path(sys.argv[0]).with_name("principal-notes.txt")
 
 def dk(*args):
+    if args[0] == "add" and "--epic" not in args:  # every ticket is written in an epic
+        dk("epic", "Work", "--spec", "Goal: g. Includes: i. Excludes: e.")
+        args = (*args, "--epic", "Work")
     done = subprocess.run([*DK, *args], capture_output=True, text=True)
     return done.returncode, done.stdout
 
@@ -92,7 +95,7 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     assert "once it is merged, any later ticket may change or remove them" in brief
     # Left to say nothing, it sent work no user sees to the test-writer: 27 scenarios refused.
     assert "--behaviour-tests | --no-behaviour-tests" in brief and "say which" in brief
-    assert len(brief.split()) < 400
+    assert len(brief.split()) < 450
 
 
 def test_the_principal_explores_itself_and_keeps_tickets_for_changes(project: Project) -> None:

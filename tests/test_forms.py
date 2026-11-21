@@ -16,6 +16,7 @@ LAID_OUT = "Goal:\npolite software.\n\nIncludes:\ngreetings.\n\nExcludes:\nsmall
 def agent(project: Project, monkeypatch: pytest.MonkeyPatch) -> None:
     """What follows is typed by an agent, as the Principal does in the conversation."""
     project.configure(coder=HELLO)
+    project.dk("epic", "Work", "--spec", EPIC)  # the epic of a ticket that names none
     monkeypatch.setenv("DK_AGENT", "principal")
 
 
@@ -57,7 +58,7 @@ def test_an_agent_says_whether_a_ticket_takes_behaviour_tests(project: Project) 
     assert project.dk("status") == ""
     assert "#1 written" in project.dk("add", "Greet", "--spec", TICKET, "--behaviour-tests")
     assert "#2 written" in project.dk("add", "Tidy", "--spec", TICKET, "--no-behaviour-tests")
-    assert "no behaviour tests" not in project.dk("status").splitlines()[0]
+    assert "no behaviour tests" not in project.dk("status").splitlines()[1]
     assert "Tidy  [no behaviour tests]" in project.dk("status")
 
 
@@ -100,7 +101,9 @@ def test_an_agent_is_refused_an_epic_that_lacks_a_part(project: Project) -> None
 
 @pytest.mark.usefixtures("agent")
 def test_an_agent_describes_an_epic_before_it_writes_tickets_for_it(project: Project) -> None:
-    said = project.refused("add", "Greet", "--spec", TICKET, "--epic", "Manners")
+    said = project.refused(
+        "add", "Greet", "--spec", TICKET, "--epic", "Manners", "--behaviour-tests"
+    )
     assert 'epic "Manners" --spec' in said and "Goal: ... Includes: ... Excludes: ..." in said
 
     project.dk("epic", "Manners", "--spec", EPIC)

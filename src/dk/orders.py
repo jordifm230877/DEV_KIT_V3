@@ -73,14 +73,20 @@ def cancel(tickets: Tickets, number: int) -> None:
     print(f"#{number} cancelled; its unmerged work is thrown away on the next run")
 
 
-def close(tickets: Tickets, epic: str) -> None:
-    """Mark an epic as complete; only one whose tickets are all merged or given up."""
+def close(tickets: Tickets, epic: str, suite: bool) -> None:
+    """Mark an epic as complete; only one whose tickets are all merged or given up. Where
+    the project has a whole test suite (`suite`), write its run instead, which closes it."""
     inside = [ticket for ticket in tickets.all() if epic and ticket.epic == epic]
     if not inside:
         raise LookupError(f"there is no epic '{epic}'")
     unfinished = [t for t in inside if t.step not in (process.DONE, process.CANCELLED)]
     if unfinished:
         raise LookupError(f"#{unfinished[0].id} is not finished")
+    if suite:
+        wanted = f"Run the project's whole test suite; {epic} closes when it passes."
+        number = tickets.add(f"Close {epic}", wanted, process.CLOSING[0].name, epic, [])
+        print(f"#{number} written; {epic} closes when the whole test suite passes")
+        return
     tickets.close(epic)
     print(f"{epic} closed")
 
@@ -97,6 +103,10 @@ def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: b
     That it takes no behaviour tests is written before it becomes one: a run that is going
     takes the ticket up at once, as it then is."""
     first = process.start(process.PROCESS) if accepted else process.Position(CANCELLED)
+    if accepted and not tickets.get(number).epic:
+        raise LookupError(
+            f'#{number} is in no epic; put it in one first: dk move {number} --epic "NAME"'
+        )
     if accepted and not tests:
         tickets.untested(number)
     tickets.move(number, *vars(first).values())
@@ -138,14 +148,33 @@ def _behaviour_tests(tickets: Tickets, number: int, approved: bool, reason: str)
 
 
 def _open(tickets: Tickets, epic: str) -> None:
+    """Refuse an epic that takes no ticket: a closed one, or one an agent has not described."""
     if epic in tickets.closed():
         raise LookupError(f"epic '{epic}' is closed; put the ticket in another epic")
+    if os.environ.get(agents.WHO) and epic and epic not in tickets.described():
+        raise LookupError(f'say first what the epic is for: epic "{epic}" --spec "{_form(EPIC)}"')
+
+
+def move(tickets: Tickets, number: int, epic: str, allowed: bool) -> None:
+    """Put a proposal in an epic, or with "" in none. `allowed` says whether whoever asks
+    is the user or the Principal."""
+    if not allowed:
+        raise LookupError("only the user or the Principal can move a proposal")
+    ticket = tickets.get(number)
+    if ticket.step != process.PROPOSED:
+        raise LookupError(f"#{number} is not a proposal; only a proposal is moved")
+    _open(tickets, epic)
+    tickets.file(number, epic)
+    where = f"to {epic}" if epic else f"out of {ticket.epic or 'no epic'}"
+    tickets.record(number, f"moved {where} by {os.environ.get(agents.WHO) or 'the user'}")
+    print(f"#{number} moved {where}")
 
 
 def propose(args: argparse.Namespace, tickets: Tickets) -> None:
     """Suggest a ticket; whoever does is named, with the ticket they were on when they did,
     whose epic it joins unless another is given."""
-    _open(tickets, args.epic)
+    if args.epic in tickets.closed():
+        raise LookupError(f"epic '{args.epic}' is closed; put the ticket in another epic")
     who = os.environ.get(agents.WHO, "")
     on = [ticket for ticket in tickets.all() if who and ticket.worker == who][:1]
     epic = args.epic or "".join(ticket.epic for ticket in on)
@@ -187,17 +216,18 @@ def epic(tickets: Tickets, name: str, spec: str) -> None:
 
 
 def add(args: argparse.Namespace, tickets: Tickets) -> None:
-    _open(tickets, args.epic)
     spec = _formed(args.spec, TICKET)
-    if os.environ.get(agents.WHO) and args.epic and args.epic not in tickets.described():
-        raise LookupError(
-            f'say first what the epic is for: epic "{args.epic}" --spec "{_form(EPIC)}"'
-        )
     if os.environ.get(agents.WHO) and not (args.behaviour_tests or args.no_behaviour_tests):
         raise LookupError(
             "say whether a user of the product sees the change: "
             "--behaviour-tests or --no-behaviour-tests"
         )
+    if not args.epic:
+        raise LookupError(
+            'say which epic the ticket belongs to: --epic "NAME"; '
+            "`dk propose` writes one that waits for you outside every epic"
+        )
+    _open(tickets, args.epic)
     first = process.start(process.PROCESS).step
     tests = not args.no_behaviour_tests
     number = tickets.add(args.title, spec, first, args.epic, args.after, tests)

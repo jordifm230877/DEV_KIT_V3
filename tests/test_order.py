@@ -66,7 +66,7 @@ def test_a_cancelled_ticket_holds_nobody_back(project: Project) -> None:
 
 def test_a_ticket_cannot_follow_one_that_does_not_exist(project: Project) -> None:
     assert "there is no ticket #7" in project.refused(
-        "add", "On top", "--spec", "b", "--after", "7"
+        "add", "On top", "--spec", "b", "--after", "7", "--epic", "Work"
     )
     assert project.dk("status") == ""
 

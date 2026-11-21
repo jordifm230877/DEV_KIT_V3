@@ -112,7 +112,7 @@ def test_the_view_uses_colour_to_tell_what_needs_the_user(project: Project) -> N
     project.dk("add", "Paint", "--spec", "Paint it.", "--epic", "Walls")
     project.dk("run")
     project.dk("add", "Frame", "--spec", "Frame it.", "--epic", "Walls", "--after", "1")
-    project.dk("add", "Sweep", "--spec", "Sweep.")
+    project.dk("propose", "Sweep", "--spec", "Sweep.")
 
     seen = watch(project).splitlines()
 
@@ -125,7 +125,7 @@ def test_the_view_uses_colour_to_tell_what_needs_the_user(project: Project) -> N
     assert shown("Walls") == f"{BOLD}Walls{OFF}"
     assert shown("#1 stopped").startswith(f"{BOLD}{YELLOW}  #1 stopped at code")
     assert shown("#2").startswith(f"{DIM}  #2 specify") and "waits for #1" in shown("#2")
-    assert shown("#3") == "#3 specify  Sweep"
+    assert shown("#3") == f"{YELLOW}#3 proposed  Sweep{OFF}"
     assert shown("finished") == f"{DIM}0 finished, 0 cancelled{OFF}"
 
 

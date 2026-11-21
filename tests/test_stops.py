@@ -97,7 +97,7 @@ def test_the_principal_is_told_the_ticket_what_happened_and_why_it_stopped(
     assert "Tests a merged ticket left" in brief and "this ticket's test-writer" in brief
     # It sent a ticket with nothing for a user to see back to the test-writer, three times.
     assert "`--no-behaviour-tests` when it stopped for behaviour tests" in brief
-    assert len(brief.split()) < 400
+    assert len(brief.split()) < 450
 
 
 def test_the_principal_answers_a_stop_once_and_then_it_is_the_users(
