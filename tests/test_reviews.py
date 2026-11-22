@@ -51,7 +51,7 @@ def test_a_reviewer_is_told_the_ticket_and_how_to_see_the_changes(project: Proje
     assert "Greet" in seen and "Say hello." in seen
     assert f"git diff {project.git('rev-parse', 'HEAD~1')}" in seen
     assert "in the background" in seen, "its own tool cuts off a command that runs long"
-    assert len(seen.split()) < 200
+    assert len(seen.split()) < 300
 
 
 def test_nothing_a_reviewer_changes_or_leaves_behind_is_merged(project: Project) -> None:

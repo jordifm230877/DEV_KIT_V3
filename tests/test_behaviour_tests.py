@@ -139,6 +139,7 @@ def test_the_verifier_checks_that_behaviour_tests_really_exercise_the_product(
     assert "really exercises the product" in seen
     # verifiers of real projects ran the scenarios again, which the program had just run
     assert "they pass: run no behaviour test yourself" in " ".join(seen.split())
+    assert len(seen.split()) < 300
 
 
 def test_only_a_ticket_waiting_for_the_user_can_be_approved_or_rejected(project: Project) -> None:

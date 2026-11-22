@@ -34,7 +34,9 @@ def test_the_verifier_judges_how_the_work_is_done_and_whether_it_works(
     assert ".feature" not in brief, "there are no behaviour tests in this project"
     # A real one named a fault or two each time: four rejections, an hour of coding after each.
     assert "names all that must change" in brief and "not the first fault found" in brief
-    assert len(brief.split()) < 200
+    # One hand-mutated the code 11, 41 and 47 times on one ticket and rejected it on survivors.
+    assert "Do no mutation testing" in brief
+    assert len(brief.split()) < 300
 
 
 def test_without_the_quality_rules_the_verifier_does_not_ask_for_them(project: Project) -> None:
