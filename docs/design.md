@@ -451,7 +451,7 @@ Each step ends with something usable.
   and what it may decide. Theirs was 300 until naming one more option left no room to say
   when to use it, and 400 until `move` made it 413: the user chose more room over
   sentences cut so short that their meaning could be lost. The verifier's went from 200
-  to 300 for the same reason, when telling it to do no mutation testing made it 211.
+  to 300 for the same reason: with behaviour tests it was already 232, unchecked.
   The limit is there so that a rule learned in a trial replaces a weaker one
   or becomes the program's work, not one more sentence; raising it is the user's decision.
 - What agents write has a fixed form, kept by the program and not by a model: a ticket

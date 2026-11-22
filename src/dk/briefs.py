@@ -101,10 +101,8 @@ RESULT: rejected: <what must change, concretely>
 {always}"""
 
 # Coder, verifier and QA each ran a suite of fifteen minutes that the program runs anyway.
-# A verifier mutated the code by hand 11, 41 and 47 times on one ticket; nobody had asked.
 _CHECKED = """\
 The project's checks have passed on this code: never run its whole test suite.
-Do no mutation testing, by hand or with a tool: that is for the coder and for a tests audit.
 """
 
 _TASK = (
