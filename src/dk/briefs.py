@@ -208,7 +208,8 @@ def coder(
 def reviewer(
     ticket: int, title: str, spec: str, base: str, behaviour: bool, quality: bool, lessons: str = ""
 ) -> str:
-    """`lessons` is what points at the project's lessons, where it keeps any."""
+    """`lessons` is what points at the project's lessons and at the folders a documenter keeps,
+    where it has them."""
     task = _TASK + (_WITH_BEHAVIOUR_TESTS if behaviour else "")
     task += _WITH_QUALITY_RULES if quality else ""
     about = _ticket(ticket, title, spec)

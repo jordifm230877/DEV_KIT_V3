@@ -523,6 +523,11 @@ Each step ends with something usable.
   habit written there it broke the code by hand 47 times on one ticket. The lessons are the
   one memory a project keeps: checked, short and in Git. Asked with the switch on, a real
   Claude said it had no folder for notes; without it, it named one.
+- A verifier is told, where the project has a documenter, that `docs/technical/` and
+  `docs/howto/` are the documenter's to bring up to date, and to reject nothing over what
+  they say. On a real project one sent a ticket back to its coder for five guides that
+  still described the sign-in form as it was before that ticket, which the documenter
+  rewrites when the epic closes. The documents lag behind the code until then: accepted.
 
 ## Deliberately left out
 

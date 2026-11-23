@@ -5,6 +5,11 @@ from __future__ import annotations
 TITLE = "Documentation"
 WANTED = "Bring the project's documentation up to date with its code."
 FOLDERS = ("docs/technical", "docs/howto")  # all a documenter may leave behind
+# A verifier sent work back for guides that described the product as it was before the ticket.
+KEPT = """\
+docs/technical/ and docs/howto/ are a documenter's to bring up to date:
+reject nothing over what they say.
+"""
 EVERY = 5  # days the night shift lets pass before it has them written again
 
 _DOCUMENTER = """\

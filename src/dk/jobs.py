@@ -236,9 +236,14 @@ class Jobs:
         base = self.workspace.base(ticket.id)
         brief = briefs.reviewer(
             *(ticket.id, ticket.title, ticket.spec, base),
-            *(bool(ticket.protected), self.config.quality_rules, self._lessons(ticket)),
+            *(bool(ticket.protected), self.config.quality_rules),
+            self._lessons(ticket) + self._documented(),
         )
         return self._judge(agent, brief, ticket, "work")
+
+    def _documented(self) -> str:
+        """What a verifier is told of the folders a documenter keeps, where there is one."""
+        return documents.KEPT if self.config.with_role("documenter") else ""
 
     def _judge(self, agent: Agent, brief: str, ticket: Ticket, what: str) -> Outcome:
         reply = self._resumed(agent, False, brief, ticket)

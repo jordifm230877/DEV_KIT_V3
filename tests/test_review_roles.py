@@ -32,6 +32,7 @@ def test_the_verifier_judges_how_the_work_is_done_and_whether_it_works(
     # coder, verifier and QA each ran a suite of 15 minutes the program had just run
     assert "checks have passed on this code" in brief and "never run its whole test suite" in brief
     assert ".feature" not in brief, "there are no behaviour tests in this project"
+    assert "docs/howto" not in brief, "nobody else keeps them here"
     # A real one named a fault or two each time: four rejections, an hour of coding after each.
     assert "names all that must change" in brief and "not the first fault found" in brief
     assert len(brief.split()) < 300
@@ -45,3 +46,16 @@ def test_without_the_quality_rules_the_verifier_does_not_ask_for_them(project: P
 
     brief = told(project, "verifier")
     assert "cheats" in brief and all(rule not in brief for rule in QUALITY)
+
+
+def test_a_verifier_rejects_nothing_over_the_folders_a_documenter_keeps(project: Project) -> None:
+    """A real one sent work back to the coder for guides that described the product as it
+    was before the ticket: the documenter brings them up to date when the epic closes."""
+    project.configure(coder=HELLO, verifier=KEEPS, documenter="print('RESULT: done')")
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    project.dk("run")
+
+    brief = told(project, "verifier")
+    assert "docs/technical/ and docs/howto/" in brief and "reject nothing over" in brief
+    assert len(brief.split()) < 300
