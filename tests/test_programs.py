@@ -345,3 +345,25 @@ def test_an_agent_with_no_reasoning_set_is_left_to_its_programs_own(
     project.dk("run")
 
     assert told[0] not in programs.calls(program)[0][:-1]
+
+
+NOTES_OFF = (
+    "import os\n"
+    "with (here / 'notes-off.txt').open('a') as said:\n"
+    "    said.write(os.environ.get('CLAUDE_CODE_DISABLE_AUTO_MEMORY', 'no') + '\\n')\n"
+)
+
+
+def test_a_claude_agent_keeps_no_notes_of_its_own(project: Project, programs: Programs) -> None:
+    """A verifier's own notes reached 13,500 words nobody had read, and from a habit written
+    there it broke the code by hand 47 times on one ticket. What a project learns is in its
+    lessons, which are checked and kept short."""
+    programs.does("claude", NOTES_OFF + CLAUDE_WORKS)
+    team(project, "claude", "coder", "principal")
+    project.dk("add", "Greet", "--spec", "Create greeting.txt.")
+
+    project.dk("run")
+    project.dk("talk", "--no-tabs")
+
+    said = (project.root.parent / "bin" / "notes-off.txt").read_text().split()
+    assert said == ["1", "1"], "in a job and in the conversation"

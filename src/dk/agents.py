@@ -21,6 +21,9 @@ from dk import child
 
 INSTRUCTIONS = "{instructions}"
 WHO = "DK_AGENT"  # set for every program an agent runs, so `dk` can tell it is not the user
+# Claude keeps no notes of its own between jobs: a verifier's grew unread to 13,500 words,
+# and a habit written there cost a ticket hours. What a project learns is in its lessons.
+_ALWAYS = {"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}
 Answer = Literal["done", "approved", "rejected", "blocked", "question"]
 ANSWERS: tuple[Answer, ...] = ("done", "approved", "rejected", "blocked", "question")
 _FREE = {
@@ -199,7 +202,7 @@ def ask(
             shown.flush()
 
         feed = None if by_argument else instructions
-        code = child.run(argv, cwd, show, seconds, stop, feed, {WHO: name})
+        code = child.run(argv, cwd, show, seconds, stop, feed, {WHO: name, **_ALWAYS})
         late = code is None and not (stop and stop.is_set())
         how = f"cut off after {seconds / 60:g} minutes" if late else _ENDED[code is None]
         shown.write(f"{datetime.now():%Y-%m-%d %H:%M}  === {how} ===\n" if title else "")
@@ -225,6 +228,6 @@ def converse(argv: Sequence[str], brief: str, cwd: Path, name: str) -> int:
     full += [] if INSTRUCTIONS in argv else [brief]
     interrupt = signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ctrl-C belongs to the agent
     try:
-        return subprocess.run(full, cwd=cwd, env={**os.environ, WHO: name}).returncode
+        return subprocess.run(full, cwd=cwd, env={**os.environ, WHO: name, **_ALWAYS}).returncode
     finally:
         signal.signal(signal.SIGINT, interrupt)
