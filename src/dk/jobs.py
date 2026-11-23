@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from dk import agents, audits, briefs, documents, shown, spent
+from dk import agents, audits, briefs, documents, lessons, shown, spent
 from dk.config import Agent, Config
 from dk.process import (
     DONE,
@@ -157,6 +157,32 @@ class Jobs:
             self.tickets.record(ticket.id, f"{agent.name} found the documentation up to date")
         return trouble or Passed()
 
+    def _lessons(self, ticket: Ticket) -> str:
+        """What points an agent at the project's lessons, where it keeps any."""
+        return lessons.READ if self.workspace.text(ticket.id, lessons.FILE) else ""
+
+    def learn(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
+        """Have the lessons of a closed epic drawn; of what the auditor leaves, only their
+        file is kept, and no longer than it may be. Finding none is a job done."""
+        about = briefs.about(ticket.id, ticket.title, ticket.spec, position.note)
+        brief = lessons.brief(about, self.command, briefs.ALWAYS)
+        trouble = self._work(agent, brief, ticket, (lessons.FILE,))
+        long = lessons.over(self.workspace.text(ticket.id, lessons.FILE))
+        if trouble or long:
+            return trouble or Failed(long)
+        if not self._saved(ticket):
+            self.tickets.record(ticket.id, f"{agent.name} found no lesson to keep")
+        return Passed()
+
+    def confirm(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
+        """Have the lessons checked against what happened, if any were written."""
+        if not self._saved(ticket):
+            return Skipped()
+        about = briefs.about(ticket.id, ticket.title, ticket.spec)
+        base = self.workspace.base(ticket.id)
+        brief = lessons.check(about, base, self.command, briefs.ALWAYS)
+        return self._judge(agent, brief, ticket, "lessons")
+
     def audit(self, agent: Agent, ticket: Ticket, position: Position) -> Outcome:
         """Have the project looked over; of what the auditor leaves, only its report is kept."""
         where = report(ticket.title)
@@ -189,7 +215,7 @@ class Jobs:
         note = self._fresh(ticket, position.note)
         brief = briefs.coder(
             *(ticket.id, ticket.title, ticket.spec, note, sorted(tests)),
-            *(self.config.quality_rules, self.command),
+            *(self.config.quality_rules, self.command, self._lessons(ticket)),
         )
         outcome = self._produce(agent, brief, ticket, note=note)
         changed = self.workspace.tampered(ticket.id, tests) if tests else []
@@ -210,7 +236,7 @@ class Jobs:
         base = self.workspace.base(ticket.id)
         brief = briefs.reviewer(
             *(ticket.id, ticket.title, ticket.spec, base),
-            *(bool(ticket.protected), self.config.quality_rules),
+            *(bool(ticket.protected), self.config.quality_rules, self._lessons(ticket)),
         )
         return self._judge(agent, brief, ticket, "work")
 

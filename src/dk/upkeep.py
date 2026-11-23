@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dk import audits, config, documents, jobs, process
+from dk import audits, config, documents, jobs, lessons, process
 from dk.tickets import Tickets
 from dk.workspace import Workspace
 
@@ -78,10 +78,28 @@ def _may_document(project: Path, tickets: Tickets) -> bool:
     return not unfinished
 
 
-def epic_closed(project: Path, tickets: Tickets) -> None:
-    """Have what a closed epic built documented, where somebody documents."""
+def epic_closed(epic: str, project: Path, tickets: Tickets) -> None:
+    """Have what a closed epic built documented, where somebody documents, and the lessons
+    of what went wrong in it drawn, where somebody audits."""
     if _may_document(project, tickets):
         _document("", tickets)
+    if _staffed(project, process.LESSONS):
+        _learn(epic, tickets)
+
+
+def _learn(epic: str, tickets: Tickets) -> None:
+    """Write the ticket that draws an epic's lessons, unless nothing in it went wrong."""
+    title = lessons.title(epic)
+    troubled = [
+        ticket.id
+        for ticket in tickets.all()
+        if ticket.epic == epic and any(map(lessons.TROUBLE.search, tickets.history(ticket.id)))
+    ]
+    if not troubled:
+        print(f"{title}: nothing was rejected, blocked or asked")
+        return
+    number = tickets.add(title, lessons.wanted(epic, troubled), process.LESSONS[0].name, "", [])
+    print(f"#{number} written; what it learns will join {lessons.FILE}")
 
 
 def night(project: Path, tickets: Tickets, workspace: Workspace) -> None:

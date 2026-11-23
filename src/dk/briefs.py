@@ -30,7 +30,7 @@ Run long commands in the background, output to a file: your tool cuts them off.
 _CODER = """\
 You are a coder. The current directory is your own copy of the project.
 
-{ticket}{note}
+{ticket}{note}{lessons}
 Make the changes the ticket asks for, with tests where the project has them.
 Run only the tests of what you change: every check is run when you finish.
 {quality}{tests}{long}Do not commit or change anything outside this directory.
@@ -89,7 +89,7 @@ _REVIEWER = """\
 You are a verifier, in the project with this ticket's work.
 
 {ticket}
-See the changes: git diff {base}
+{lessons}See the changes: git diff {base}
 
 {task}
 {long}{checked}A rejection names all that must change, not the first fault found.
@@ -190,11 +190,13 @@ def coder(
     protected: list[str],
     quality: bool,
     command: str,
+    lessons: str = "",
 ) -> str:
     tests = _PROTECTED.format(files=", ".join(protected)) if protected else ""
     return _CODER.format(
         ticket=_ticket(ticket, title, spec),
         note=_notes(note),
+        lessons=lessons,
         quality=_QUALITY if quality else "",
         tests=tests,
         command=command,
@@ -203,12 +205,21 @@ def coder(
     )
 
 
-def reviewer(ticket: int, title: str, spec: str, base: str, behaviour: bool, quality: bool) -> str:
+def reviewer(
+    ticket: int, title: str, spec: str, base: str, behaviour: bool, quality: bool, lessons: str = ""
+) -> str:
+    """`lessons` is what points at the project's lessons, where it keeps any."""
     task = _TASK + (_WITH_BEHAVIOUR_TESTS if behaviour else "")
     task += _WITH_QUALITY_RULES if quality else ""
     about = _ticket(ticket, title, spec)
     return _REVIEWER.format(
-        ticket=about, base=base, task=task, long=LONG, checked=_CHECKED, always=ALWAYS
+        ticket=about,
+        base=base,
+        task=task,
+        long=LONG,
+        checked=_CHECKED,
+        always=ALWAYS,
+        lessons=lessons,
     )
 
 

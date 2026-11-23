@@ -185,7 +185,7 @@ def _night(args: argparse.Namespace, project: Path, home: Path, tickets: Tickets
 def _closed(epic: str, project: Path, tickets: Tickets) -> None:
     tickets.close(epic)
     print(f"{epic} closed")
-    upkeep.epic_closed(project, tickets)
+    upkeep.epic_closed(epic, project, tickets)
 
 
 def _close(epic: str, project: Path, tickets: Tickets) -> None:
@@ -193,7 +193,7 @@ def _close(epic: str, project: Path, tickets: Tickets) -> None:
     suite = bool(config.load(project).suite)
     orders.close(tickets, epic, suite)
     if not suite:
-        upkeep.epic_closed(project, tickets)
+        upkeep.epic_closed(epic, project, tickets)
 
 
 def _trusted(project: Path) -> bool:

@@ -48,7 +48,7 @@ time.
 | `director` | Carries out the step each ticket waits for; the only piece that decides | Talk to models or Git directly |
 | `jobs` | The jobs agents are given on a ticket: what each is told and what its answer means; a composer | Decide where a ticket goes next |
 | `orders` | What the user, or the Principal for them, asks of the ticket list with a command: write, send on, give up, close, decide; a composer | Start anything |
-| `upkeep` | Work on the whole project, not one ticket: writes audits and documentation runs for the user, the close of an epic and the night shift; a composer | Start anything |
+| `upkeep` | Work on the whole project, not one ticket: writes audits and documentation runs for the user, the close of an epic and the night shift, and the lessons of a closed epic; a composer | Start anything |
 | `nightly` | Has the system start a command every day at a set time (systemd timers) | Know what the command does |
 | `principal` | What the Principal is told, in the conversation and about a stopped ticket | Start anything |
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
@@ -57,6 +57,7 @@ time.
 | `briefs` | The short instructions each role receives | — |
 | `audits` | The kinds of audit and what an auditor is told | — |
 | `documents` | What a documenter is asked for and told, and the folders it may write | — |
+| `lessons` | The file of lessons a project keeps and its limit; what the auditor who writes them, the verifier who checks them and those who read them are told | — |
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
 | `checks` | Runs the project's check commands | Interpret results |
 | `screen` | One Herdr tab per agent, showing what it is doing, and one for the board; watch-only | Affect the run |
@@ -502,6 +503,23 @@ Each step ends with something usable.
   test it was. It is a job and not the command's own work because the suite can take an
   hour, the Principal's tool cuts a command off at ten minutes, and the board should show
   it. A project without `[checks.epic]` closes an epic at once, as before.
+- A closed epic has its lessons drawn, where the project has an auditor: `Lessons of EPIC`,
+  written once the epic is closed, so closing takes no longer. It names the epic's tickets
+  where work was rejected or an agent was blocked or had to ask, and is not written when
+  there are none. The auditor reads them (`dk show N`) and writes three lessons at most, or
+  none, each one line of `docs/lessons.md` ending with the tickets it comes from; nothing
+  else it leaves is kept. A verifier then checks facts, not taste: that each lesson
+  happened on the tickets it names, says what to do concretely, holds for later tickets and
+  neither repeats nor contradicts `AGENTS.md`. The user is not asked: whoever follows a
+  lesson judges it better than they would, and a wrong one is a line they can delete. The
+  file may hold 300 words, which the program counts, so a new lesson in a full file takes
+  the place of an old one; coders and verifiers are told to read it first, once it is
+  there. The auditor writes them because it neither made the mistakes nor rejected them.
+- Claude agents are started with their own notes off (`CLAUDE_CODE_DISABLE_AUTO_MEMORY`).
+  On a real project a verifier's notes had grown to 13,500 words nobody had read, and from a
+  habit written there it broke the code by hand 47 times on one ticket. The lessons are the
+  one memory a project keeps: checked, short and in Git. Asked with the switch on, a real
+  Claude said it had no folder for notes; without it, it named one.
 
 ## Deliberately left out
 

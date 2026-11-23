@@ -196,7 +196,7 @@ class Director:
             return Stopped(briefs.approval(ticket.id))
         work = self.jobs
         jobs = {"specify": work.specify, "vet": work.vet, "code": work.code, "audit": work.audit}
-        jobs |= {"document": work.document}
+        jobs |= {"document": work.document, "learn": work.learn, "confirm": work.confirm}
         job = jobs.get(step.name, work.review)
         agent = agent or self._free[step.role].get()
         try:

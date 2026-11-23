@@ -292,6 +292,25 @@ Where a project has a documenter, two things ask for a run without you: closing 
 (`dk close`), and the night shift once the documentation is five days old and the project,
 apart from `docs/`, changed since it was written.
 
+### Lessons
+
+Where a project has an auditor, closing an epic also has its lessons drawn. Nothing is
+asked of you, and the epic does not wait for it.
+
+- A ticket `Lessons of EPIC` is written when the epic's tickets include some where work
+  was rejected, or an agent was blocked or had to ask. With none, no ticket is written.
+- The auditor reads those tickets and adds three lessons at most to `docs/lessons.md`, or
+  none. Each is one line saying what to do or not to do, with the tickets it comes from.
+- A verifier checks that each lesson happened on the tickets it names, is concrete, and
+  neither repeats nor contradicts `AGENTS.md`. What it rejects goes back to the auditor.
+- Coders and verifiers are told to read the file before every ticket.
+
+The file may hold 300 words: a new lesson in a full file takes the place of an old one.
+It is yours to edit: delete a line you find wrong.
+
+Claude agents started by DevKit keep no notes of their own between jobs; the lessons are
+what the project remembers. Your own Claude sessions are not affected.
+
 ### Proposed tickets and a coder's notes
 
 An auditor, and a coder that comes across work its ticket does not cover, propose a ticket

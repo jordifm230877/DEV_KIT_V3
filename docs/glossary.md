@@ -35,6 +35,7 @@
 - **Auditor** — the role of the agent that carries out audits.
 - **Documenter** — the role of the agent that keeps the project's documentation in step with its code.
 - **Documentation run** — one job of the documenter, asked for with `dk document`, by closing an epic or by the night shift: it reads and tries the product in a throwaway copy, and only what it leaves in `docs/technical/` (for whoever changes the code) and `docs/howto/` (for whoever uses the product) is kept.
+- **Lesson** — one line of `docs/lessons.md`: what to do or not to do in this project, with the tickets it was learnt on. Drawn by the auditor when an epic closes, from what was rejected, blocked or asked in it; checked by a verifier; read by coders and verifiers before every ticket. The file may hold 300 words.
 - **Director** — the piece that decides what happens next to each ticket.
 - **Clash** — a ticket's work collides with work merged while it was in progress; the coder gets the files to resolve.
 - **Board** — the view that redraws itself (`dk status --watch`, the `status` tab): what each agent is doing and the unfinished tickets.

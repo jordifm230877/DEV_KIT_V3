@@ -45,6 +45,12 @@ DOCUMENT: tuple[Step, ...] = (
     Step("document", "work", "documenter", required=True),
     Step("publish", "merge"),
 )
+# So is drawing the lessons of a closed epic: an auditor writes them, a verifier checks them.
+LESSONS: tuple[Step, ...] = (
+    Step("learn", "work", "auditor", required=True),
+    Step("confirm", "review", "verifier"),
+    Step("keep", "merge"),
+)
 
 
 # So is closing an epic: the project's whole test suite is run, and the epic closes if it
@@ -54,7 +60,9 @@ CLOSING: tuple[Step, ...] = (Step("suite", "suite"),)
 
 def of(step: str) -> tuple[Step, ...]:
     """The process that a ticket at this step is going through."""
-    apart = (one for one in (AUDIT, DOCUMENT, CLOSING) if step in [known.name for known in one])
+    apart = (
+        one for one in (AUDIT, DOCUMENT, LESSONS, CLOSING) if step in [known.name for known in one]
+    )
     return next(apart, PROCESS)
 
 
