@@ -404,7 +404,10 @@ Each step ends with something usable.
   examiner for every ticket. The Principal is told to split an older file itself. It is
   also told where a finding about one ticket does go, to the user and into the ticket
   with its `retry` note: told only where not to write it, it wrote its look at a failing
-  ticket into the old file all the same.
+  ticket into the old file all the same. Trying things out with throwaway scripts and data
+  is named as its work too: told only to read and to ask, it proposed two tickets to find
+  out how a server behaved, one of them to "record decisions with the user", whom no
+  coder talks with.
 - A documenter (`dk document`, an optional role) keeps `docs/technical/` and `docs/howto/`
   in step with the code. Its job is carried like an audit, with a process of its own,
   `document` then `publish`: it works in a throwaway copy where it may build and run the

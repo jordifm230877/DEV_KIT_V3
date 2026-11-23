@@ -148,7 +148,7 @@ dk talk
 ```
 
 Tell the Principal what you want. While it is not yet clear what to build, it explores
-with you: it reads code, asks, and writes each study in a file of its own under
+with you: it reads code, tries things out, asks, and writes each study in a file of its own under
 `docs/discovery/`, and what is decided now in `docs/decisions.md`, which stays short. No
 ticket is written in that phase. When you say it is clear enough, it
 proposes epics and tickets, writes them once you agree, and the work starts behind the

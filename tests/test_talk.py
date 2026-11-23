@@ -105,6 +105,10 @@ def test_the_principal_explores_itself_and_keeps_tickets_for_changes(project: Pr
 
     brief = (project.root / "brief.txt").read_text()
     assert brief.index("Explore") < brief.index("never tickets") < brief.index("Plan")
+    # Told only to read and ask, it proposed two tickets to try things out on a throwaway
+    # server, one of them to "record decisions with the user": no coder talks with the user.
+    assert "try things out with throwaway scripts and data" in brief
+    assert brief.index("Finding out and deciding") < brief.index("never tickets")
     # One file for everything reached 13,500 words that every examiner read for every ticket.
     assert "`docs/decisions.md`" in brief and "rewrite it" in brief
     assert "`docs/discovery/DATE-topic.md`" in brief
