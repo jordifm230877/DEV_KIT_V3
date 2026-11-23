@@ -212,11 +212,17 @@ class Director:
 
     def _suite(self, ticket: Ticket, logs: Path) -> Outcome:
         """Run the whole test suite on the project as it is now; the epic closes if it
-        passes, and what fails becomes a ticket of the epic that this run then waits for."""
+        passes, and what fails becomes a ticket of the epic that this run then waits for.
+
+        The copy of a run that failed is kept until the next one, for whoever fixes it: a
+        real suite named only a log in its copy, which had been thrown away."""
+        self.workspace.discard(ticket.id)
+        failure = None
         try:
             failure = self._checked(ticket, self.config.suite, logs)
         finally:
-            self.workspace.discard(ticket.id)
+            if not failure:
+                self.workspace.discard(ticket.id)
         if self.stop.is_set() or self.tickets.get(ticket.id).step == CANCELLED:
             return Waiting("cut short or given up")  # its result is not judged
         if not failure:
@@ -225,7 +231,8 @@ class Director:
         spec = (
             f"Wanted:\nThe project's whole test suite passes. Run when closing {ticket.epic}, "
             f"it failed.\n\nAcceptance criteria:\n- What fails below passes.\n\n{failure}\n\n"
-            f"The whole output is under {logs}."
+            f"The whole output is under {logs}.\nWhat the suite wrote in its copy of the "
+            f"project is still in {self.workspace.prepare(ticket.id)} until it is run again."
         )
         first = start(PROCESS).step
         fix = self.tickets.add(

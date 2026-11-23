@@ -115,3 +115,56 @@ def test_an_epic_whose_closing_is_given_up_while_the_suite_runs_stays_open(
     status = project.dk("status")
     assert runs(project) == 1 and "#2 cancelled" in status
     assert "closed" not in status and "#3" not in status, "nothing is written for a suite given up"
+
+
+def test_what_a_failing_suite_left_in_its_copy_is_kept_for_whoever_fixes_it(
+    project: Project,
+) -> None:
+    """A real suite named only the log of the group that failed, a file in the copy the
+    program had thrown away: the coder ran the group again to learn which test it was."""
+    settings = suite(project, needs_cake=True)
+    tools = project.root.parent / "tools"
+    leaves = "pathlib.Path('details.log').write_text('the oven was cold')\n"
+    (tools / "suite.py").write_text(SUITE.replace("if not", leaves + "if not"))
+    reads = (
+        "import re\n"
+        "copy = re.search(r'still in (\\S+) until', prompt)\n"
+        "if copy:\n"
+        "    found = (pathlib.Path(copy[1]) / 'details.log').read_text()\n"
+        "    pathlib.Path(sys.argv[0]).with_name('found.txt').write_text(found)\n" + FORGETS
+    )
+    project.configure(coder=reads, settings=settings)
+    project.dk("add", "Greet", "--spec", "Say hello.", "--epic", "Manners", "--no-behaviour-tests")
+    project.dk("run")
+    project.dk("close", "Manners")
+
+    project.dk("run")
+
+    assert (tools / "found.txt").read_text() == "the oven was cold"
+    assert "Manners  closed" in project.dk("status")
+    copies = project.root / ".devkit" / "work"
+    assert not list(copies.glob("ticket-*")), "no copy is left once the suite has passed"
+
+
+def test_the_copy_of_a_failing_suite_goes_when_closing_the_epic_is_given_up(
+    project: Project,
+) -> None:
+    stuck = (
+        "if 'the cake is missing' in prompt:\n"
+        "    print('RESULT: blocked: no oven')\n"
+        "    sys.exit()\n" + HELLO
+    )
+    project.configure(coder=stuck, settings=suite(project, needs_cake=True))
+    project.dk("add", "Greet", "--spec", "Say hello.", "--epic", "Manners", "--no-behaviour-tests")
+    project.dk("run")
+    project.dk("close", "Manners")
+    project.dk("run")
+    copy = project.root / ".devkit" / "work" / "ticket-2"
+    kept = copy.exists()
+
+    project.dk("cancel", "2")
+    project.dk("run")
+
+    assert kept, "it is there while the fix is not made"
+    assert not copy.exists()
+    assert "ticket/2" not in project.git("branch", "--list")

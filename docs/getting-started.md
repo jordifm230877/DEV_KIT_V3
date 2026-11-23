@@ -199,7 +199,8 @@ Where the project has a whole test suite (`[checks.epic]`), closing writes a run
 listed in the epic as `Close EPIC NAME` and carried out by `dk run`, `dk talk` or
 `dk night`. If the suite passes, the epic is closed. If it fails, the program writes a
 ticket in the epic with what failed, which goes straight to a coder, and runs the suite
-again once that ticket is merged. `dk cancel` on the run gives the closing up.
+again once that ticket is merged. Until then the copy of the project the suite failed
+in is kept, with whatever logs the suite wrote there. `dk cancel` on the run gives the closing up.
 A closed epic takes one line in `dk status` and accepts no more tickets.
 `dk reopen "EPIC NAME"` undoes it.
 

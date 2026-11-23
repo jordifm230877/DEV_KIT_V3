@@ -496,7 +496,10 @@ Each step ends with something usable.
   and documented. If it fails the program writes a ticket in the epic with what failed,
   which takes no behaviour tests and goes to a coder without the user accepting it, since
   the epic cannot close without it; the run waits for that ticket and is done again once
-  it is merged. It is a job and not the command's own work because the suite can take an
+  it is merged. The copy of a run that failed is kept until the next run, and the
+  ticket says where it is: a real suite named only the log of the group that failed, a
+  file in a copy already thrown away, and the coder ran the group again to learn which
+  test it was. It is a job and not the command's own work because the suite can take an
   hour, the Principal's tool cuts a command off at ten minutes, and the board should show
   it. A project without `[checks.epic]` closes an epic at once, as before.
 
