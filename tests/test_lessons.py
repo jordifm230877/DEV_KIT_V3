@@ -206,3 +206,56 @@ def test_coders_and_verifiers_are_told_to_read_the_lessons_there_are(project: Pr
     assert "lessons.md" not in before, "no words are spent on a file that is not there"
     for role in ("coder", "verifier"):
         assert "Read docs/lessons.md first" in told(project, role)
+
+
+# A coder and a verifier for several tickets: each product is sent back once.
+WRITES = "import re\nn = re.search(r'Ticket #(\\d+)', prompt)[1]\n"
+WRITES += "pathlib.Path(f'greeting-{n}.txt').write_text('hello\\n')\nprint('RESULT: done')"
+REJECTS_EACH_ONCE = """
+import re
+tools = pathlib.Path(sys.argv[0]).parent
+seen = tools / ('seen-' + re.search(r'Ticket #(\\d+)', prompt)[1])
+if 'lessons' in prompt.splitlines()[0]:
+    diff = re.search(r'git diff .+', prompt)[0].split()
+    added = subprocess.run(diff, capture_output=True, text=True).stdout
+    with (tools / 'added.txt').open('a') as told:
+        told.write(str(sum(line.startswith('+- ') for line in added.splitlines())))
+    print('RESULT: approved')
+elif seen.exists():
+    print('RESULT: approved')
+else:
+    seen.touch()
+    print('RESULT: rejected: it does not bow')
+"""
+# An auditor that adds its epic's lesson to those the file holds, taking out conflict markers.
+ADDS = """
+import re
+file = pathlib.Path('docs/lessons.md')
+file.parent.mkdir(exist_ok=True)
+old = file.read_text() if file.exists() else ''
+kept = [line for line in old.splitlines() if line[:1] == '-']
+mine = '- Lesson of ' + re.search(r'epic (\\w+)', prompt)[1] + '. (#1)'
+file.write_text('\\n'.join(dict.fromkeys([*kept, mine])) + '\\n')
+print('RESULT: done')
+"""
+
+
+def test_lessons_of_two_epics_closed_together_are_both_kept(project: Project) -> None:
+    """On a real project four epics had their lessons drawn at once. Each added to the one
+    file, so the later ones collided; the auditor resolved it, the program then forgot that
+    the project's changes had been taken in, and the same collision came back every time."""
+    project.configure(coder=WRITES, verifier="import subprocess" + REJECTS_EACH_ONCE, auditor=ADDS)
+    project.dk("add", "Greet", "--spec", "Say hello.", "--epic", "Manners")
+    project.dk("add", "Wave", "--spec", "Wave.", "--epic", "Gestures")
+    project.dk("run")
+    project.dk("close", "Manners")
+    project.dk("close", "Gestures")
+
+    project.dk("run")
+
+    status = project.dk("status")
+    assert "done  Lessons of Manners" in status and "done  Lessons of Gestures" in status
+    kept = project.merged("docs/lessons.md") or ""
+    assert sorted(kept.splitlines()) == ["- Lesson of Gestures. (#1)", "- Lesson of Manners. (#1)"]
+    added = told(project, "added")
+    assert set(added) == {"1"}, "the verifier is shown the lessons of its own epic alone"

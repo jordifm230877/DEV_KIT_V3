@@ -528,6 +528,12 @@ Each step ends with something usable.
   they say. On a real project one sent a ticket back to its coder for five guides that
   still described the sign-in form as it was before that ticket, which the documenter
   rewrites when the epic closes. The documents lag behind the code until then: accepted.
+- A job of which only some paths are kept (lessons, documentation, an audit's report) ends
+  an update left to resolve with what its agent made of those paths. On a real project four
+  epics had their lessons drawn at once; each added to the one file, so the later ones
+  collided at `keep`. The auditor resolved it, but throwing away the rest of what it left
+  also forgot that the project's changes had been taken in: the verifier was shown other
+  epics' lessons as added by this one, and the same collision came back at every `keep`.
 
 ## Deliberately left out
 

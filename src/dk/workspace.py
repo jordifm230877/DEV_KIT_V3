@@ -92,6 +92,12 @@ class Workspace:
         """Throw away everything not saved in the copy, except what is at these paths: the
         files written, changed or removed there stay so."""
         copy = self._copy(ticket)
+        if self._git(copy, "rev-parse", "-q", "--verify", "MERGE_HEAD").returncode == 0:
+            # An update left to resolve ends with what the agent made of these paths. Left
+            # open, the reset below forgot it, and the same collision came back every time.
+            for path in kept:
+                self._git(copy, "add", "-A", "--", path)
+            self._git(copy, "commit", "-q", "--no-edit")
         self._must(copy, "reset", "-q")
         for path in kept:
             self._git(copy, "add", "-A", "--", path)  # nothing there is no trouble
