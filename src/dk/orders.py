@@ -98,6 +98,26 @@ def reopen(tickets: Tickets, epic: str) -> None:
     print(f"{epic} open again")
 
 
+def trust(tickets: Tickets, epic: str, given: bool) -> None:
+    """The user trusts an epic, or no longer does; with no epic, say which are trusted.
+    Tickets of it that wait for approval are taken up again, to go on as the rest will."""
+    if not epic:
+        return print(*sorted(tickets.trusted()) or ["no epic is trusted"], sep="\n")
+    if os.environ.get(agents.WHO):
+        raise LookupError("only the user can trust an epic; ask them to run this themselves")
+    inside = [ticket for ticket in tickets.all() if ticket.epic == epic]
+    if not inside and epic not in tickets.described():
+        raise LookupError(f"there is no epic '{epic}'")
+    tickets.trust(epic, given)
+    if not given:
+        return print(f"behaviour tests of {epic} wait for your approval again")
+    for ticket in inside:
+        position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+        if process.waiting(process.PROCESS, position):
+            tickets.move(ticket.id, ticket.step, ticket.attempts, ticket.note, False)
+    print(f"behaviour tests of {epic} that a verifier approves go on without your approval")
+
+
 def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: bool) -> None:
     """The user's word on a proposed ticket: it becomes a ticket like any other, or is given up.
     That it takes no behaviour tests is written before it becomes one: a run that is going
@@ -241,9 +261,13 @@ def asked(tickets: Tickets, order: object) -> str:
     Returns what the command prints."""
     said = order if isinstance(order, dict) else {}
     do, number, note = said.get("do"), said.get("ticket"), str(said.get("note") or "").strip()
+    epic = said.get("epic")
+    if do == "trust" and isinstance(epic, str) and epic:
+        number = 0  # it is about an epic, not a ticket
     if not isinstance(number, int):
         raise LookupError("say which ticket, by its number")
     orders: dict[object, Callable[[], None]] = {
+        "trust": lambda: trust(tickets, str(epic), said.get("given") is not False),
         "approve": lambda: decide(tickets, number, True, "", said.get("tests") is not False),
         "reject": lambda: decide(tickets, number, False, note),
         "retry": lambda: retry(tickets, number, note),

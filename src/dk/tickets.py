@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS history (
     at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, what TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS closed (epic TEXT PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS trusted (epic TEXT PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS epic (name TEXT PRIMARY KEY, description TEXT NOT NULL);
 """
 _LATER = (
@@ -178,6 +179,16 @@ class Tickets:
 
     def closed(self) -> set[str]:
         rows, _ = self._run("SELECT epic FROM closed")
+        return {epic for (epic,) in rows}
+
+    def trust(self, epic: str, given: bool) -> None:
+        """Remember that the user trusts an epic, or no longer does."""
+        self._run("DELETE FROM trusted WHERE epic = ?", epic)
+        if given:
+            self._run("INSERT INTO trusted (epic) VALUES (?)", epic)
+
+    def trusted(self) -> set[str]:
+        rows, _ = self._run("SELECT epic FROM trusted")
         return {epic for (epic,) in rows}
 
     def describe(self, epic: str, description: str) -> None:

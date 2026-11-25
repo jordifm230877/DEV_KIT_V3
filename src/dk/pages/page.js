@@ -59,6 +59,21 @@ function row(ticket) {
     h("span", { class: "extra" }, extra(ticket)));
 }
 
+// Have an epic's behaviour tests go on to the coder unapproved, or wait for the reader again.
+function trusting(one) {
+  const words = one.trusted ? "Withdraw trust" : "Trust";
+  const sure = `Trust ${one.name}? The behaviour tests of its tickets will go on to the coder `
+    + "once a verifier approves them, without your approval.";
+  const press = h("button", { class: "small", type: "button" }, words);
+  press.addEventListener("click", async (event) => {
+    event.preventDefault(); // it sits in the line that opens and closes the epic
+    if (!one.trusted && !confirm(sure)) return;
+    await order({ do: "trust", epic: one.name, given: !one.trusted });
+    if (told.bad) alert(told.text);
+  });
+  return press;
+}
+
 function epic(one) {
   const total = one.tickets.filter((ticket) => ticket.kind !== "cancelled").length;
   const open = folded.has(one.name) ? folded.get(one.name) : !one.closed && one.done < total;
@@ -66,6 +81,8 @@ function epic(one) {
     h("summary", {},
       h("span", { class: "name" }, one.name || "Without an epic"),
       one.closed && h("span", { class: "chip" }, "closed"),
+      one.trusted && h("span", { class: "chip" }, "trusted"),
+      key && one.name && !one.closed && trusting(one),
       one.follows.map((name) => h("span", { class: "chip" }, `after ${name}`)),
       h("span", { class: "count" }, `${one.done} of ${total} done`),
       h("span", { class: "bar" }, h("i", { style: `width:${total ? (100 * one.done) / total : 0}%` }))),

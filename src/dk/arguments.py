@@ -85,6 +85,9 @@ def parser(audits: list[str], programs: list[str]) -> argparse.ArgumentParser:
     epic.add_argument("--spec", default="", help="its goal, what it includes and what it excludes")
     commands.add_parser("close", help="mark an epic as complete").add_argument("epic")
     commands.add_parser("reopen", help="open a closed epic again").add_argument("epic")
+    trust = commands.add_parser("trust", help="have an epic's behaviour tests go on unapproved")
+    trust.add_argument("epic", nargs="?", default="", help="none: say which are trusted")
+    trust.add_argument("--withdraw", action="store_true", help="they wait for you again")
     approve = commands.add_parser("approve", help="accept what waits for you")
     approve.add_argument("ticket", type=int)
     approve.add_argument(

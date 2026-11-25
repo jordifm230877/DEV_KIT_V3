@@ -261,6 +261,7 @@ def _execute(args: argparse.Namespace) -> None:
         "epic": lambda: orders.epic(tickets, args.name, args.spec),
         "close": lambda: _close(args.epic, project, tickets),
         "reopen": lambda: orders.reopen(tickets, args.epic),
+        "trust": lambda: orders.trust(tickets, args.epic, not args.withdraw),
         "approve": lambda: orders.decide(
             tickets, args.ticket, True, "", not args.no_behaviour_tests
         ),

@@ -193,7 +193,7 @@ class Director:
             self.tickets.record(ticket.id, f"{step.name} skipped: no {step.role}")
             return Skipped()
         if step.kind == "user":
-            return Stopped(briefs.approval(ticket.id))
+            return self._approval(ticket)
         work = self.jobs
         jobs = {"specify": work.specify, "vet": work.vet, "code": work.code, "audit": work.audit}
         jobs |= {"document": work.document, "learn": work.learn, "confirm": work.confirm}
@@ -203,6 +203,18 @@ class Director:
             return job(agent, self.tickets.get(ticket.id), position)
         finally:
             self._free[step.role].put(agent)
+
+    def _approval(self, ticket: Ticket) -> Outcome:
+        """Behaviour tests wait for the user, unless the user trusts the ticket's epic and a
+        verifier has read them."""
+        if ticket.epic not in self.tickets.trusted():
+            return Stopped(briefs.approval(ticket.id))
+        if not any(one.role in self._free for one in PROCESS if one.kind == "review"):
+            self.tickets.record(ticket.id, f"{ticket.epic} is trusted, but there is no verifier")
+            return Stopped(briefs.approval(ticket.id))
+        said = f"behaviour tests approved by a verifier alone: the user trusts {ticket.epic}"
+        self.tickets.record(ticket.id, said)
+        return Passed()
 
     def _check(self, ticket: Ticket, logs: Path) -> Outcome:
         mine = sorted(self.tickets.get(ticket.id).protected)

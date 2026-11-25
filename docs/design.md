@@ -22,7 +22,8 @@ one page, the design has grown too much.
    first and sends back scenarios that are not about what a user of the product sees.
 4. **The user approves the behaviour tests.** From then on their text is read-only: the
    program rejects any delivery that changed it. If a test turns out to be wrong, the agent
-   says so and the user decides.
+   says so and the user decides. In an epic the user trusts (`dk trust "EPIC"`), the
+   verifier's approval stands for the user's.
 5. A coder writes the code, its own tests and the code that connects the Gherkin sentences
    to the product.
 6. The program runs the project's checks on the ticket's work: the build, the unit tests
@@ -534,6 +535,14 @@ Each step ends with something usable.
   collided at `keep`. The auditor resolved it, but throwing away the rest of what it left
   also forgot that the project's changes had been taken in: the verifier was shown other
   epics' lessons as added by this one, and the same collision came back at every `keep`.
+- `dk trust "EPIC"` has the behaviour tests of that epic's tickets go on to the coder once
+  a verifier has approved them; `--withdraw` ends it, and `dk trust` alone lists the trusted
+  epics. The page has a button for both beside each open epic, for whoever has the key. The user wanted an epic whose tickets they had read to be built overnight, and the
+  wait for approval was the one stop every ticket made. It is per epic, so that a delicate
+  one still passes by the user; only the user gives it, since an agent that could would be
+  approving in the user's name; and without a verifier the ticket still waits, since nobody
+  would have read the tests. The Principal was not made the one who approves: it wrote the
+  ticket, and its yes would be a model's call that checks nothing new.
 
 ## Deliberately left out
 

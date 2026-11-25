@@ -104,6 +104,7 @@ button {
   font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 6px; cursor: pointer;
   background: var(--card); color: var(--ink); border: 1px solid var(--line);
 }
+button.small { padding: 1px 8px; font-size: 12px; }
 button:hover { border-color: var(--accent); }
 button.main { background: var(--accent); border-color: var(--accent); color: var(--card); font-weight: 600; }
 button.quiet { margin-left: auto; color: var(--stopped); }
