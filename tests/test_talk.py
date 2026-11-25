@@ -130,8 +130,12 @@ def test_the_principal_approves_in_the_conversation_where_the_user_tells_it_to(
     talk = PRINCIPAL + (
         "dk('add', 'Greet', '--spec', spec('Say hello.'), '--behaviour-tests')\n"
         "wait_for('stopped at approve')\n"
-        "code, said = dk('approve', '1')\n"
-        "notes.write_text(f'{code} {said}')"
+        # Codex runs its commands in a helper that outlives conversations: of what the
+        # conversation was started with, they had only what an older one had been given.
+        "import os\n"
+        "old = {name: os.environ[name] for name in ('PATH', 'DK_AGENT')}\n"
+        "done = subprocess.run([*DK, 'approve', '1'], capture_output=True, text=True, env=old)\n"
+        "notes.write_text(f'{done.returncode} {done.stdout}')"
     )
     project.configure(coder=HELLO, tester=tester, principal=talk)
 

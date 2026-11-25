@@ -547,6 +547,9 @@ Each step ends with something usable.
   the history says that it passed the decision on. The user told it to approve a ticket, it
   was refused, and it gave them a command to type in another terminal. On a job (a stopped
   ticket, the night) no agent can, the Principal included: the user is not there.
+  The command the Principal is given for the conversation says so itself (`--conversation`).
+  A variable set for its program did not reach the commands it ran: Codex runs them in a
+  helper that outlives conversations, with what an older conversation had been given.
 
 ## Deliberately left out
 

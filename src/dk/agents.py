@@ -21,7 +21,6 @@ from dk import child
 
 INSTRUCTIONS = "{instructions}"
 WHO = "DK_AGENT"  # set for every program an agent runs, so `dk` can tell it is not the user
-TALKING = "DK_TALKING"  # set for the conversation alone: there the user is with the agent
 # Claude keeps no notes of its own between jobs: a verifier's grew unread to 13,500 words,
 # and a habit written there cost a ticket hours. What a project learns is in its lessons.
 _ALWAYS = {"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}
@@ -229,7 +228,6 @@ def converse(argv: Sequence[str], brief: str, cwd: Path, name: str) -> int:
     full += [] if INSTRUCTIONS in argv else [brief]
     interrupt = signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ctrl-C belongs to the agent
     try:
-        told = {WHO: name, TALKING: "1", **_ALWAYS}
-        return subprocess.run(full, cwd=cwd, env={**os.environ, **told}).returncode
+        return subprocess.run(full, cwd=cwd, env={**os.environ, WHO: name, **_ALWAYS}).returncode
     finally:
         signal.signal(signal.SIGINT, interrupt)

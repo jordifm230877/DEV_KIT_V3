@@ -140,11 +140,18 @@ def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: b
     print(f"#{number} accepted; it will start at {first.step} on the next run")
 
 
-def decide(tickets: Tickets, number: int, approved: bool, reason: str, tests: bool = True) -> None:
+def decide(
+    tickets: Tickets,
+    number: int,
+    approved: bool,
+    reason: str,
+    tests: bool = True,
+    told: bool = False,
+) -> None:
     """The user's word on what waits for them. In the conversation the Principal may pass
-    it on, since the user is there; an agent on a job decides nothing."""
+    it on (`told`), since the user is there; an agent on a job decides nothing."""
     who = os.environ.get(agents.WHO)
-    if who and not os.environ.get(agents.TALKING):
+    if who and not told:
         raise LookupError("only the user can approve or reject; ask them to run this themselves")
     if tickets.get(number).step == process.PROPOSED:
         _answer(tickets, number, approved, reason, tests)

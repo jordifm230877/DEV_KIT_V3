@@ -5,11 +5,16 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+TOLD = "--conversation"  # in the command the Principal is given for the conversation
+
 
 def parser(audits: list[str], programs: list[str]) -> argparse.ArgumentParser:
     """`audits` are the kinds of audit there are, `programs` the agent programs known."""
     parser = argparse.ArgumentParser(prog="dk", description=__doc__)
     parser.add_argument("--project", type=Path, default=Path.cwd(), help="the project directory")
+    parser.add_argument(
+        TOLD, action="store_true", help="put there by `dk talk`: the user is present"
+    )
     commands = parser.add_subparsers(dest="command", required=True)
     add = commands.add_parser("add", help="write a new ticket")
     add.add_argument("title")

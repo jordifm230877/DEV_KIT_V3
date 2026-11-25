@@ -114,7 +114,10 @@ def _talk(project: Path, home: Path, tickets: Tickets, no_tabs: bool) -> None:
     with _alone(home, BUSY), watching, screen.named(herdr, mine, "Principal"):
         behind.start()
         try:
-            agents.converse(argv, principal.conversation(director.command), project, agent.name)
+            # What is set for the agent's program does not reach every command it runs: Codex
+            # runs them in a helper that outlives conversations. The command itself says it.
+            brief = principal.conversation(f"{director.command} {arguments.TOLD}")
+            agents.converse(argv, brief, project, agent.name)
         finally:
             director.stop.set()
             behind.join()
@@ -263,9 +266,11 @@ def _execute(args: argparse.Namespace) -> None:
         "reopen": lambda: orders.reopen(tickets, args.epic),
         "trust": lambda: orders.trust(tickets, args.epic, not args.withdraw),
         "approve": lambda: orders.decide(
-            tickets, args.ticket, True, "", not args.no_behaviour_tests
+            tickets, args.ticket, True, "", not args.no_behaviour_tests, args.conversation
         ),
-        "reject": lambda: orders.decide(tickets, args.ticket, False, args.note),
+        "reject": lambda: orders.decide(
+            tickets, args.ticket, False, args.note, told=args.conversation
+        ),
     }
     commands[args.command]()
 
