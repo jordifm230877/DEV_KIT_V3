@@ -45,7 +45,7 @@ Your tool for tickets: `{command}`
 
 Tell the user why a ticket stopped, and pass their answer on with retry.
 Show the user behaviour tests awaiting approval
-and tickets an agent proposed; only the user decides:
+and proposed tickets; only the user's word decides:
 `approve NUMBER` or `reject NUMBER --note "..."`.
 A ticket's approved tests change only by `reject` on it:
 no note lets its coder change them;

@@ -118,7 +118,10 @@ def test_the_principal_explores_itself_and_keeps_tickets_for_changes(project: Pr
     assert about_one.index("`retry` note") < about_one.index("docs/discovery.md` is yours")
 
 
-def test_the_principal_cannot_approve_for_the_user(project: Project) -> None:
+def test_the_principal_approves_in_the_conversation_where_the_user_tells_it_to(
+    project: Project, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The user told it to approve a ticket; it was refused and gave them a command to type."""
     tester = (
         "pathlib.Path('features').mkdir(exist_ok=True)\n"
         "pathlib.Path('features/greet.feature').write_text('Feature: Greeting\\n')\n"
@@ -134,10 +137,15 @@ def test_the_principal_cannot_approve_for_the_user(project: Project) -> None:
 
     project.dk("talk")
 
-    assert notes(project).startswith("1 ") and "only the user" in notes(project)
-    assert "#1 stopped at approve" in project.dk("status")
-    project.dk("approve", "1")
-    assert "#1 code" in project.dk("status")
+    assert notes(project).startswith("0 "), notes(project)
+    assert "#1 stopped at approve" not in project.dk("status")
+    shown = project.dk("show", "1")
+    assert "approved by the user" in shown and "in the conversation, on the user's word" in shown
+    # Outside the conversation the user is not there: a Principal on a job decides nothing.
+    project.dk("add", "Bow", "--spec", "Bow.", "--epic", "Manners")
+    project.dk("run")
+    monkeypatch.setenv("DK_AGENT", "principal-1")
+    assert "only the user" in project.refused("approve", "2")
 
 
 def test_no_agent_can_approve_or_reject(project: Project, monkeypatch: pytest.MonkeyPatch) -> None:

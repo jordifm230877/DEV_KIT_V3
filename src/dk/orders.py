@@ -141,13 +141,19 @@ def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: b
 
 
 def decide(tickets: Tickets, number: int, approved: bool, reason: str, tests: bool = True) -> None:
-    if os.environ.get(agents.WHO):
+    """The user's word on what waits for them. In the conversation the Principal may pass
+    it on, since the user is there; an agent on a job decides nothing."""
+    who = os.environ.get(agents.WHO)
+    if who and not os.environ.get(agents.TALKING):
         raise LookupError("only the user can approve or reject; ask them to run this themselves")
     if tickets.get(number).step == process.PROPOSED:
-        return _answer(tickets, number, approved, reason, tests)
-    if not tests:
+        _answer(tickets, number, approved, reason, tests)
+    elif not tests:
         raise LookupError(f"#{number} is not a proposal; --no-behaviour-tests is for accepting one")
-    _behaviour_tests(tickets, number, approved, reason)
+    else:
+        _behaviour_tests(tickets, number, approved, reason)
+    if who:
+        tickets.record(number, f"passed on by {who} in the conversation, on the user's word")
 
 
 def _behaviour_tests(tickets: Tickets, number: int, approved: bool, reason: str) -> None:

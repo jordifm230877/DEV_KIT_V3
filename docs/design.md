@@ -68,7 +68,7 @@ time.
 | `web` | A web server for this computer and its network: hands out the page in `pages/` and answers with data it is given | Know what a ticket is |
 | `paint` | Colour for one line of an agent's work or of the board | Know agents or tickets |
 | `child` | Shared groundwork: run a program with a time limit and a stop signal | Know any piece |
-| conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve, finish tickets or skip steps |
+| conversation (`dk talk`) | The Principal talks with the user; its only tool is the `dk` command | Approve or reject unless the user says so, finish tickets or skip steps |
 | stop review | A ticket that stops goes to the Principal as a job: it answers from what the project already says, or explains the stop to the user | Decide for the user, change files |
 
 An agent answers every job in one of three ways: done, blocked (with the reason), or a
@@ -543,6 +543,10 @@ Each step ends with something usable.
   approving in the user's name; and without a verifier the ticket still waits, since nobody
   would have read the tests. The Principal was not made the one who approves: it wrote the
   ticket, and its yes would be a model's call that checks nothing new.
+- In the conversation the Principal may run `dk approve` and `dk reject`, on the user's word;
+  the history says that it passed the decision on. The user told it to approve a ticket, it
+  was refused, and it gave them a command to type in another terminal. On a job (a stopped
+  ticket, the night) no agent can, the Principal included: the user is not there.
 
 ## Deliberately left out
 
