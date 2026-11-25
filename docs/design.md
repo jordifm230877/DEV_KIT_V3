@@ -558,6 +558,11 @@ Each step ends with something usable.
   agreed again with the Principal. Once somebody has worked on a ticket it is refused: tests
   or code would be left written for a ticket that says something else, and `retry --note`
   adds to it instead. The user and the Principal may; the history keeps what it said before.
+- The Principal is told that a ticket stands alone: it writes out every rule and decision the
+  ticket rests on and names the file and line each comes from. A real ticket said only "under
+  the rules settled in discovery". The user, who decides on tickets, no longer had those rules
+  in mind, and the project's studies held 17,600 words; its test-writer and verifier read
+  over a million tokens between them. Studies are left as written, so a line number stays true.
 
 ## Deliberately left out
 

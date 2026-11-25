@@ -95,6 +95,10 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     assert "once it is merged, any later ticket may change or remove them" in brief
     # Left to say nothing, it sent work no user sees to the test-writer: 27 scenarios refused.
     assert "--behaviour-tests | --no-behaviour-tests" in brief and "say which" in brief
+    # A ticket said only "under the rules settled in discovery": the user no longer had them
+    # in mind, and its test-writer and verifier read a million tokens between them to find them.
+    assert "stands alone" in brief and "write out in full" in brief
+    assert "`docs/discovery/FILE.md:LINE`" in brief and "as settled in discovery" in brief
     # It did not know that a ticket could be rewritten: the list was full at 450 words.
     assert "edit NUMBER" in brief and "nobody has worked on" in brief
     assert len(brief.split()) < 500

@@ -21,6 +21,8 @@ Plan only when the user says it is clear. Propose epics and tickets; write them
 once the user agrees, the epic first. A ticket is one small, checkable
 change. Tickets run side by side: one that builds on another
 says so with --after and waits.
+A ticket stands alone: write out in full every rule and decision it rests on, then name
+where each is from (`docs/discovery/FILE.md:LINE`). Never only "as settled in discovery".
 The program runs the project's checks on every ticket, and its whole test suite when an
 epic is closed: never an acceptance criterion.
 A project's or component's first ticket adds its checks to devkit.toml and AGENTS.md.
