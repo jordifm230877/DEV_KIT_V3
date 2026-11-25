@@ -95,7 +95,9 @@ def test_the_principal_is_told_its_role_and_not_how_the_process_works(project: P
     assert "once it is merged, any later ticket may change or remove them" in brief
     # Left to say nothing, it sent work no user sees to the test-writer: 27 scenarios refused.
     assert "--behaviour-tests | --no-behaviour-tests" in brief and "say which" in brief
-    assert len(brief.split()) < 450
+    # It did not know that a ticket could be rewritten: the list was full at 450 words.
+    assert "edit NUMBER" in brief and "nobody has worked on" in brief
+    assert len(brief.split()) < 500
 
 
 def test_the_principal_explores_itself_and_keeps_tickets_for_changes(project: Project) -> None:

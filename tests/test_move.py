@@ -96,7 +96,7 @@ def test_the_principal_is_told_how_to_move_a_proposal(project: Project) -> None:
 
     brief = (project.root / "brief.txt").read_text()
     assert "move NUMBER" in brief and "inside an epic" in brief
-    assert len(brief.split()) < 450
+    assert len(brief.split()) < 500
 
 
 def test_a_ticket_is_written_only_in_an_epic(project: Project) -> None:

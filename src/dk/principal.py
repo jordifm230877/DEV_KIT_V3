@@ -35,6 +35,7 @@ Your tool for tickets: `{command}`
   retry NUMBER --note "TEXT" [--no-behaviour-tests]   send a stopped ticket on; the last
       when it stopped for behaviour tests no user would see
   cancel NUMBER          give it up
+  edit NUMBER [--title "TITLE"] [--spec "..."]   rewrite a ticket nobody has worked on yet
   move NUMBER --epic "NAME" | --no-epic   put a proposed ticket in an epic, or take it
       out; the user can accept it only inside an epic
   close "EPIC"           the whole test suite is run; the epic closes when it passes, and
