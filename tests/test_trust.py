@@ -7,6 +7,9 @@ import pytest
 from conftest import Project, Site
 from test_page_orders import order
 
+from dk import config, views
+from dk.tickets import Tickets
+
 HELLO = "pathlib.Path('greeting.txt').write_text('hello\\n')\nprint('RESULT: done')"
 TESTER = (
     "pathlib.Path('features').mkdir(exist_ok=True)\n"
@@ -136,3 +139,25 @@ def test_trust_is_not_given_from_the_page_without_the_key(project: Project, site
     status, _ = order(project, key="not-the-key", do="trust", epic="Manners")
 
     assert status == 403 and project.dk("trust") == "no epic is trusted\n"
+
+
+def test_the_ticket_list_marks_the_trusted_epics(project: Project) -> None:
+    written(project)
+    project.dk("add", "Wave", "--spec", "Wave.", "--epic", "Gestures")
+    project.dk("trust", "Manners")
+
+    listed = project.dk("status").splitlines()
+
+    assert "Manners  [T]" in listed and "Gestures" in listed
+
+
+def test_the_view_that_redraws_itself_marks_them_too(
+    project: Project, capsys: pytest.CaptureFixture[str]
+) -> None:
+    written(project)
+    project.dk("trust", "Manners")
+    tickets = Tickets(project.root / ".devkit" / "tickets.db")
+
+    views.board(config.load(project.root).agents, tickets.all(), tickets.trusted())
+
+    assert "Manners  [T]" in capsys.readouterr().out

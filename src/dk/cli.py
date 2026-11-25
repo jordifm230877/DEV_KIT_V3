@@ -249,7 +249,7 @@ def _execute(args: argparse.Namespace) -> None:
         "status": lambda: (
             views.watch(project, tickets)
             if args.watch
-            else views.status(tickets.all(), closed=tickets.closed())
+            else views.status(tickets.all(), tickets.closed(), tickets.trusted())
         ),
         "follow": lambda: views.follow(args.log),
         "web": lambda: _web(args.port, project, home, tickets),

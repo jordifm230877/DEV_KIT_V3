@@ -47,7 +47,9 @@ def _kind(ticket: Ticket, steps: dict[int, str]) -> str:
     return "held" if process.held_by(ticket.follows, steps) else "ticket"
 
 
-def _rows(tickets: list[Ticket], hidden: Sequence[str], closed: Collection[str]) -> Iterator[Row]:
+def _rows(
+    tickets: list[Ticket], hidden: Sequence[str], closed: Collection[str], trusted: Collection[str]
+) -> Iterator[Row]:
     steps = {ticket.id: ticket.step for ticket in tickets}
     listed = [ticket for ticket in tickets if ticket.step not in hidden]
     for epic in sorted({ticket.epic for ticket in listed}):
@@ -56,15 +58,15 @@ def _rows(tickets: list[Ticket], hidden: Sequence[str], closed: Collection[str])
             yield "closed", f"{epic}  closed: {_counted(inside)}"
             continue
         if epic:
-            yield "epic", epic
+            yield "epic", epic + ("  [T]" if epic in trusted else "")
         for ticket in inside:
             yield _kind(ticket, steps), ("  " if epic else "") + line(ticket, steps)
 
 
-def status(tickets: list[Ticket], hidden: Sequence[str] = (), closed: Collection[str] = ()) -> None:
-    """Tickets without an epic first, then each epic with its tickets; none at a hidden step.
-    A closed epic takes one line."""
-    for _, text in _rows(tickets, hidden, closed):
+def status(tickets: list[Ticket], closed: Collection[str], trusted: Collection[str]) -> None:
+    """Tickets without an epic first, then each epic with its tickets. A closed epic takes
+    one line; one the user trusts is marked [T]."""
+    for _, text in _rows(tickets, (), closed, trusted):
         print(text)
 
 
@@ -79,12 +81,17 @@ def _working(team: Sequence[config.Agent], tickets: list[Ticket]) -> Iterator[Ro
         yield "busy" if on else "free", f"  {name:<12} {doing}{used and '  ' + used}"
 
 
-def board(team: Sequence[config.Agent], tickets: list[Ticket]) -> None:
+def board(
+    team: Sequence[config.Agent], tickets: list[Ticket], trusted: Collection[str] = ()
+) -> None:
     """What each agent is doing, the tickets not yet finished, and a count of the rest; in
     colour, so that what needs the user stands out. The Principal is listed only while it
     has a job: otherwise it is in the conversation."""
     rows: list[Row] = [("heading", "Agents"), *_working(team, tickets)]
-    rows += [("heading", "Tickets"), *_rows(tickets, (process.DONE, process.CANCELLED), ())]
+    rows += [
+        ("heading", "Tickets"),
+        *_rows(tickets, (process.DONE, process.CANCELLED), (), trusted),
+    ]
     steps = [ticket.step for ticket in tickets]
     done, cancelled = steps.count(process.DONE), steps.count(process.CANCELLED)
     rows.append(("count", f"{done} finished, {cancelled} cancelled"))
@@ -97,7 +104,7 @@ def watch(project: Path, tickets: Tickets) -> None:
     try:
         while True:
             print("\033[2J\033[H", end="")
-            board(config.load(project).agents, tickets.all())
+            board(config.load(project).agents, tickets.all(), tickets.trusted())
             sys.stdout.flush()
             time.sleep(2)
     except KeyboardInterrupt:
