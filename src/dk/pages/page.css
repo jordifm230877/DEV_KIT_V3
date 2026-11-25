@@ -95,7 +95,7 @@ a.row:hover { background: var(--ground); text-decoration: none; }
   .history li { grid-template-columns: 1fr; gap: 0; }
 }
 .word { padding: 12px; display: grid; gap: 10px; }
-.word textarea {
+.word textarea, .word input {
   width: 100%; box-sizing: border-box; padding: 8px; font: inherit; color: var(--ink);
   background: var(--ground); border: 1px solid var(--line); border-radius: 6px; resize: vertical;
 }

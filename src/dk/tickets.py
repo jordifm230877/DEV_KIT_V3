@@ -134,6 +134,9 @@ class Tickets:
             *(step, attempts, note, stopped, ticket),
         )
 
+    def rewrite(self, ticket: int, title: str, spec: str) -> None:
+        self._run("UPDATE ticket SET title = ?, spec = ? WHERE id = ?", title, spec, ticket)
+
     def amend(self, ticket: int, text: str) -> None:
         """Add to what the ticket asks for; every agent that works on it from now on sees it."""
         self._run("UPDATE ticket SET spec = spec || ? WHERE id = ?", f"\n\n{text}", ticket)

@@ -11,14 +11,15 @@ import argparse
 import contextlib
 import io
 import os
-import re
 from collections.abc import Callable
 
-from dk import agents, process
+from dk import agents, forms, process
 from dk.jobs import BEHAVIOUR_TESTS
 from dk.process import CANCELLED
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
+
+Write = Callable[[str, str], tuple[str, str]]  # the user's editor: a title and a text, changed
 
 
 def _stopped(tickets: Tickets, number: int) -> tuple[Ticket, process.Position]:
@@ -185,7 +186,9 @@ def _open(tickets: Tickets, epic: str) -> None:
     if epic in tickets.closed():
         raise LookupError(f"epic '{epic}' is closed; put the ticket in another epic")
     if os.environ.get(agents.WHO) and epic and epic not in tickets.described():
-        raise LookupError(f'say first what the epic is for: epic "{epic}" --spec "{_form(EPIC)}"')
+        raise LookupError(
+            f'say first what the epic is for: epic "{epic}" --spec "{forms.form(forms.EPIC)}"'
+        )
 
 
 def move(tickets: Tickets, number: int, epic: str, allowed: bool) -> None:
@@ -217,30 +220,30 @@ def propose(args: argparse.Namespace, tickets: Tickets) -> None:
     print(f"#{number} proposed; it waits for the user to accept it or turn it down")
 
 
-TICKET = ("Wanted:", "Acceptance criteria:", "Out of scope:")
-EPIC = ("Goal:", "Includes:", "Excludes:")
+def _agent() -> str:  # the agent that asks, or "" for the user
+    return os.environ.get(agents.WHO, "")
 
 
-def _formed(text: str, headings: tuple[str, ...]) -> str:
-    """What an agent wrote, laid out under the headings every such text has. The user
-    writes as they like; an agent is refused a text that lacks a part."""
-    if not os.environ.get(agents.WHO):
-        return text
-    first, *rest = re.split("(" + "|".join(map(re.escape, headings)) + ")", text)
-    said = [body.strip() for body in rest[1::2]]
-    if first.strip() or tuple(rest[::2]) != headings or not all(said):
-        raise LookupError(f"write it as `{_form(headings)}`: each once, in this order, none empty")
-    return "\n\n".join(f"{heading}\n{body}" for heading, body in zip(headings, said, strict=True))
-
-
-def _form(headings: tuple[str, ...]) -> str:
-    return " ".join(f"{heading} ..." for heading in headings)
+def edit(tickets: Tickets, number: int, title: str, spec: str, write: Write | None) -> None:
+    """Rewrite a ticket nobody has worked on; with no new words, in the user's editor (`write`)."""
+    old = tickets.get(number)
+    if not process.untouched(old.step, old.attempts, old.stopped, old.worker):
+        raise LookupError(f"#{number} has been worked on; to add to it: dk retry {number} --note")
+    if not (title or spec) and (_agent() or not write):
+        raise LookupError("say the new text with --spec, the new title with --title")
+    if write and not (title or spec):
+        title, spec = write(old.title, old.spec)
+    spec = forms.formed(spec, forms.TICKET, _agent()) if spec else old.spec
+    tickets.rewrite(number, title or old.title, spec)
+    was = f"edited by {_agent() or 'the user'}; it said: {old.title}: {old.spec}"
+    tickets.record(number, " ".join(was.split()))
+    print(f"#{number} edited")
 
 
 def epic(tickets: Tickets, name: str, spec: str) -> None:
     """Say what an epic is for, or show what was said."""
     if spec:
-        tickets.describe(name, _formed(spec, EPIC))
+        tickets.describe(name, forms.formed(spec, forms.EPIC, _agent()))
         print(f"{name} described")
     elif name in tickets.described():
         print(tickets.described()[name])
@@ -249,7 +252,7 @@ def epic(tickets: Tickets, name: str, spec: str) -> None:
 
 
 def add(args: argparse.Namespace, tickets: Tickets) -> None:
-    spec = _formed(args.spec, TICKET)
+    spec = forms.formed(args.spec, forms.TICKET, _agent())
     if os.environ.get(agents.WHO) and not (args.behaviour_tests or args.no_behaviour_tests):
         raise LookupError(
             "say whether a user of the product sees the change: "
@@ -279,8 +282,10 @@ def asked(tickets: Tickets, order: object) -> str:
         number = 0  # it is about an epic, not a ticket
     if not isinstance(number, int):
         raise LookupError("say which ticket, by its number")
+    title, spec = (str(said.get(part) or "") for part in ("title", "spec"))
     orders: dict[object, Callable[[], None]] = {
         "trust": lambda: trust(tickets, str(epic), said.get("given") is not False),
+        "edit": lambda: edit(tickets, number, title, spec, None),
         "approve": lambda: decide(tickets, number, True, "", said.get("tests") is not False),
         "reject": lambda: decide(tickets, number, False, note),
         "retry": lambda: retry(tickets, number, note),

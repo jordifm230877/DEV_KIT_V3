@@ -221,6 +221,7 @@ def data(what: str, project: Path, tickets: Tickets, workspace: Workspace) -> ob
     return {
         **_facts(ticket, {other.id: other.step for other in listed}),
         "spec": ticket.spec,
+        "editable": process.untouched(ticket.step, ticket.attempts, ticket.stopped, ticket.worker),
         "history": tickets.history(ticket.id),
         "approval": process.waiting(process.PROCESS, position),
         "tests": [{"name": name, "text": workspace.text(ticket.id, name)} for name in files],

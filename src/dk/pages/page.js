@@ -7,6 +7,7 @@ const folded = new Map(); // epics the reader opened or closed by hand
 const NAMES = { stopped: "needs you", proposed: "proposed", held: "waiting", ticket: "in progress",
   done: "done", cancelled: "cancelled" };
 const notes = new Map(); // what the reader is writing about each ticket, kept while it redraws
+const drafts = new Map(); // the tickets the reader is rewriting: each one's title and text so far
 let drawn = "";
 let told = null; // the answer to the last thing the reader asked for
 let key = "";
@@ -180,6 +181,34 @@ function word(data) {
     h("div", { class: "word card" }, said, can.length > 0 && note, h("div", { class: "buttons" }, can, give))];
 }
 
+// What the ticket asks for. Whoever has the key can rewrite one nobody has worked on yet.
+function wanted(data) {
+  const draft = drafts.get(data.id);
+  const again = () => { drawn = ""; look(); };
+  if (!draft) {
+    const edit = key && data.editable && h("button", { class: "small", type: "button" }, "Edit");
+    if (edit) edit.addEventListener("click", () => {
+      drafts.set(data.id, { title: data.title, spec: data.spec });
+      again();
+    });
+    return h("div", { class: "block card" }, prose(data.spec), edit && h("div", { class: "buttons" }, edit));
+  }
+  const title = h("input", { type: "text", value: draft.title });
+  const spec = h("textarea", { rows: 14 });
+  spec.value = draft.spec;
+  title.addEventListener("input", () => { draft.title = title.value; });
+  spec.addEventListener("input", () => { draft.spec = spec.value; });
+  const save = h("button", { class: "main", type: "button" }, "Save");
+  save.addEventListener("click", async () => {
+    await order({ do: "edit", ticket: data.id, title: draft.title.trim(), spec: draft.spec.trim() });
+    if (!told.bad) drafts.delete(data.id);
+    again();
+  });
+  const cancel = h("button", { type: "button" }, "Cancel");
+  cancel.addEventListener("click", () => { drafts.delete(data.id); again(); });
+  return h("div", { class: "word card" }, title, spec, h("div", { class: "buttons" }, save, cancel));
+}
+
 function ticket(data) {
   where.textContent = data.epic || "Without an epic";
   return [
@@ -193,7 +222,7 @@ function ticket(data) {
       data.waits.length > 0 && h("span", {}, "waits for ", listed(data.waits))),
     data.note && [h("h2", {}, "Why it stopped"), h("div", { class: "say card" }, data.note)],
     h("h2", {}, "What is wanted"),
-    h("div", { class: "block card" }, prose(data.spec)),
+    wanted(data),
     h("h2", {}, data.approval ? "Behaviour tests waiting for your approval" : "Behaviour tests"),
     data.tests.length ? data.tests.map((file) => h("div", { class: "file card" },
       h("div", { class: "path" }, file.name), gherkin(file.text)))

@@ -160,6 +160,13 @@ def unapproved(step: str) -> bool:
     return step in names and any(one.behaviour for one in PROCESS[names.index(step) :])
 
 
+def untouched(step: str, attempts: int, stopped: bool, worker: str) -> bool:
+    """Whether nobody has worked on the ticket yet: an agent proposed it, or it has not
+    started. What it asks for can still be rewritten."""
+    fresh = step == PROCESS[0].name and not (attempts or stopped or worker)
+    return step == PROPOSED or fresh
+
+
 def retry(position: Position) -> Position:
     """The user sends a stopped ticket on again, with a fresh set of attempts."""
     return Position(position.step, 0, position.note)

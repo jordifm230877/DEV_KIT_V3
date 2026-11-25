@@ -62,6 +62,7 @@ time.
 | `workspace` | A separate copy of the code per ticket; merging | Decide when to merge |
 | `checks` | Runs the project's check commands | Interpret results |
 | `screen` | One Herdr tab per agent, showing what it is doing, and one for the board; watch-only | Affect the run |
+| `forms` | The headings a ticket and an epic are written under; the user's editor for a long text | Know the ticket list |
 | `starter` | Writes a first `devkit.toml` and `AGENTS.md` (`dk init`) | Overwrite anything |
 | `preflight` | Finds what would stop the first ticket (`dk check`); a composer | Change anything |
 | `views` | What the user is shown: the ticket list, the board, one ticket, an agent's work as it happens, and the same as data for the web page; a composer | Change anything |
@@ -550,10 +551,17 @@ Each step ends with something usable.
   The command the Principal is given for the conversation says so itself (`--conversation`).
   A variable set for its program did not reach the commands it ran: Codex runs them in a
   helper that outlives conversations, with what an older conversation had been given.
+- `dk edit N` rewrites a ticket nobody has worked on yet: one an agent proposed, or one that
+  has not started. `--title` and `--spec` give the new words; with neither, the user's editor
+  opens on both. The page has it too, for whoever has the key. A proposal with a good idea
+  and a poor text could only be accepted as it was or turned down, and a ticket's text only
+  agreed again with the Principal. Once somebody has worked on a ticket it is refused: tests
+  or code would be left written for a ticket that says something else, and `retry --note`
+  adds to it instead. The user and the Principal may; the history keeps what it said before.
 
 ## Deliberately left out
 
 Beads, backups and retention, several projects in one database, a separate watcher process
 for Git, per-role credentials, resuming a job that was cut off or failed (only one that
-stopped to ask is picked up again), writing or editing tickets, epics and behaviour tests
-from the web page.
+stopped to ask is picked up again), writing tickets or epics and editing epics or behaviour
+tests from the web page.

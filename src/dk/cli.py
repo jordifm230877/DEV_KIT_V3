@@ -21,6 +21,7 @@ from dk import (
     arguments,
     audits,
     config,
+    forms,
     nightly,
     orders,
     preflight,
@@ -205,6 +206,12 @@ def _trusted(project: Path) -> bool:
     return not who or who in {agent.name for agent in config.load(project).with_role(PRINCIPAL)}
 
 
+def _edit(args: argparse.Namespace, project: Path, tickets: Tickets) -> None:
+    if not _trusted(project):
+        raise LookupError("only the user or the Principal can edit a ticket")
+    orders.edit(tickets, args.ticket, args.title, args.spec, forms.write)
+
+
 def _web(port: int, project: Path, home: Path, tickets: Tickets) -> None:
     key = secrets.token_urlsafe(16)  # shown only here: an agent cannot approve its own work
 
@@ -264,6 +271,7 @@ def _execute(args: argparse.Namespace) -> None:
         "epic": lambda: orders.epic(tickets, args.name, args.spec),
         "close": lambda: _close(args.epic, project, tickets),
         "reopen": lambda: orders.reopen(tickets, args.epic),
+        "edit": lambda: _edit(args, project, tickets),
         "trust": lambda: orders.trust(tickets, args.epic, not args.withdraw),
         "approve": lambda: orders.decide(
             tickets, args.ticket, True, "", not args.no_behaviour_tests, args.conversation
