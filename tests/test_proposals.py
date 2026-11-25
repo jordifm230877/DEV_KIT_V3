@@ -74,8 +74,9 @@ def test_no_agent_can_accept_a_proposal_and_it_says_who_made_it(
 ) -> None:
     project.configure(coder=HELLO)
     monkeypatch.setenv("DK_AGENT", "auditor-1")
+    spec = "Wanted: a greeting. Acceptance criteria: - it says hello. Out of scope: goodbyes."
 
-    project.dk("propose", "Greet", "--spec", "Say hello.", "--epic", "Manners")
+    project.dk("propose", "Greet", "--spec", spec, "--epic", "Manners")
 
     assert "only the user" in project.refused("approve", "1")
     assert "only the user" in project.refused("reject", "1", "--note", "no")

@@ -563,6 +563,10 @@ Each step ends with something usable.
   the rules settled in discovery". The user, who decides on tickets, no longer had those rules
   in mind, and the project's studies held 17,600 words; its test-writer and verifier read
   over a million tokens between them. Studies are left as written, so a line number stays true.
+- A ticket an agent proposes is written under the three headings, like one it adds, and
+  the coder and the auditor are shown them where they are told how to propose. A proposal
+  the user had to decide on said in one paragraph what was wanted, with no criterion to
+  tell when it was done. The user still proposes as they like.
 
 ## Deliberately left out
 

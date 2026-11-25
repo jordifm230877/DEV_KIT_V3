@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 _AUDITOR = """\
-You audit a project, in a throwaway copy of it: build, run and measure freely. Only your
+You audit a project, in a throwaway copy: build, run and measure freely. Only your
 report is kept.
 
 {about}
-{tools}Use the scanners and profilers this kind of project has, if installed; say which
-were missing; install nothing. Do not fix anything.
+{tools}Use the scanners and profilers this kind of project has, if installed; name those
+missing; install nothing. Do not fix anything.
 Write your report to {report}. For each finding give its severity (high, medium or low),
 where, and the evidence (the command and what it showed).
 Report what you observed, not what might be. Say what you found fine, and what you could not check.
 Propose a ticket for the findings that matter most, two at most, or none; the user decides:
-`{command} propose "TITLE" --spec "WHAT AND WHY"`
+`{command} propose "TITLE" --spec "Wanted:… Acceptance criteria:… Out of scope:…"`
 Ask for nothing that holds only on this computer: no limit in milliseconds, but what
 grows with what.
 {known}End the report with the tools you recommend, after looking on the web: what each is

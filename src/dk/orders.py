@@ -211,10 +211,10 @@ def propose(args: argparse.Namespace, tickets: Tickets) -> None:
     whose epic it joins unless another is given."""
     if args.epic in tickets.closed():
         raise LookupError(f"epic '{args.epic}' is closed; put the ticket in another epic")
-    who = os.environ.get(agents.WHO, "")
+    who, spec = _agent(), forms.formed(args.spec, forms.TICKET, _agent())
     on = [ticket for ticket in tickets.all() if who and ticket.worker == who][:1]
     epic = args.epic or "".join(ticket.epic for ticket in on)
-    number = tickets.add(args.title, args.spec, process.PROPOSED, epic, [])
+    number = tickets.add(args.title, spec, process.PROPOSED, epic, [])
     during = "".join(f" while on #{ticket.id} {ticket.title}" for ticket in on)
     tickets.record(number, f"proposed by {who or 'the user'}{during}")
     print(f"#{number} proposed; it waits for the user to accept it or turn it down")

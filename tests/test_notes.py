@@ -14,7 +14,8 @@ NOTES = (
 PROPOSES = """
 import re, shlex, subprocess
 dk = shlex.split(re.search(r"`([^`]*-m dk[^`]*) propose", prompt).group(1))
-subprocess.run([*dk, "propose", "Greet in Catalan", "--spec", "Say hola too."], check=True)
+spec = "Wanted: hola too. Acceptance criteria: - it says hola. Out of scope: adeu."
+subprocess.run([*dk, "propose", "Greet in Catalan", "--spec", spec], check=True)
 pathlib.Path('greeting.txt').write_text('hello\\n')
 print('RESULT: done')
 """

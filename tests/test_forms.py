@@ -110,3 +110,22 @@ def test_an_agent_describes_an_epic_before_it_writes_tickets_for_it(project: Pro
 
     written = project.dk("add", "Greet", "--spec", TICKET, "--epic", "Manners", "--behaviour-tests")
     assert "#1 written" in written
+
+
+@pytest.mark.usefixtures("agent")
+def test_a_ticket_an_agent_proposes_has_the_three_headings_too(project: Project) -> None:
+    """A proposal the user had to decide on said in one paragraph what was wanted, with no
+    criterion to tell when it was done."""
+    refused = project.refused("propose", "Greet", "--spec", "Say hello.")
+    project.dk("propose", "Greet", "--spec", TICKET)
+
+    assert "Wanted: ... Acceptance criteria: ... Out of scope: ..." in refused
+    assert "Wanted:\na greeting.\n\nAcceptance criteria:\n" in project.dk("show", "1")
+
+
+def test_the_user_proposes_a_ticket_as_they_like(project: Project) -> None:
+    project.configure(coder=HELLO)
+
+    project.dk("propose", "Greet", "--spec", "Say hello.")
+
+    assert "\nSay hello.\n" in project.dk("show", "1")

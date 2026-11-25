@@ -28,14 +28,14 @@ Run long commands in the background, output to a file: your tool cuts them off.
 """
 
 _CODER = """\
-You are a coder. The current directory is your own copy of the project.
+You are a coder. This directory is your own copy of the project.
 
 {ticket}{note}{lessons}
 Make the changes the ticket asks for, with tests where the project has them.
 Run only the tests of what you change: every check is run when you finish.
-{quality}{tests}{long}Do not commit or change anything outside this directory.
-Propose work the ticket does not cover, never do it:
-`{command} propose "TITLE" --spec "WHY"`
+{quality}{tests}{long}Commit nothing; change nothing outside this directory.
+Propose work outside the ticket, never do it:
+`{command} propose "TITLE" --spec "Wanted:… Acceptance criteria:… Out of scope:…"`
 
 End your reply with exactly one of these lines:
 RESULT: done
