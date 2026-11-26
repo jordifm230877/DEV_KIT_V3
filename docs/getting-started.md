@@ -357,7 +357,9 @@ dk night --off                         # no longer
 
 This uses your system's own timers (systemd, for your account); the computer must be on,
 and where you are not kept logged in, `loginctl enable-linger` lets it run without you. On
-a system without `systemctl`, have your own scheduler run `dk night`. In the morning,
+macOS it uses launchd instead: you must be logged in, and a Mac asleep at that time starts
+the night shift when it wakes. On a system with neither, have your own scheduler run
+`dk night`. In the morning,
 `dk status` lists what was proposed. Only one of `dk run`, `dk talk` and `dk night` works on
 a project at a time: a night shift that finds work going on writes its audits and leaves
 them to it.

@@ -50,7 +50,7 @@ time.
 | `jobs` | The jobs agents are given on a ticket: what each is told and what its answer means; a composer | Decide where a ticket goes next |
 | `orders` | What the user, or the Principal for them, asks of the ticket list with a command: write, send on, give up, close, decide; a composer | Start anything |
 | `upkeep` | Work on the whole project, not one ticket: writes audits and documentation runs for the user, the close of an epic and the night shift, and the lessons of a closed epic; a composer | Start anything |
-| `nightly` | Has the system start a command every day at a set time (systemd timers) | Know what the command does |
+| `nightly` | Has the system start a command every day at a set time (systemd timers, or launchd on macOS) | Know what the command does |
 | `principal` | What the Principal is told, in the conversation and about a stopped ticket | Start anything |
 | `agents` | Starts an agent program, hands it one job, reads its answer | Know the process |
 | `shown` | Turns what Pi, Claude and Codex print into lines a person can read | Start anything |
@@ -286,8 +286,8 @@ Each step ends with something usable.
   a reviewer judges better without the account of whoever wrote the code, whose reasons
   can talk it into accepting what it would have refused.
 - The night shift (`dk night`) is every kind of audit plus `dk run`, started by the user or
-  every day by a systemd timer (`--at`). DevKit keeps no clock and no process of its own
-  running; the system already has both. An audit is left out while one of its kind is
+  every day by a systemd timer, or by launchd on macOS (`--at`). DevKit keeps no clock and
+  no process of its own running; the system already has both. An audit is left out while one of its kind is
   unfinished or while the project has not changed since its last report. A third kind of
   audit, `tests`, breaks the code on purpose to see whether the tests notice; it runs in the
   auditor's throwaway copy like the others.
