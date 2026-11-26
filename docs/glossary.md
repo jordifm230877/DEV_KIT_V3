@@ -23,7 +23,7 @@
 - **Brief** — the instructions an agent receives for one job.
 - **Answer** — the last line of an agent's reply: done, blocked or question.
 - **Copy** — a ticket's own working copy of the project (a Git worktree on branch `ticket/<n>`).
-- **Checks** — the project's own commands that must succeed; run by the program, never trusted from an agent. Those under `[checks]` are run on every ticket's work, those under `[checks.behaviour]` with the ticket's own behaviour tests.
+- **Checks** — the project's own commands that must succeed; run by the program, never trusted from an agent. Those under `[checks]` are run on every ticket's work, those under `[checks.behaviour]` with the ticket's own behaviour tests. A check that names `paths` is run only on a ticket that changed a file within them.
 - **Whole test suite** — the commands under `[checks.epic]`: everything the project can test, run only when an epic is closed. What fails becomes a ticket of that epic, and the suite is run again once it is merged.
 - **Behaviour test** — a Gherkin scenario written before the code and approved by the user.
 - **Without behaviour tests** — a ticket written, accepted or sent on with `--no-behaviour-tests` because it changes nothing a user of the product can see; it goes to the coder with no test-writer.

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 FILE = "devkit.toml"
 
@@ -31,6 +32,7 @@ class Config:
     checks: dict[str, tuple[str, ...]]  # run on every ticket's work
     behaviour: dict[str, tuple[str, ...]]  # run on a ticket's own behaviour tests
     suite: dict[str, tuple[str, ...]]  # the whole test suite, run before an epic is closed
+    owns: dict[str, tuple[str, ...]] = field(default_factory=dict)  # a check's paths, if any
     max_attempts: int = 3
     agent_minutes: float = 90  # 30 cut off a coder twice on a ticket that builds slowly
     check_minutes: float = 30  # 10 was short for a Rust project's whole test suite
@@ -47,8 +49,23 @@ def _table(listed: dict[str, object], name: str) -> bool:
     return isinstance(listed.get(name), dict)
 
 
-def _commands(listed: dict[str, list[str]]) -> dict[str, tuple[str, ...]]:
-    return {name: tuple(argv) for name, argv in listed.items()}
+def _commands(
+    listed: dict[str, Any], owns: dict[str, tuple[str, ...]], kind: str = ""
+) -> dict[str, tuple[str, ...]]:
+    """The command of each check. One written as a table says in `paths` what it is for,
+    which is noted in `owns` under the name it is shown by."""
+    found = {}
+    for name, entry in listed.items():
+        if isinstance(entry, dict):
+            if extra := sorted(set(entry) - {"run", "paths"}):
+                raise TypeError(f"check '{name}' takes `run` and `paths`, not {', '.join(extra)}")
+            if "run" not in entry:
+                raise TypeError(f"check '{name}' has no `run`")
+            if entry.get("paths"):
+                owns[kind + name] = tuple(entry["paths"])
+            entry = entry["run"]
+        found[name] = tuple(entry)
+    return found
 
 
 def load(project: Path) -> Config:
@@ -62,9 +79,12 @@ def load(project: Path) -> Config:
             for entry in raw.pop("agents", [])
         )
         listed = raw.pop("checks", {})
-        behaviour = _commands(listed.pop("behaviour", {}) if _table(listed, "behaviour") else {})
-        suite = _commands(listed.pop("epic", {}) if _table(listed, "epic") else {})
+        owns: dict[str, tuple[str, ...]] = {}
+        runners = listed.pop("behaviour", {}) if _table(listed, "behaviour") else {}
+        behaviour = _commands(runners, owns, "behaviour ")
+        suite = _commands(listed.pop("epic", {}) if _table(listed, "epic") else {}, {})
         tools = tuple(raw.pop("audit", {}).get("tools", ()))
-        return Config(agents, _commands(listed), behaviour, suite, audit_tools=tools, **raw)
+        every = _commands(listed, owns)
+        return Config(agents, every, behaviour, suite, owns, audit_tools=tools, **raw)
     except (tomllib.TOMLDecodeError, TypeError) as error:
         raise ConfigError(f"{path}: {error}") from error

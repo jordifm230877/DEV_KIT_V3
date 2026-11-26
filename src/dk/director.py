@@ -218,7 +218,12 @@ class Director:
 
     def _check(self, ticket: Ticket, logs: Path) -> Outcome:
         mine = sorted(self.tickets.get(ticket.id).protected)
-        every = {**self.config.checks, **checks.behaviour(self.config.behaviour, mine)}
+        settings, changed = self.config, self.workspace.changed(ticket.id)
+        every, said = checks.chosen(
+            settings.checks, settings.behaviour, settings.owns, changed, mine
+        )
+        if said:
+            self.tickets.record(ticket.id, said)
         failure = self._checked(ticket, every, logs)
         return Failed(failure) if failure else Passed()
 

@@ -496,6 +496,17 @@ Each step ends with something usable.
   accepted: a ticket can break a scenario of an earlier one, and it shows only when the
   epic is closed. A list named `behaviour` under `[checks]` is still one check of every
   ticket, as projects written before have it.
+- A check may name the paths it is for (`[checks.NAME]` with `run` and `paths`), and is
+  then run only on a ticket whose saved work changed a file within them; a runner of
+  behaviour tests so written is given the ticket's `.feature` files within its own. A
+  project of fifteen components asked for it: a ticket in one ran the checks of them all.
+  What the ticket changed is taken against the commit its work started from, so what
+  others merged meanwhile adds no check, and a file moved counts in both places. A file
+  within nobody's paths has every check run, and a behaviour test within no runner's goes
+  to them all: a check run for nothing costs time, one left out lets a fault through. The
+  history says which ran and which were left out, so that left out never reads as
+  passed. `[checks.epic]` takes no paths into account. A check is given no directory to
+  run in: its command can already say so (`make -C`, `sh -c "cd ..."`).
 - Closing an epic is carried like a ticket where the project has a whole test suite:
   `dk close` writes `Close EPIC` in the epic, with a process of one step, `suite`. The suite
   is run in a fresh copy of the project as it is then; if it passes the epic is closed

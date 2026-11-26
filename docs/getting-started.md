@@ -115,6 +115,25 @@ Things to know:
 - **`[checks.epic]`** is everything the project can test. No ticket waits for it: it is
   run when you close an epic, so keep what is slow there and `[checks]` quick. Until then
   a ticket can break a scenario of an earlier one without anybody noticing.
+- **In a repository of several components**, a check can say what it is for, and is then
+  run only on a ticket that changed something there:
+
+  ```toml
+  [checks.auth]
+  run = ["make", "-C", "auth", "test"]
+  paths = ["auth/**", "shared/**"]
+
+  [checks.behaviour.auth]              # given only the ticket's .feature files under auth/
+  run = ["make", "-C", "auth", "behave", "FEATURES={features}"]
+  paths = ["auth/**"]
+  ```
+
+  A check without `paths` is run on every ticket, as before. A ticket that changed a file
+  within no check's paths has every check run, so list shared files under each component
+  that uses them; `docs/` and `devkit.toml` belong to none and count for nothing. The
+  ticket's history says each time which checks ran and which were left out. A ticket in
+  one component can still break another: that shows when the epic is closed, since
+  `[checks.epic]` is always run whole.
 - **Commit everything agents must see.** Each ticket is worked on in a copy of what Git
   holds; uncommitted files, `AGENTS.md` included, do not exist for the agents.
 - **More agents is more lines.** Add `coder-2` with `role = "coder"` and two tickets advance

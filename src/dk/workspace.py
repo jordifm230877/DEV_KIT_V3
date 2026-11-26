@@ -63,6 +63,14 @@ class Workspace:
         """The commit the ticket's work started from; `git diff <base>` shows the work."""
         return self._must(self._project, "merge-base", "HEAD", f"ticket/{ticket}")
 
+    def changed(self, ticket: int) -> list[str]:
+        """The files the ticket's saved work changed, whatever the project gained meanwhile.
+        A file moved counts in both places."""
+        names = "--name-only", "--no-renames"
+        return self._must(
+            self._copy(ticket), "diff", *names, self.base(ticket), "HEAD"
+        ).splitlines()
+
     def _last(self, what: str, files: tuple[str, ...]) -> str:
         """`what` (a Git format) of the latest commit that wrote any of `files` (patterns)."""
         patterns = (f":(glob){one}" for one in files)

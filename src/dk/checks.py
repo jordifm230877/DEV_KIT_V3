@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Callable, Mapping, Sequence
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from dk import child
 
@@ -34,6 +34,46 @@ def behaviour(
         for name, argv in commands.items()
         if features
     }
+
+
+def _within(file: str, paths: Sequence[str]) -> bool:
+    return any(PurePosixPath(file).full_match(pattern) for pattern in paths)
+
+
+def chosen(
+    commands: Mapping[str, Sequence[str]],
+    runners: Mapping[str, Sequence[str]],
+    owns: Mapping[str, Sequence[str]],
+    changed: Sequence[str],
+    features: Sequence[str],
+) -> tuple[dict[str, tuple[str, ...]], str]:
+    """The checks for a ticket that changed these files and has these behaviour tests, and
+    a line for its history, empty where no check names paths (`owns`).
+
+    A check with paths is run when a changed file is within them; a runner of behaviour
+    tests is given those within its own. A file within nobody's paths goes to all: a check
+    run for nothing costs time, one left out lets a fault through."""
+    changed = [file for file in changed if concern([file])]
+    stray = [file for file in changed if not _within(file, [p for ps in owns.values() for p in ps])]
+    mine = [p for name, ps in owns.items() if name.startswith("behaviour ") for p in ps]
+    loose = [file for file in features if not _within(file, mine)]
+    found = {
+        name: tuple(argv)
+        for name, argv in commands.items()
+        if stray or name not in owns or any(_within(file, owns[name]) for file in changed)
+    }
+    for name, argv in runners.items():
+        paths = owns.get(f"behaviour {name}")
+        given = [file for file in features if not paths or file in loose or _within(file, paths)]
+        found |= behaviour({name: argv}, given)
+    if not owns:
+        return found, ""
+    if stray:
+        return found, f"checks: all of them, as no check's paths hold {', '.join(stray)}"
+    every = [*commands, *(f"behaviour {name}" for name in runners if features)]
+    out = [name for name in every if name not in found]
+    left = f"; left out, nothing of theirs changed: {', '.join(out)}" if out else ""
+    return found, f"checks: {', '.join(found) or 'none'}{left}"
 
 
 def run(
