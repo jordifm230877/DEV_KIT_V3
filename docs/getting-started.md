@@ -19,6 +19,18 @@ dk --help
 `--editable` means the command always runs the code in that folder, so pulling or changing
 the code needs no reinstall. To remove it: `uv tool uninstall devkit3`.
 
+On another computer, with no copy of the code, install it from the repository. It is
+private, so that computer needs an SSH key GitHub knows:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh      # uv, if it is not there; brings Python 3.14
+uv tool install git+ssh://git@github.com/jordifm230877/DEV_KIT_V3.git
+dk --help
+```
+
+To take a newer version later: `uv tool upgrade devkit3`. DevKit has not yet been run on
+macOS; to see what holds there, clone the repository and run `uv run pytest -q` in it.
+
 ## 3. Set up a project
 
 The project must be a Git repository with at least one commit, and you should be on the
