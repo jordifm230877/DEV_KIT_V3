@@ -39,16 +39,21 @@ def _unfinished(tickets: Tickets, title: str) -> list[int]:
     ]
 
 
-def audit(kind: str, note: str, project: Path, tickets: Tickets) -> None:
+def audit(kind: str, note: str, project: Path, tickets: Tickets, component: str = "") -> None:
+    """Ask for an audit of the whole project, or of the one component named."""
     auditor(project)
-    title = _audit_title(kind)
-    spec = f"{audits.AUDITS[kind]}\n{note}".strip()
+    named = config.load(project).components
+    if component and component not in named:
+        raise LookupError(f"no component '{component}'; named: {', '.join(named) or 'none'}")
+    title = _audit_title(kind, component)
+    only = audits.only(component, named[component]) if component else ""
+    spec = "\n".join(filter(None, (audits.AUDITS[kind], only, note)))
     number = tickets.add(title, spec, process.AUDIT[0].name, "", [])
     print(f"#{number} written; its report will be {jobs.report(title)}")
 
 
-def _audit_title(kind: str) -> str:
-    return f"{kind.capitalize()} audit"
+def _audit_title(kind: str, component: str = "") -> str:
+    return f"{kind.capitalize()} audit" + (f" of {component}" if component else "")
 
 
 def document(note: str, project: Path, tickets: Tickets) -> None:
@@ -104,16 +109,22 @@ def _learn(epic: str, tickets: Tickets) -> None:
 
 def night(project: Path, tickets: Tickets, workspace: Workspace) -> None:
     """Write an audit of every kind, except one still unfinished or one whose last report
-    the project has not changed since; then a documentation run where that is due."""
-    for kind in audits.AUDITS:
-        title = _audit_title(kind)
+    the project has not changed since; then a documentation run where that is due.
+
+    Where the project names components, each is audited apart, and the whole only if the
+    project asks for it."""
+    settings = config.load(project)
+    parts = settings.components
+    whole = [""] if settings.audit_whole_at_night or not parts else []
+    for kind, part in ((kind, part) for kind in audits.AUDITS for part in (*parts, *whole)):
+        title = _audit_title(kind, part)
         unfinished = _unfinished(tickets, title)
         if unfinished:
             print(f"{title}: #{unfinished[0]} is still unfinished")
-        elif not workspace.changed_since(jobs.report(title, "*")):
+        elif not workspace.changed_since(jobs.report(title, "*"), within=parts.get(part, ())):
             print(f"{title}: nothing changed since its last report")
         else:
-            audit(kind, "", project, tickets)
+            audit(kind, "", project, tickets, part)
     _nightly_documentation(project, tickets, workspace)
 
 

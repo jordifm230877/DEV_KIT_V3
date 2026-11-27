@@ -134,6 +134,29 @@ Things to know:
   ticket's history says each time which checks ran and which were left out. A ticket in
   one component can still break another: that shows when the epic is closed, since
   `[checks.epic]` is always run whole.
+
+  The components can be named once, and a check then says which it is for instead of
+  repeating the paths. Audits use the same names (section 7):
+
+  ```toml
+  [components]
+  auth = ["auth/**", "shared/**"]
+  login = ["login/**"]
+
+  [checks.auth]
+  run = ["make", "-C", "auth", "test"]
+  component = "auth"
+  ```
+- **`devkit.toml` can be split.** A line at its top names other files, written like it,
+  anywhere in the project; their paths are given from the project's folder:
+
+  ```toml
+  include = ["devkit/agents.toml", "auth/devkit.toml"]
+  ```
+
+  Any section can go in them. What two files both set is refused when DevKit starts, with
+  the name of the file, rather than one of them chosen; agents are the exception, and those
+  of every file make the team. An included file names no further files.
 - **Commit everything agents must see.** Each ticket is worked on in a copy of what Git
   holds; uncommitted files, `AGENTS.md` included, do not exist for the agents.
 - **More agents is more lines.** Add `coder-2` with `role = "coder"` and two tickets advance
@@ -301,6 +324,11 @@ tools = ["cargo-audit", "gitleaks"]
 ```
 
 The auditor is then told to use them, and `dk check` names those that are not installed.
+
+Where `devkit.toml` names `[components]` (section 3), `dk audit security auth` audits that
+component alone: the auditor is told its paths, and the report is its own,
+`docs/audits/DAY-security-audit-of-auth.md`. Without a component the audit is of the whole
+project, which is where what the components share and how they talk to each other is seen.
 DevKit installs nothing itself. When you ask the Principal
 to close an epic, it suggests an audit if what the epic changed gives a reason.
 
@@ -372,7 +400,19 @@ as where it departed from the ticket or what it is unsure of; `dk show N` has it
 
 `dk night` writes all three audits and then works like `dk run`. It leaves out an audit
 that is still unfinished, and one whose last report the project has not changed since, so
-the same findings do not come back every morning. To have it start by itself:
+the same findings do not come back every morning.
+
+In a project that names `[components]`, the night shift audits each component instead,
+and only those with a change within their paths since their last report. The whole project
+is then not audited at night, and a change outside every component brings no audit, unless
+the project asks for it:
+
+```toml
+[audit]
+whole_project_at_night = true
+```
+
+To have the night shift start by itself:
 
 ```bash
 dk night --at 02:30                    # every day at that time; starts nothing now

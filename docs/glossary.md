@@ -31,6 +31,7 @@
 - **Protected** — a behaviour-test file the user approved; the program puts it back if a coder changes it.
 - **Trusted** — an epic the user marked with `dk trust`: the behaviour tests of its tickets go on to the coder once a verifier has approved them, without waiting for the user. Only the user gives or withdraws it.
 - **Waiting** — a ticket stopped at a step that is the user's own decision (`dk approve` / `dk reject`).
+- **Component** — a part of a project that is tested and audited apart, named under `[components]` in `devkit.toml` with the paths it holds. A check may be for one (`component = "NAME"`), and so may an audit (`dk audit KIND NAME`).
 - **Audit** — a look over the whole project for security, for performance or for how well its tests protect it, asked for by the user or by the night shift; it leaves a report in `docs/audits/` and changes nothing else.
 - **Night shift** — `dk night`: every kind of audit whose last report the project has changed since, a documentation run when the last is five days old and the project changed since, then the unfinished tickets; `--at HH:MM` has the system start it every day.
 - **Note** — one line a coder may add to its answer for the user (`RESULT: done: ...`); kept in the ticket's history and shown to no reviewer.

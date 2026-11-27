@@ -10,6 +10,7 @@ import math
 import subprocess
 import threading
 import time
+from collections.abc import Sequence
 from pathlib import Path
 
 _SAFE = ("-c", "core.hooksPath=/dev/null")
@@ -76,13 +77,14 @@ class Workspace:
         patterns = (f":(glob){one}" for one in files)
         return self._must(self._project, "log", "-1", f"--format={what}", "--", *patterns)
 
-    def changed_since(self, *files: str, apart: str = "") -> bool:
+    def changed_since(self, *files: str, apart: str = "", within: Sequence[str] = ()) -> bool:
         """Whether the project changed, apart from what is under `apart` (the folder of
         `files` when not given), since the latest of `files` (patterns) was written; true
-        when there is none."""
+        when there is none. With `within`, only what is at those paths counts."""
         last = self._last("%H", files)
         beside = f":(exclude){apart or files[0].rpartition('/')[0]}"
-        unchanged = ("diff", "--quiet", last, "HEAD", "--", ".", beside)
+        where = [f":(glob){path}" for path in within] or ["."]
+        unchanged = ("diff", "--quiet", last, "HEAD", "--", *where, beside)
         return not last or self._git(self._project, *unchanged).returncode != 0
 
     def days_since(self, *files: str) -> float:

@@ -40,6 +40,14 @@ AUDITS = {
 }
 
 
+def only(component: str, paths: tuple[str, ...]) -> str:
+    """What the auditor of one component is told besides the kind of audit."""
+    return (
+        f"Look only at the component '{component}' of this project: {', '.join(paths)}. What "
+        "it shares with the others is left to the audit of the whole project."
+    )
+
+
 def brief(
     about: str, report: str, tools: tuple[str, ...], command: str, known: list[str], always: str
 ) -> str:

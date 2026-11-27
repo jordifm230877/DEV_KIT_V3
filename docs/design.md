@@ -513,6 +513,17 @@ Each step ends with something usable.
   history says which ran and which were left out, so that left out never reads as
   passed. `[checks.epic]` takes no paths into account. A check is given no directory to
   run in: its command can already say so (`make -C`, `sh -c "cd ..."`).
+- A project names its components once (`[components]`, a name and its paths): a check says
+  `component = "NAME"` instead of repeating paths, and `dk audit KIND NAME` audits that
+  component alone, with a report of its own. The user asked for it, so that an audit looks
+  at what one auditor can take in. At night such a project has each component audited,
+  only those changed within their paths since their last report; the whole project is
+  audited at night only with `whole_project_at_night = true` under `[audit]`, so a project
+  that names no components is audited as before.
+- `devkit.toml` may name other settings files (`include`), read as if written in it: the
+  user's own had grown confusing. What two files both set is refused, since a later file
+  silently winning hides a mistake; `[[agents]]` of every file are joined. Paths are from
+  the project's folder wherever the file is, so the same line means the same in each.
 - Closing an epic is carried like a ticket where the project has a whole test suite:
   `dk close` writes `Close EPIC` in the epic, with a process of one step, `suite`. The suite
   is run in a fresh copy of the project as it is then; if it passes the epic is closed

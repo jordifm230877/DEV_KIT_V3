@@ -44,7 +44,7 @@ Your tool for tickets: `{command}`
   close "EPIC"           the whole test suite is run; the epic closes when it passes, and
       what fails becomes a ticket of the epic
   reopen "EPIC"
-  audit security|performance|tests [--note "FOCUS"]   a report in docs/audits/
+  audit security|performance|tests [COMPONENT] [--note "FOCUS"]   report in docs/audits/
   document [--note "FOCUS"]   update docs/technical/ and docs/howto/
 
 Tell the user why a ticket stopped, and pass their answer on with retry.

@@ -249,7 +249,7 @@ def _execute(args: argparse.Namespace) -> None:
         "add": lambda: orders.add(args, tickets),
         "propose": lambda: orders.propose(args, tickets),
         "move": lambda: orders.move(tickets, args.ticket, args.epic, _trusted(project)),
-        "audit": lambda: upkeep.audit(args.kind, args.note, project, tickets),
+        "audit": lambda: upkeep.audit(args.kind, args.note, project, tickets, args.part),
         "document": lambda: upkeep.document(args.note, project, tickets),
         "night": lambda: _night(args, project, home, tickets),
         "check": lambda: _check(project, home),

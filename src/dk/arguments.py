@@ -49,6 +49,7 @@ def parser(audits: list[str], programs: list[str]) -> argparse.ArgumentParser:
     where.add_argument("--no-epic", action="store_true", help="it belongs to no epic")
     audit = commands.add_parser("audit", help="have the whole project audited; leaves a report")
     audit.add_argument("kind", choices=audits)
+    audit.add_argument("part", nargs="?", default="", help="one of [components]; else all")
     audit.add_argument("--note", default="", help="what to look at in particular")
     document = commands.add_parser("document", help="have the documentation brought up to date")
     document.add_argument("--note", default="", help="what to write or correct in particular")
