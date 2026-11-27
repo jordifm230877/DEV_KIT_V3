@@ -87,6 +87,16 @@ def test_a_ticket_somebody_has_worked_on_is_not_rewritten(project: Project) -> N
     assert "Say good morning." not in project.dk("show", "1")
 
 
+def test_a_ticket_whose_first_agent_asked_something_is_not_rewritten(project: Project) -> None:
+    """It stopped with no attempt counted and nobody at work on it: it has been read."""
+    project.configure(coder=HELLO, tester="print('RESULT: question: in which language?')")
+    project.dk("add", "Greet", "--spec", "Say hello.", "--epic", "Manners")
+    project.dk("run")
+    assert "#1 stopped at specify  Greet  question" in project.dk("status")
+
+    assert "#1 has been worked on" in project.refused("edit", "1", "--spec", "Say good morning.")
+
+
 def test_a_finished_ticket_is_not_rewritten(project: Project) -> None:
     project.configure(coder=HELLO)
     project.dk("add", "Greet", "--spec", "Say hello.", "--epic", "Manners")

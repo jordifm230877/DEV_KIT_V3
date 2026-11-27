@@ -42,6 +42,25 @@ def test_a_ticket_out_of_attempts_gets_a_fresh_set(project: Project) -> None:
     assert "#1 done" in project.dk("status")
 
 
+def test_a_ticket_sent_on_has_all_its_attempts_again(project: Project) -> None:
+    fourth_time = (
+        "marker = pathlib.Path(sys.argv[0]).with_name('tried.txt')\n"
+        "tried = marker.read_text() if marker.exists() else ''\n"
+        "if len(tried) == 3:\n"
+        "    pathlib.Path('greeting.txt').write_text('hello\\n')\n"
+        "marker.write_text(tried + 'x'); print('RESULT: done')"
+    )
+    project.configure(coder=fourth_time, max_attempts=2)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+    project.dk("run")
+    assert "#1 stopped" in project.dk("status")
+
+    project.dk("retry", "1")
+    project.dk("run")
+
+    assert "#1 done" in project.dk("status")
+
+
 def test_a_merge_that_was_in_the_way_is_retried_without_redoing_the_work(project: Project) -> None:
     project.configure(coder=HELLO)
     project.dk("add", "Greet", "--spec", "Say hello.")

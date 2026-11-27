@@ -143,6 +143,16 @@ def test_on_macos_the_night_shift_starts_every_day_too(
     assert not (tmp_path / "config").exists()
 
 
+def test_on_macos_what_launchctl_refuses_is_said(project: Project, mac: Timers) -> None:
+    project.configure(coder=HELLO, auditor="print('RESULT: done')")
+    launchctl = Path(str(shutil.which("launchctl")))
+    launchctl.write_text('#!/bin/sh\necho "Bootstrap failed: 5" >&2\nexit 5\n')
+
+    refused = project.refused("night", "--at", "02:05")
+
+    assert "launchctl bootstrap failed: Bootstrap failed: 5" in refused
+
+
 def test_on_macos_a_new_time_takes_the_place_of_the_old(
     project: Project, mac: Timers, tmp_path: Path
 ) -> None:

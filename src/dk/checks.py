@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from pathlib import Path, PurePosixPath
 
 from dk import child
@@ -40,6 +40,40 @@ def _within(file: str, paths: Sequence[str]) -> bool:
     return any(PurePosixPath(file).full_match(pattern) for pattern in paths)
 
 
+def _plain(
+    commands: Mapping[str, Sequence[str]], owns: Mapping[str, Sequence[str]], changed: Sequence[str]
+) -> dict[str, tuple[str, ...]]:
+    """The checks without paths, and those whose paths hold one of the changed files."""
+    return {
+        name: tuple(argv)
+        for name, argv in commands.items()
+        if name not in owns or any(_within(file, owns[name]) for file in changed)
+    }
+
+
+def _runners(
+    runners: Mapping[str, Sequence[str]], owns: Mapping[str, Sequence[str]], features: Sequence[str]
+) -> dict[str, tuple[str, ...]]:
+    """Each runner with the behaviour tests within its paths, and those within nobody's."""
+    mine = [p for name, ps in owns.items() if name.startswith("behaviour ") for p in ps]
+    loose = [file for file in features if not _within(file, mine)]
+    found: dict[str, tuple[str, ...]] = {}
+    for name, argv in runners.items():
+        paths = owns.get(f"behaviour {name}")
+        given = [file for file in features if not paths or file in loose or _within(file, paths)]
+        found |= behaviour({name: argv}, given)
+    return found
+
+
+def _told(found: Collection[str], every: Sequence[str], stray: Sequence[str]) -> str:
+    """The line for the ticket's history: which checks ran, and which were left out."""
+    if stray:
+        return f"checks: all of them, as no check's paths hold {', '.join(stray)}"
+    out = [name for name in every if name not in found]
+    left = f"; left out, nothing of theirs changed: {', '.join(out)}" if out else ""
+    return f"checks: {', '.join(found) or 'none'}{left}"
+
+
 def chosen(
     commands: Mapping[str, Sequence[str]],
     runners: Mapping[str, Sequence[str]],
@@ -55,25 +89,9 @@ def chosen(
     run for nothing costs time, one left out lets a fault through."""
     changed = [file for file in changed if concern([file])]
     stray = [file for file in changed if not _within(file, [p for ps in owns.values() for p in ps])]
-    mine = [p for name, ps in owns.items() if name.startswith("behaviour ") for p in ps]
-    loose = [file for file in features if not _within(file, mine)]
-    found = {
-        name: tuple(argv)
-        for name, argv in commands.items()
-        if stray or name not in owns or any(_within(file, owns[name]) for file in changed)
-    }
-    for name, argv in runners.items():
-        paths = owns.get(f"behaviour {name}")
-        given = [file for file in features if not paths or file in loose or _within(file, paths)]
-        found |= behaviour({name: argv}, given)
-    if not owns:
-        return found, ""
-    if stray:
-        return found, f"checks: all of them, as no check's paths hold {', '.join(stray)}"
+    found = _plain(commands, {} if stray else owns, changed) | _runners(runners, owns, features)
     every = [*commands, *(f"behaviour {name}" for name in runners if features)]
-    out = [name for name in every if name not in found]
-    left = f"; left out, nothing of theirs changed: {', '.join(out)}" if out else ""
-    return found, f"checks: {', '.join(found) or 'none'}{left}"
+    return found, _told(found, every, stray) if owns else ""
 
 
 def run(
