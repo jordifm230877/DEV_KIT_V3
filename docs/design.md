@@ -48,7 +48,9 @@ time.
 | `process` | The cycle as a list of steps and the rule for moving along it | Touch files or programs |
 | `director` | Carries out the step each ticket waits for; the only piece that decides | Talk to models or Git directly |
 | `jobs` | The jobs agents are given on a ticket: what each is told and what its answer means; a composer | Decide where a ticket goes next |
-| `orders` | What the user, or the Principal for them, asks of the ticket list with a command: write, send on, give up, close, decide; a composer | Start anything |
+| `orders` | What the user, or the Principal for them, asks of a ticket with a command or from the page: send on, give up, pause, decide; a composer | Start anything |
+| `writing` | What is asked to be written in the ticket list: a ticket, a proposal, a ticket rewritten, a proposal moved; a composer | Start anything |
+| `epics` | What is asked about an epic: describe, close, reopen, trust; a composer | Start anything |
 | `upkeep` | Work on the whole project, not one ticket: writes audits and documentation runs for the user, the close of an epic and the night shift, and the lessons of a closed epic; a composer | Start anything |
 | `nightly` | Has the system start a command every day at a set time (systemd timers, or launchd on macOS) | Know what the command does |
 | `principal` | What the Principal is told, in the conversation and about a stopped ticket | Start anything |
@@ -452,7 +454,9 @@ Each step ends with something usable.
   old it is comes from Git, so DevKit still keeps no clock. A run that finds nothing to
   change leaves no trace in Git, so the night shift asks again the next night: accepted
   until it is seen to happen. `upkeep` is a fifth composer: with audits and documentation
-  runs `orders` had reached its 300 lines.
+  runs `orders` had reached its 300 lines. It reached them again with trust, rewriting and
+  pausing, and lines were squeezed to fit before it was split: `writing` and `epics` are
+  composers too, and a piece at its limit is split, not squeezed.
 - The page of `dk web` lists the reports of the audits apart, under *Audits*, by the day
   each was made and the latest first, and no longer among the documents. The user asked
   for it: after three nights a real project had nine reports in one alphabetical list among

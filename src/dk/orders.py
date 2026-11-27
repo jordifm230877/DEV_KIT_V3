@@ -1,5 +1,5 @@
-"""What the user, or the Principal for them, asks of the ticket list with a command: write a
-ticket, send one on, give it up, close an epic, decide on what waits.
+"""What the user, or the Principal for them, asks of a ticket with a command or from the
+page: send it on, give it up, pause it, decide on what waits.
 
 A composer: it reads the process and writes the ticket list, and takes out of a ticket's
 copy the behaviour tests it is to go on without. It starts nothing.
@@ -7,13 +7,12 @@ copy the behaviour tests it is to go on without. It starts nothing.
 
 from __future__ import annotations
 
-import argparse
 import contextlib
 import io
 import os
 from collections.abc import Callable
 
-from dk import agents, forms, process
+from dk import agents, epics, process, writing
 from dk.jobs import BEHAVIOUR_TESTS
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
@@ -72,51 +71,6 @@ def leave(tickets: Tickets, number: int, pause: bool = False) -> None:
     tickets.move(number, *vars(left).values())
     tickets.record(number, process.PAUSED if pause else "cancelled")
     print(f"#{number} " + (f"paused; `dk retry {number}` sends it on" if pause else _GIVEN_UP))
-
-
-def close(tickets: Tickets, epic: str, suite: bool) -> None:
-    """Mark an epic as complete; only one whose tickets are all merged or given up. Where
-    the project has a whole test suite (`suite`), write its run instead, which closes it."""
-    inside = [ticket for ticket in tickets.all() if epic and ticket.epic == epic]
-    if not inside:
-        raise LookupError(f"there is no epic '{epic}'")
-    unfinished = [t for t in inside if t.step not in (process.DONE, process.CANCELLED)]
-    if unfinished:
-        raise LookupError(f"#{unfinished[0].id} is not finished")
-    if suite:
-        wanted = f"Run the project's whole test suite; {epic} closes when it passes."
-        number = tickets.add(f"Close {epic}", wanted, process.CLOSING[0].name, epic, [])
-        print(f"#{number} written; {epic} closes when the whole test suite passes")
-        return
-    tickets.close(epic)
-    print(f"{epic} closed")
-
-
-def reopen(tickets: Tickets, epic: str) -> None:
-    if epic not in tickets.closed():
-        raise LookupError(f"epic '{epic}' is not closed")
-    tickets.reopen(epic)
-    print(f"{epic} open again")
-
-
-def trust(tickets: Tickets, epic: str, given: bool) -> None:
-    """The user trusts an epic, or no longer does; with no epic, say which are trusted.
-    Tickets of it that wait for approval are taken up again, to go on as the rest will."""
-    if not epic:
-        return print(*sorted(tickets.trusted()) or ["no epic is trusted"], sep="\n")
-    if os.environ.get(agents.WHO):
-        raise LookupError("only the user can trust an epic; ask them to run this themselves")
-    inside = [ticket for ticket in tickets.all() if ticket.epic == epic]
-    if not inside and epic not in tickets.described():
-        raise LookupError(f"there is no epic '{epic}'")
-    tickets.trust(epic, given)
-    if not given:
-        return print(f"behaviour tests of {epic} wait for your approval again")
-    for ticket in inside:
-        position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
-        if process.waiting(process.PROCESS, position):
-            tickets.move(ticket.id, ticket.step, ticket.attempts, ticket.note, False)
-    print(f"behaviour tests of {epic} that a verifier approves go on without your approval")
 
 
 def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: bool) -> None:
@@ -181,110 +135,17 @@ def _behaviour_tests(tickets: Tickets, number: int, approved: bool, reason: str)
     print(f"#{number} will continue at {decided.step} on the next run")
 
 
-def _open(tickets: Tickets, epic: str) -> None:
-    """Refuse an epic that takes no ticket: a closed one, or one an agent has not described."""
-    if epic in tickets.closed():
-        raise LookupError(f"epic '{epic}' is closed; put the ticket in another epic")
-    if os.environ.get(agents.WHO) and epic and epic not in tickets.described():
-        raise LookupError(
-            f'say first what the epic is for: epic "{epic}" --spec "{forms.form(forms.EPIC)}"'
-        )
-
-
-def move(tickets: Tickets, number: int, epic: str, allowed: bool) -> None:
-    """Put a proposal in an epic, or with "" in none. `allowed` says whether whoever asks
-    is the user or the Principal."""
-    if not allowed:
-        raise LookupError("only the user or the Principal can move a proposal")
-    ticket = tickets.get(number)
-    if ticket.step != process.PROPOSED:
-        raise LookupError(f"#{number} is not a proposal; only a proposal is moved")
-    _open(tickets, epic)
-    tickets.file(number, epic)
-    where = f"to {epic}" if epic else f"out of {ticket.epic or 'no epic'}"
-    tickets.record(number, f"moved {where} by {os.environ.get(agents.WHO) or 'the user'}")
-    print(f"#{number} moved {where}")
-
-
-def propose(args: argparse.Namespace, tickets: Tickets) -> None:
-    """Suggest a ticket; whoever does is named, with the ticket they were on when they did,
-    whose epic it joins unless another is given."""
-    if args.epic in tickets.closed():
-        raise LookupError(f"epic '{args.epic}' is closed; put the ticket in another epic")
-    who, spec = _agent(), forms.formed(args.spec, forms.TICKET, _agent())
-    on = [ticket for ticket in tickets.all() if who and ticket.worker == who][:1]
-    epic = args.epic or "".join(ticket.epic for ticket in on)
-    number = tickets.add(args.title, spec, process.PROPOSED, epic, [])
-    during = "".join(f" while on #{ticket.id} {ticket.title}" for ticket in on)
-    tickets.record(number, f"proposed by {who or 'the user'}{during}")
-    print(f"#{number} proposed; it waits for the user to accept it or turn it down")
-
-
-def _agent() -> str:  # the agent that asks, or "" for the user
-    return os.environ.get(agents.WHO, "")
-
-
-def edit(tickets: Tickets, number: int, title: str, spec: str, write: Write | None) -> None:
-    """Rewrite a ticket nobody has worked on; with no new words, in the user's editor (`write`)."""
-    old = tickets.get(number)
-    if not process.untouched(old.step, old.attempts, old.stopped, old.worker):
-        raise LookupError(f"#{number} has been worked on; to add to it: dk retry {number} --note")
-    if not (title or spec) and (_agent() or not write):
-        raise LookupError("say the new text with --spec, the new title with --title")
-    if write and not (title or spec):
-        title, spec = write(old.title, old.spec)
-    spec = forms.formed(spec, forms.TICKET, _agent()) if spec else old.spec
-    tickets.rewrite(number, title or old.title, spec)
-    was = f"edited by {_agent() or 'the user'}; it said: {old.title}: {old.spec}"
-    tickets.record(number, " ".join(was.split()))
-    print(f"#{number} edited")
-
-
-def epic(tickets: Tickets, name: str, spec: str) -> None:
-    """Say what an epic is for, or show what was said."""
-    if spec:
-        tickets.describe(name, forms.formed(spec, forms.EPIC, _agent()))
-        print(f"{name} described")
-    elif name in tickets.described():
-        print(tickets.described()[name])
-    else:
-        raise LookupError(f"epic '{name}' has no description")
-
-
-def add(args: argparse.Namespace, tickets: Tickets) -> None:
-    spec = forms.formed(args.spec, forms.TICKET, _agent())
-    if os.environ.get(agents.WHO) and not (args.behaviour_tests or args.no_behaviour_tests):
-        raise LookupError(
-            "say whether a user of the product sees the change: "
-            "--behaviour-tests or --no-behaviour-tests"
-        )
-    if not args.epic:
-        raise LookupError(
-            'say which epic the ticket belongs to: --epic "NAME"; '
-            "`dk propose` writes one that waits for you outside every epic"
-        )
-    _open(tickets, args.epic)
-    tests, first = not args.no_behaviour_tests, process.PROCESS[0].name
-    number = tickets.add(args.title, spec, first, args.epic, args.after, tests)
-    if args.no_behaviour_tests:
-        tickets.record(number, "no behaviour tests: decided when the ticket was written")
-    print(f"#{number} written")
-
-
 def asked(tickets: Tickets, order: object) -> str:
     """Carry out what the user asked for from the page, as the command of that name would.
     Returns what the command prints."""
     said = order if isinstance(order, dict) else {}
-    do, number, note = said.get("do"), said.get("ticket"), str(said.get("note") or "").strip()
-    epic = said.get("epic")
-    if do == "trust" and isinstance(epic, str) and epic:
-        number = 0  # it is about an epic, not a ticket
-    if not isinstance(number, int):
-        raise LookupError("say which ticket, by its number")
+    do, number, note = said.get("do"), _ticket(said), str(said.get("note") or "").strip()
     title, spec = (str(said.get(part) or "") for part in ("title", "spec"))
     orders: dict[object, Callable[[], None]] = {
-        "trust": lambda: trust(tickets, str(epic), said.get("given") is not False),
-        "edit": lambda: edit(tickets, number, title, spec, None),
+        "trust": lambda: epics.trust(
+            tickets, str(said.get("epic")), said.get("given") is not False
+        ),
+        "edit": lambda: writing.edit(tickets, number, title, spec, None),
         "approve": lambda: decide(tickets, number, True, "", said.get("tests") is not False),
         "reject": lambda: decide(tickets, number, False, note),
         "retry": lambda: retry(tickets, number, note),
@@ -298,3 +159,13 @@ def asked(tickets: Tickets, order: object) -> str:
     with contextlib.redirect_stdout(io.StringIO()) as printed:
         orders[do]()
     return printed.getvalue().strip()
+
+
+def _ticket(said: dict[object, object]) -> int:
+    """The number of the ticket an order from the page is about."""
+    number, epic = said.get("ticket"), said.get("epic")
+    if said.get("do") == "trust" and isinstance(epic, str) and epic:
+        return 0  # it is about an epic, not a ticket
+    if not isinstance(number, int):
+        raise LookupError("say which ticket, by its number")
+    return number

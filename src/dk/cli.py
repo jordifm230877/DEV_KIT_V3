@@ -21,6 +21,7 @@ from dk import (
     arguments,
     audits,
     config,
+    epics,
     forms,
     nightly,
     orders,
@@ -31,6 +32,7 @@ from dk import (
     upkeep,
     views,
     web,
+    writing,
 )
 from dk.director import Director
 from dk.jobs import PRINCIPAL
@@ -195,7 +197,7 @@ def _closed(epic: str, project: Path, tickets: Tickets) -> None:
 def _close(epic: str, project: Path, tickets: Tickets) -> None:
     """Close an epic: at once, or by a run of the whole test suite where the project has one."""
     suite = bool(config.load(project).suite)
-    orders.close(tickets, epic, suite)
+    epics.close(tickets, epic, suite)
     if not suite:
         upkeep.epic_closed(epic, project, tickets)
 
@@ -209,7 +211,7 @@ def _trusted(project: Path) -> bool:
 def _edit(args: argparse.Namespace, project: Path, tickets: Tickets) -> None:
     if not _trusted(project):
         raise LookupError("only the user or the Principal can edit a ticket")
-    orders.edit(tickets, args.ticket, args.title, args.spec, forms.write)
+    writing.edit(tickets, args.ticket, args.title, args.spec, forms.write)
 
 
 def _web(port: int, project: Path, home: Path, tickets: Tickets) -> None:
@@ -246,9 +248,9 @@ def _execute(args: argparse.Namespace) -> None:
     tickets = Tickets(home / "tickets.db")
     copies = Workspace(project, home / "work")
     commands: dict[str, Callable[[], None]] = {
-        "add": lambda: orders.add(args, tickets),
-        "propose": lambda: orders.propose(args, tickets),
-        "move": lambda: orders.move(tickets, args.ticket, args.epic, _trusted(project)),
+        "add": lambda: writing.add(args, tickets),
+        "propose": lambda: writing.propose(args, tickets),
+        "move": lambda: writing.move(tickets, args.ticket, args.epic, _trusted(project)),
         "audit": lambda: upkeep.audit(args.kind, args.note, project, tickets, args.part),
         "document": lambda: upkeep.document(args.note, project, tickets),
         "night": lambda: _night(args, project, home, tickets),
@@ -269,11 +271,11 @@ def _execute(args: argparse.Namespace) -> None:
         ),
         "cancel": lambda: orders.leave(tickets, args.ticket),
         "pause": lambda: orders.leave(tickets, args.ticket, pause=True),
-        "epic": lambda: orders.epic(tickets, args.name, args.spec),
+        "epic": lambda: epics.describe(tickets, args.name, args.spec),
         "close": lambda: _close(args.epic, project, tickets),
-        "reopen": lambda: orders.reopen(tickets, args.epic),
+        "reopen": lambda: epics.reopen(tickets, args.epic),
         "edit": lambda: _edit(args, project, tickets),
-        "trust": lambda: orders.trust(tickets, args.epic, not args.withdraw),
+        "trust": lambda: epics.trust(tickets, args.epic, not args.withdraw),
         "approve": lambda: orders.decide(
             tickets, args.ticket, True, "", not args.no_behaviour_tests, args.conversation
         ),
