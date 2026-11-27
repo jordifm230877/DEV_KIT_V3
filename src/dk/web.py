@@ -8,6 +8,7 @@ from __future__ import annotations
 import hmac
 import json
 import socket
+import socketserver
 import threading
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -82,6 +83,14 @@ def _reached() -> str:
         return str(probe.getsockname()[0])
 
 
+class _Server(ThreadingHTTPServer):
+    def server_bind(self) -> None:
+        """Start without asking the network for this computer's name, which nothing here
+        uses: on one computer that took five seconds every time `dk web` started."""
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = "", self.server_address[1]
+
+
 def serve(
     port: int,
     data: Callable[[str], object],
@@ -96,7 +105,7 @@ def serve(
     what to say, or raises LookupError for what cannot be done."""
     given = {"data": staticmethod(data), "change": staticmethod(change), "key": key}
     answers = type("Answers", (_Answers,), given)
-    with ThreadingHTTPServer(("0.0.0.0", port), answers) as server:
+    with _Server(("0.0.0.0", port), answers) as server:
         started(f"http://{_reached()}:{server.server_port}/")
         try:
             server.serve_forever()
