@@ -498,6 +498,8 @@ Each step ends with something usable.
   it starts at once, and `move` could not put it in one later.
 - A verifier is told to run no behaviour test: the program has run them. The user saw the
   verifiers of real projects run the scenarios again, although told the checks had passed.
+  Nor any other test the checks ran, on the code or on a copy it altered: one spent half
+  an hour of a project's only test container that way, on each of three reviews.
 - No ticket has the project's whole test suite run on its work. After the coder the
   program runs `[checks]`, meant for the build and the unit tests, and `[checks.behaviour]`
   with the `.feature` files of that ticket alone, put where the command says `{features}`;

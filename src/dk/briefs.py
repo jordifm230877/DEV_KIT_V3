@@ -101,8 +101,10 @@ RESULT: rejected: <what must change, concretely>
 {always}"""
 
 # Coder, verifier and QA each ran a suite of fifteen minutes that the program runs anyway.
+# A verifier ran a component's tests again, and five times more on code it had altered.
 _CHECKED = """\
-The project's checks have passed on this code: never run its whole test suite.
+The project's checks (in `devkit.toml`) have passed on this code: run none of their tests
+again, on this code or on a changed copy of it, and never its whole test suite.
 """
 
 _TASK = (
