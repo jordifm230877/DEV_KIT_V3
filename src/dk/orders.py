@@ -264,8 +264,7 @@ def add(args: argparse.Namespace, tickets: Tickets) -> None:
             "`dk propose` writes one that waits for you outside every epic"
         )
     _open(tickets, args.epic)
-    first = process.start(process.PROCESS).step
-    tests = not args.no_behaviour_tests
+    tests, first = not args.no_behaviour_tests, process.PROCESS[0].name
     number = tickets.add(args.title, spec, first, args.epic, args.after, tests)
     if args.no_behaviour_tests:
         tickets.record(number, "no behaviour tests: decided when the ticket was written")
@@ -290,6 +289,7 @@ def asked(tickets: Tickets, order: object) -> str:
         "reject": lambda: decide(tickets, number, False, note),
         "retry": lambda: retry(tickets, number, note),
         "cancel": lambda: leave(tickets, number),
+        "pause": lambda: leave(tickets, number, pause=True),
     }
     if do not in orders:
         raise LookupError(f"the page cannot ask for {do}")

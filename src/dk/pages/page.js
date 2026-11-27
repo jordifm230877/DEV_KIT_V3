@@ -177,8 +177,12 @@ function word(data) {
     button("Send them back", "", { do: "reject", ticket }),
   ] : data.kind === "stopped" ? [button("Send it on with this answer", "main", { do: "retry", ticket })]
     : [];
+  // Only a ticket that would go on: it is left with its work until it is sent on from here.
+  const pause = ["ticket", "held"].includes(data.kind)
+    && button("Pause this ticket", "quiet", { do: "pause", ticket });
   return [h("h2", {}, "Your word"),
-    h("div", { class: "word card" }, said, can.length > 0 && note, h("div", { class: "buttons" }, can, give))];
+    h("div", { class: "word card" }, said, can.length > 0 && note,
+      h("div", { class: "buttons" }, can, pause, give))];
 }
 
 // What the ticket asks for. Whoever has the key can rewrite one nobody has worked on yet.

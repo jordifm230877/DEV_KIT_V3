@@ -117,6 +117,23 @@ def test_a_ticket_is_given_up_from_the_page(project: Project, site: Site) -> Non
     assert "#1 cancelled" in project.dk("status")
 
 
+def test_a_ticket_is_paused_from_the_page_and_sent_on_again(project: Project, site: Site) -> None:
+    project.configure(coder=HELLO)
+    project.dk("add", "Greet", "--spec", "Say hello.")
+
+    status, answer = order(project, do="pause", ticket=1)
+    project.dk("run")
+
+    assert status == 200 and "#1 paused" in answer["said"]
+    assert "#1 stopped at specify  Greet  paused by the user" in project.dk("status")
+    assert 'do: "pause"' in site("/page.js")
+
+    order(project, do="retry", ticket=1)
+    project.dk("run")
+
+    assert "#1 done" in project.dk("status")
+
+
 @pytest.mark.parametrize("key", [WRONG, " "])
 def test_nobody_without_the_key_changes_anything(project: Project, site: Site, key: str) -> None:
     waiting_for_approval(project)

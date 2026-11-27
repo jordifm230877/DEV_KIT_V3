@@ -228,7 +228,7 @@ thrown away.
 A ticket you want left for later, as when the coders are needed elsewhere: `dk pause N`. It
 shows as stopped, `paused by the user`, and nobody starts on it; its work is kept. A job an
 agent is doing on it is left to end and its result counts, but nothing follows it.
-`dk retry N` sends it on from where it was.
+`dk retry N` sends it on from where it was. The page of `dk web` has a button for each.
 
 An epic whose tickets are all finished: `dk close "EPIC NAME"`, or tell the Principal.
 Where the project has a whole test suite (`[checks.epic]`), closing writes a run of it,
@@ -246,8 +246,8 @@ With a tester in the configuration, every ticket starts with Gherkin scenarios
 (`.feature` files) that you approve before any code is written. If there is a verifier, it
 looks them over first and sends back any that are not about what a user of the product sees,
 so what reaches you is already filtered. They are easiest to read in the page of `dk web`,
-where you can also approve them or send them back with a note, answer a stopped ticket and
-accept a proposal. For that, open the page once with the second address `dk web` prints when
+where you can also approve them or send them back with a note, answer a stopped ticket,
+pause one and accept a proposal. For that, open the page once with the second address `dk web` prints when
 it starts, the one that ends in a key: without the key the page only shows. The key changes
 each time `dk web` starts.
 Say in `AGENTS.md` where
