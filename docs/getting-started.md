@@ -182,6 +182,11 @@ Things to know:
   An agent's tab closes each job with a line that says how it ended: `=== ended ===`,
   `=== cut off after 90 minutes ===` or `=== stopped ===`, so an old command is not
   taken for work still going on.
+- **A program that is cut off is warned first.** An agent or a check that takes too long,
+  or that is running when you stop the work, is told to end (`SIGTERM`) and has ten seconds
+  to tidy up what it started, such as a container; what is still there after that is ended
+  outright. The limit for one check (`check_minutes`, 30 by default) counts from when the
+  check starts, whatever it waits for meanwhile.
 - **Agents may look things up on the web.** Claude and Codex search by themselves; Pi needs
   an extension for it (`pi install npm:pi-codex-search`). Put `web = false` at the top of
   `devkit.toml` to take the web away from all of them.

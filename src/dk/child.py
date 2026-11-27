@@ -15,6 +15,29 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 _LOOK_EVERY = 0.05
+_GRACE = 10.0  # seconds a program has to tidy up once it is told to end
+
+
+def _gone(child: subprocess.Popen[str]) -> bool:
+    """Whether the program and everything it started have ended."""
+    child.poll()  # an ended program still counts until it has been asked after
+    try:
+        os.killpg(child.pid, 0)
+    except ProcessLookupError:
+        return True
+    return False
+
+
+def _end(child: subprocess.Popen[str]) -> None:
+    """Warn the program and what it started, so that they can tidy up; end whatever is
+    still there `_GRACE` seconds later. Ended outright, a real project's check left its
+    container running while the next check started."""
+    with contextlib.suppress(ProcessLookupError):
+        os.killpg(child.pid, signal.SIGTERM)
+        warned = time.monotonic()
+        while not _gone(child) and time.monotonic() - warned < _GRACE:
+            time.sleep(_LOOK_EVERY)
+        os.killpg(child.pid, signal.SIGKILL)
 
 
 def _cut_off(
@@ -25,8 +48,7 @@ def _cut_off(
     while child.poll() is None:
         if time.monotonic() > deadline or (stop is not None and stop.is_set()):
             cut.set()
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(child.pid, signal.SIGKILL)
+            _end(child)
             return
         time.sleep(_LOOK_EVERY)
 
