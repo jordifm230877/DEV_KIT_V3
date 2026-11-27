@@ -126,6 +126,12 @@ Each step ends with something usable.
 - `dk cancel` gives a ticket up wherever it is; any agent may run it. A job in progress is
   left to end and its result is ignored. The director removes the copy at the end of a run,
   never the command, so a copy is not removed under an agent working in it.
+- `dk pause` leaves a ticket where it is, as a stopped one whose note begins `paused by the
+  user`; `dk retry` sends it on. Its copy, and what the next agent was to be told, are
+  kept. A job in progress is left to end and its result is kept, but nothing follows it and
+  the Principal is not asked about it. On a real project three coders were wanted for the
+  tickets that would shorten the tests, and the only way to free them was `dk cancel`,
+  which throws the work away.
 - A ticket can say which tickets it follows (`dk add --after N`); it is not started until
   they are merged, so its copy begins with their work. A cancelled ticket holds nobody back.
   Tickets without it advance side by side. In the first real trial the Principal planned

@@ -32,6 +32,7 @@ from dk.process import (
     building,
     held_by,
     of,
+    pause,
     retry,
     start,
 )
@@ -128,14 +129,17 @@ class Director:
             steps = of(position.step)
             step = next(step for step in steps if step.name == position.step)
             outcome, agent = self._perform(step, ticket, position, agent), None
-            if self.stop.is_set() or self.tickets.get(ticket.id).step == CANCELLED:
+            now = self.tickets.get(ticket.id)
+            if self.stop.is_set() or now.step == CANCELLED:
                 return  # work cut short or no longer wanted is thrown away, not judged
             position = advance(steps, position, outcome, self.config.max_attempts)
+            if now.stopped and not position.final:  # paused meanwhile: the job's result is kept
+                position = pause(position)
             self.tickets.move(ticket.id, *vars(position).values())
             if not isinstance(outcome, Passed):
                 self.tickets.record(ticket.id, f"{step.name}: {outcome.reason}")
             self.say(f"#{ticket.id} {step.name} {type(outcome).__name__.lower()}")
-            if isinstance(outcome, Waiting):
+            if isinstance(outcome, Waiting) or now.stopped:
                 return
             if position.stopped:
                 position, helped = self._halt(step, ticket, position, helped), True

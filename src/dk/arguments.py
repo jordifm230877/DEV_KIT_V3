@@ -78,9 +78,11 @@ def parser(audits: list[str], programs: list[str]) -> argparse.ArgumentParser:
         action="store_true",
         help="go on to the coder: the ticket changes nothing a user of the product can see",
     )
-    commands.add_parser("cancel", help="give a ticket up and throw its work away").add_argument(
-        "ticket", type=int
-    )
+    for name, text in (
+        ("cancel", "give a ticket up and throw its work away"),
+        ("pause", "leave a ticket and its work until `dk retry` sends it on"),
+    ):
+        commands.add_parser(name, help=text).add_argument("ticket", type=int)
     site = commands.add_parser("web", help="show the agents and the tickets in a browser")
     site.add_argument("--port", type=int, default=8642, help="where on this computer; 0 for any")
     follow = commands.add_parser("follow", help="show a file of an agent's work, in colour")

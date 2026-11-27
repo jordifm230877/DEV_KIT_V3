@@ -11,6 +11,7 @@ from typing import Literal
 
 DONE = "done"
 CANCELLED = "cancelled"  # the user no longer wants the ticket
+PAUSED = "paused by the user"  # the note of a ticket left for later, before what it held
 PROPOSED = "proposed"  # an agent suggests the ticket; nothing happens until the user accepts
 
 
@@ -169,7 +170,7 @@ def untouched(step: str, attempts: int, stopped: bool, worker: str) -> bool:
 
 def retry(position: Position) -> Position:
     """The user sends a stopped ticket on again, with a fresh set of attempts."""
-    return Position(position.step, 0, position.note)
+    return Position(position.step, 0, position.note.removeprefix(PAUSED).strip())
 
 
 def held_by(follows: Sequence[int], steps: Mapping[int, str]) -> list[int]:
@@ -200,6 +201,13 @@ def cancel(position: Position) -> Position:
     if position.step in (DONE, CANCELLED):
         raise LookupError(f"is already {position.step}")
     return Position(CANCELLED, position.attempts)
+
+
+def pause(position: Position) -> Position:
+    """The user has the ticket left where it is, with its work, until it is sent on."""
+    if position.final:
+        raise LookupError(f"is already {'stopped' if position.stopped else position.step}")
+    return replace(position, note=f"{PAUSED}\n{position.note}".strip(), stopped=True)
 
 
 def waiting(process: Sequence[Step], position: Position) -> bool:

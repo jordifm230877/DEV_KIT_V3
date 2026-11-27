@@ -267,7 +267,8 @@ def _execute(args: argparse.Namespace) -> None:
         "retry": lambda: orders.retry(
             tickets, args.ticket, args.note, copies if args.no_behaviour_tests else None
         ),
-        "cancel": lambda: orders.cancel(tickets, args.ticket),
+        "cancel": lambda: orders.leave(tickets, args.ticket),
+        "pause": lambda: orders.leave(tickets, args.ticket, pause=True),
         "epic": lambda: orders.epic(tickets, args.name, args.spec),
         "close": lambda: _close(args.epic, project, tickets),
         "reopen": lambda: orders.reopen(tickets, args.epic),

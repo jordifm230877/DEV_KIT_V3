@@ -15,10 +15,10 @@ from collections.abc import Callable
 
 from dk import agents, forms, process
 from dk.jobs import BEHAVIOUR_TESTS
-from dk.process import CANCELLED
 from dk.tickets import Ticket, Tickets
 from dk.workspace import Workspace
 
+_GIVEN_UP = "cancelled; its unmerged work is thrown away on the next run"
 Write = Callable[[str, str], tuple[str, str]]  # the user's editor: a title and a text, changed
 
 
@@ -62,16 +62,16 @@ def _untested(tickets: Tickets, ticket: Ticket, drafts: Workspace) -> None:
     tickets.record(ticket.id, "no behaviour tests: decided when the ticket was sent on")
 
 
-def cancel(tickets: Tickets, number: int) -> None:
-    ticket = tickets.get(number)
-    position = process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+def leave(tickets: Tickets, number: int, pause: bool = False) -> None:
+    """Give the ticket up; or `pause` it, left with its work until it is sent on."""
+    ticket, change = tickets.get(number), process.pause if pause else process.cancel
     try:
-        cancelled = process.cancel(position)
+        left = change(process.Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped))
     except LookupError as error:
         raise LookupError(f"#{number} {error}") from None
-    tickets.move(number, *vars(cancelled).values())
-    tickets.record(number, "cancelled")
-    print(f"#{number} cancelled; its unmerged work is thrown away on the next run")
+    tickets.move(number, *vars(left).values())
+    tickets.record(number, process.PAUSED if pause else "cancelled")
+    print(f"#{number} " + (f"paused; `dk retry {number}` sends it on" if pause else _GIVEN_UP))
 
 
 def close(tickets: Tickets, epic: str, suite: bool) -> None:
@@ -123,7 +123,7 @@ def _answer(tickets: Tickets, number: int, accepted: bool, reason: str, tests: b
     """The user's word on a proposed ticket: it becomes a ticket like any other, or is given up.
     That it takes no behaviour tests is written before it becomes one: a run that is going
     takes the ticket up at once, as it then is."""
-    first = process.start(process.PROCESS) if accepted else process.Position(CANCELLED)
+    first = process.start(process.PROCESS) if accepted else process.Position(process.CANCELLED)
     if accepted and not tickets.get(number).epic:
         raise LookupError(
             f'#{number} is in no epic; put it in one first: dk move {number} --epic "NAME"'
@@ -289,7 +289,7 @@ def asked(tickets: Tickets, order: object) -> str:
         "approve": lambda: decide(tickets, number, True, "", said.get("tests") is not False),
         "reject": lambda: decide(tickets, number, False, note),
         "retry": lambda: retry(tickets, number, note),
-        "cancel": lambda: cancel(tickets, number),
+        "cancel": lambda: leave(tickets, number),
     }
     if do not in orders:
         raise LookupError(f"the page cannot ask for {do}")

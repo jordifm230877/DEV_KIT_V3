@@ -225,6 +225,11 @@ afterwards reads it.
 A ticket you no longer want: `dk cancel N`, or tell the Principal. Its unmerged work is
 thrown away.
 
+A ticket you want left for later, as when the coders are needed elsewhere: `dk pause N`. It
+shows as stopped, `paused by the user`, and nobody starts on it; its work is kept. A job an
+agent is doing on it is left to end and its result counts, but nothing follows it.
+`dk retry N` sends it on from where it was.
+
 An epic whose tickets are all finished: `dk close "EPIC NAME"`, or tell the Principal.
 Where the project has a whole test suite (`[checks.epic]`), closing writes a run of it,
 listed in the epic as `Close EPIC NAME` and carried out by `dk run`, `dk talk` or
@@ -397,6 +402,7 @@ dk run            # work on every unfinished ticket, then exit
 dk status
 dk show 1
 dk cancel 1       # give a ticket up
+dk pause 1        # leave it for later, with its work; dk retry 1 sends it on
 ```
 
 ## 9. Where things are

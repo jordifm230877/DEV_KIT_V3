@@ -99,6 +99,7 @@ dk show 1         # the ticket and everything that happened to it
 dk web            # the same in your browser: agents, epics, tickets and their behaviour tests, the documents under docs/ and the audit reports by day; with the key it prints, approve and answer there
 dk retry 1 --note "an answer"   # send a stopped ticket on again; --no-behaviour-tests if it stopped for them and needs none
 dk cancel 1       # give a ticket up; its unmerged work is thrown away
+dk pause 1        # leave a ticket for later with its work; `dk retry 1` sends it on
 dk epic "EPIC" --spec "Goal: ... Includes: ... Excludes: ..."   # say what an epic is for; without --spec, show it
 dk close "EPIC"   # close an epic once all its tickets are finished: the whole test suite (`[checks.epic]`) is run on the
                   # next run, the epic closes if it passes, and what fails becomes a ticket of the epic; a documenter then documents it
