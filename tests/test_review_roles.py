@@ -30,7 +30,7 @@ def test_the_verifier_judges_how_the_work_is_done_and_whether_it_works(
     for rule in QUALITY:
         assert rule in brief
     # coder, verifier and QA each ran a suite of 15 minutes the program had just run
-    assert "checks have passed on this code" in brief and "never its whole test suite" in brief
+    assert "have passed on this code" in brief and "never its whole test suite" in brief
     # one ran a component's tests the checks had just passed, then five times more on
     # altered code: half an hour of the project's only test container (terastation #176)
     again = "run none of their tests again, on this code or on a changed copy of it"
