@@ -10,6 +10,7 @@ from conftest import Project
 from test_component_checks import CODER, _check, ran
 from test_night import AUDITS as COUNTS
 from test_night import HELLO
+from test_settings_files import included
 
 COMPONENTS = '[components]\nauth = ["auth/**"]\nlogin = ["login/**", "shared/login/**"]\n'
 # A stand-in auditor that keeps what it was told beside its script.
@@ -23,14 +24,6 @@ TOLD = (
 
 def report(kind: str, component: str) -> str:
     return f"docs/audits/{date.today()}-{kind}-audit-of-{component}.md"
-
-
-def change(project: Project, name: str) -> None:
-    file = project.root / name
-    file.parent.mkdir(parents=True, exist_ok=True)
-    file.write_text("more\n")
-    project.git("add", "-A")
-    project.git("commit", "-qm", f"change {name}")
 
 
 def test_a_check_for_a_component_runs_when_the_component_changed(project: Project) -> None:
@@ -56,6 +49,13 @@ def test_a_check_for_a_component_nobody_named_is_refused(project: Project) -> No
     refused = project.refused("run")
 
     assert "check 'auth' is for the component 'auht'" in refused and "auth, login" in refused
+
+
+def test_the_paths_of_a_component_are_a_list(project: Project) -> None:
+    """One path written without brackets was read as a list of its letters."""
+    project.configure(coder=CODER, settings='[components]\nauth = "auth/**"\n')
+
+    assert "component 'auth' takes a list of paths" in project.refused("run")
 
 
 def test_one_component_is_audited_and_its_report_is_its_own(project: Project) -> None:
@@ -95,8 +95,8 @@ def test_at_night_each_component_is_audited_and_not_the_whole(project: Project) 
 def test_at_night_only_the_components_that_changed_are_audited_again(project: Project) -> None:
     project.configure(coder=HELLO, auditor=COUNTS, settings=COMPONENTS)
     project.dk("night")
-    change(project, "shared/login/new.txt")
-    change(project, "elsewhere/new.txt")
+    included(project, "shared/login/new.txt", "more\n")
+    included(project, "elsewhere/new.txt", "more\n")
 
     said = project.dk("night")
 
@@ -113,7 +113,7 @@ def test_a_project_may_have_the_whole_audited_at_night_as_well(project: Project)
 
     assert project.dk("status").count("done") == 9
     assert project.merged(f"docs/audits/{date.today()}-tests-audit.md") is not None
-    change(project, "elsewhere/new.txt")
+    included(project, "elsewhere/new.txt", "more\n")
     said = project.dk("night")
     assert said.count("nothing changed since its last report") == 6
     assert len(project.dk("status").splitlines()) == 12

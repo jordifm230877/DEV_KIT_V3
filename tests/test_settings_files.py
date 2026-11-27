@@ -49,6 +49,13 @@ def test_what_two_files_both_set_is_refused(project: Project) -> None:
     assert "conf/more.toml sets `checks.unit`, which is already set" in refused
 
 
+def test_a_check_written_once_as_a_list_and_once_as_a_table_is_refused(project: Project) -> None:
+    project.configure(coder=CODER, settings='include = ["conf/more.toml"]')
+    included(project, "conf/more.toml", '[checks.unit]\nrun = ["true"]\n')
+
+    assert "conf/more.toml sets `checks.unit`" in project.refused("run")
+
+
 def test_a_file_that_is_not_there_is_named(project: Project) -> None:
     project.configure(coder=CODER, settings='include = ["conf/gone.toml"]')
 

@@ -110,6 +110,13 @@ def _settings(project: Path) -> dict[str, Any]:
     return raw
 
 
+def _components(named: dict[str, Any]) -> dict[str, tuple[str, ...]]:
+    for name, paths in named.items():
+        if not isinstance(paths, list):  # a path alone would be read as its letters
+            raise TypeError(f"component '{name}' takes a list of paths")
+    return {name: tuple(paths) for name, paths in named.items()}
+
+
 def load(project: Path) -> Config:
     path = project / FILE
     if not path.exists():
@@ -123,7 +130,7 @@ def load(project: Path) -> Config:
         listed = raw.pop("checks", {})
         owns: dict[str, tuple[str, ...]] = {}
         runners = listed.pop("behaviour", {}) if _table(listed, "behaviour") else {}
-        parts = {name: tuple(paths) for name, paths in raw.pop("components", {}).items()}
+        parts = _components(raw.pop("components", {}))
         behaviour = _commands(runners, owns, parts, "behaviour ")
         suite = _commands(listed.pop("epic", {}) if _table(listed, "epic") else {}, {}, parts)
         audit = raw.pop("audit", {})
