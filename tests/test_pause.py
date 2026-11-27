@@ -121,3 +121,17 @@ def test_only_a_ticket_that_would_go_on_can_be_paused(project: Project) -> None:
     assert "#2 is already stopped" in project.refused("pause", "2")
     project.dk("cancel", "2")
     assert "#2 is already cancelled" in project.refused("pause", "2")
+
+
+def test_a_ticket_paused_before_anybody_worked_on_it_can_be_rewritten(project: Project) -> None:
+    told = "pathlib.Path('told.txt').write_text(prompt)\nprint('RESULT: done')"
+    project.configure(coder=told)
+    project.dk("add", "Later", "--spec", "Say hello.")
+    project.dk("pause", "1")
+
+    assert "#1 edited" in project.dk("edit", "1", "--spec", "Say good morning.")
+
+    assert "#1 stopped at specify  Later  paused by the user" in project.dk("status")
+    project.dk("retry", "1")
+    project.dk("run")
+    assert "Say good morning." in str(project.merged("told.txt"))

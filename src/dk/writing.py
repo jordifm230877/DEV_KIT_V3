@@ -83,7 +83,8 @@ def move(tickets: Tickets, number: int, epic: str, allowed: bool) -> None:
 def edit(tickets: Tickets, number: int, title: str, spec: str, write: Write | None) -> None:
     """Rewrite a ticket nobody has worked on; with no new words, in the user's editor (`write`)."""
     old = tickets.get(number)
-    if not process.untouched(old.step, old.attempts, old.stopped, old.worker):
+    position = process.Position(old.step, old.attempts, old.note, old.stopped)
+    if not process.untouched(position, old.worker):
         raise LookupError(f"#{number} has been worked on; to add to it: dk retry {number} --note")
     title, spec = _words(old, title, spec, write)
     spec = forms.formed(spec, forms.TICKET, agent()) if spec else old.spec

@@ -8,6 +8,7 @@ import sys
 import pytest
 from conftest import Project, Site
 from test_page_orders import order
+from test_talk import PRINCIPAL, notes
 
 HELLO = "pathlib.Path('greeting.txt').write_text('hello\\n')\nprint('RESULT: done')"
 TESTER = (
@@ -95,6 +96,20 @@ def test_a_ticket_whose_first_agent_asked_something_is_not_rewritten(project: Pr
     assert "#1 stopped at specify  Greet  question" in project.dk("status")
 
     assert "#1 has been worked on" in project.refused("edit", "1", "--spec", "Say good morning.")
+
+
+def test_a_ticket_its_first_agent_is_at_work_on_is_not_rewritten(project: Project) -> None:
+    slow = "import time; time.sleep(1)\n" + TESTER
+    talk = PRINCIPAL + (
+        "dk('add', 'Greet', '--spec', spec('Say hello.'), '--behaviour-tests')\n"
+        "wait_for('tester-1 started')\n"
+        "notes.write_text(str(dk('edit', '1', '--spec', spec('Say good morning.'))))\n"
+    )
+    project.configure(coder=HELLO, tester=slow, principal=talk)
+
+    project.dk("talk")
+
+    assert notes(project).startswith("(1,") and "Say good morning." not in project.dk("show", "1")
 
 
 def test_a_finished_ticket_is_not_rewritten(project: Project) -> None:
