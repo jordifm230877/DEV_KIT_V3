@@ -25,13 +25,14 @@ function keyed() {
 }
 keyed();
 
+const drawable = (child) => child !== null && child !== undefined && child !== false;
+
 function h(tag, attrs, ...children) {
   const node = document.createElement(tag);
   for (const [name, value] of Object.entries(attrs || {})) {
     if (value !== false && value !== null) node.setAttribute(name, value === true ? "" : value);
   }
-  for (const child of children.flat()) {
-    if (child === null || child === undefined || child === false) continue;
+  for (const child of children.flat().filter(drawable)) {
     node.append(child.nodeType ? child : document.createTextNode(String(child)));
   }
   return node;
@@ -75,18 +76,22 @@ function trusting(one) {
   return press;
 }
 
+// The line that opens and closes an epic: its name, what is so of it, and how far it is.
+function heading(one, total) {
+  return h("summary", {},
+    h("span", { class: "name" }, one.name || "Without an epic"),
+    one.closed && h("span", { class: "chip" }, "closed"),
+    one.trusted && h("span", { class: "chip" }, "trusted"),
+    key && one.name && !one.closed && trusting(one),
+    one.follows.map((name) => h("span", { class: "chip" }, `after ${name}`)),
+    h("span", { class: "count" }, `${one.done} of ${total} done`),
+    h("span", { class: "bar" }, h("i", { style: `width:${total ? (100 * one.done) / total : 0}%` })));
+}
+
 function epic(one) {
   const total = one.tickets.filter((ticket) => ticket.kind !== "cancelled").length;
   const open = folded.has(one.name) ? folded.get(one.name) : !one.closed && one.done < total;
-  const card = h("details", { class: "epic card", open },
-    h("summary", {},
-      h("span", { class: "name" }, one.name || "Without an epic"),
-      one.closed && h("span", { class: "chip" }, "closed"),
-      one.trusted && h("span", { class: "chip" }, "trusted"),
-      key && one.name && !one.closed && trusting(one),
-      one.follows.map((name) => h("span", { class: "chip" }, `after ${name}`)),
-      h("span", { class: "count" }, `${one.done} of ${total} done`),
-      h("span", { class: "bar" }, h("i", { style: `width:${total ? (100 * one.done) / total : 0}%` }))),
+  const card = h("details", { class: "epic card", open }, heading(one, total),
     one.description && h("div", { class: "about" }, prose(one.description)),
     one.tickets.map(row));
   card.addEventListener("toggle", () => folded.set(one.name, card.open));
@@ -151,32 +156,43 @@ const button = (words, kind, asked, sure) => {
   return one;
 };
 
+const hint = () => h("div", { class: "hint" },
+  "To decide from here, open this page once with the second address `dk web` printed ",
+  "when it started: the one that ends in your key.");
+
+// The answers a ticket that waits for the reader can be given, each with the reader's note.
+function answers(data) {
+  const ticket = data.id;
+  if (data.kind === "proposed") {
+    return [button("Accept", "main", { do: "approve", ticket }),
+      button("Accept, no behaviour tests", "", { do: "approve", ticket, tests: false }),
+      button("Turn down", "", { do: "reject", ticket })];
+  }
+  if (data.approval) {
+    return [button("Approve the behaviour tests", "main", { do: "approve", ticket }),
+      button("Send them back", "", { do: "reject", ticket })];
+  }
+  return data.kind === "stopped"
+    ? [button("Send it on with this answer", "main", { do: "retry", ticket })] : [];
+}
+
+// The answer to what the reader last asked of this ticket, if it was of this one.
+const heard = (ticket) => told && told.ticket === ticket
+  && h("div", { class: told.bad ? "told bad" : "told" }, told.text);
+
 // What the reader can decide about this ticket now, as the commands of the same names would.
 function word(data) {
   const ticket = data.id;
   const over = ["done", "cancelled"].includes(data.kind);
-  const said = told && told.ticket === ticket
-    && h("div", { class: told.bad ? "told bad" : "told" }, told.text);
+  const said = heard(ticket);
   if (over) return said ? [h("h2", {}, "Your word"), h("div", { class: "word card" }, said)] : [];
-  if (!key) {
-    return [h("h2", {}, "Your word"), h("div", { class: "word card" }, said, h("div", { class: "hint" },
-      "To decide from here, open this page once with the second address `dk web` printed ",
-      "when it started: the one that ends in your key."))];
-  }
+  if (!key) return [h("h2", {}, "Your word"), h("div", { class: "word card" }, said, hint())];
   const note = h("textarea", { rows: 3, placeholder: "A note for the agents (needed to send back)" });
   note.value = notes.get(ticket) || "";
   note.addEventListener("input", () => notes.set(ticket, note.value));
   const give = button("Give up this ticket", "quiet", { do: "cancel", ticket },
     `Give up #${ticket}? Its unmerged work is thrown away.`);
-  const can = data.kind === "proposed" ? [
-    button("Accept", "main", { do: "approve", ticket }),
-    button("Accept, no behaviour tests", "", { do: "approve", ticket, tests: false }),
-    button("Turn down", "", { do: "reject", ticket }),
-  ] : data.approval ? [
-    button("Approve the behaviour tests", "main", { do: "approve", ticket }),
-    button("Send them back", "", { do: "reject", ticket }),
-  ] : data.kind === "stopped" ? [button("Send it on with this answer", "main", { do: "retry", ticket })]
-    : [];
+  const can = answers(data);
   // Only a ticket that would go on: it is left with its work until it is sent on from here.
   const pause = ["ticket", "held"].includes(data.kind)
     && button("Pause this ticket", "quiet", { do: "pause", ticket });
@@ -213,17 +229,22 @@ function wanted(data) {
   return h("div", { class: "word card" }, title, spec, h("div", { class: "buttons" }, save, cancel));
 }
 
+// The line under a ticket's title: where it is and what holds it.
+function facts(data) {
+  return h("div", { class: "meta" },
+    !["done", "cancelled", "proposed"].includes(data.kind) && h("span", {}, `at ${data.step}`),
+    data.attempts > 0 && h("span", {}, `${data.attempts} attempt${data.attempts > 1 ? "s" : ""}`),
+    !data.behaviour && h("span", {}, "no behaviour tests"),
+    data.worker && h("span", {}, `${data.worker} since ${data.since.slice(11)}`),
+    data.follows.length > 0 && h("span", {}, "after ", listed(data.follows)),
+    data.waits.length > 0 && h("span", {}, "waits for ", listed(data.waits)));
+}
+
 function ticket(data) {
   where.textContent = data.epic || "Without an epic";
   return [
     h("div", { class: "title-line" }, h("h1", {}, `#${data.id} ${data.title}`), state(data)),
-    h("div", { class: "meta" },
-      !["done", "cancelled", "proposed"].includes(data.kind) && h("span", {}, `at ${data.step}`),
-      data.attempts > 0 && h("span", {}, `${data.attempts} attempt${data.attempts > 1 ? "s" : ""}`),
-      !data.behaviour && h("span", {}, "no behaviour tests"),
-      data.worker && h("span", {}, `${data.worker} since ${data.since.slice(11)}`),
-      data.follows.length > 0 && h("span", {}, "after ", listed(data.follows)),
-      data.waits.length > 0 && h("span", {}, "waits for ", listed(data.waits))),
+    facts(data),
     data.note && [h("h2", {}, "Why it stopped"), h("div", { class: "say card" }, data.note)],
     h("h2", {}, "What is wanted"),
     wanted(data),
