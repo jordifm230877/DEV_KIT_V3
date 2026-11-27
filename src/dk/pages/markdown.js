@@ -35,19 +35,22 @@ function target(href, from) {
   return { href: `#/doc/${parts.join("/")}` };
 }
 
+// What one find of INLINE is drawn as.
+function marked([, code, bold, starred, underlined, words, href], from) {
+  if (code !== undefined) return [el("code", [code])];
+  if (bold !== undefined) return [el("strong", inline(bold, from))];
+  if (href === undefined) return [el("em", inline(starred ?? underlined, from))];
+  const leads = target(href, from);
+  return leads ? [el("a", inline(words, from), leads)] : inline(words, from);
+}
+
 function inline(text, from) {
   const out = [];
   let at = 0;
   for (const found of text.matchAll(INLINE)) {
-    const [whole, code, bold, starred, underlined, words, href] = found;
     if (found.index > at) out.push(text.slice(at, found.index));
-    at = found.index + whole.length;
-    const leads = href !== undefined && target(href, from);
-    if (code !== undefined) out.push(el("code", [code]));
-    else if (bold !== undefined) out.push(el("strong", inline(bold, from)));
-    else if (href === undefined) out.push(el("em", inline(starred ?? underlined, from)));
-    else if (leads) out.push(el("a", inline(words, from), leads));
-    else out.push(...inline(words, from));
+    at = found.index + found[0].length;
+    out.push(...marked(found, from));
   }
   if (at < text.length) out.push(text.slice(at));
   return out;
@@ -64,78 +67,88 @@ function table(lines, at, from) {
   return [el("table", [el("thead", [row(lines[at], "th")]), el("tbody", body)]), end];
 }
 
+// How far the first line with words is from `at`; -1 when there is none.
+const ahead = (lines, at) => lines.slice(at).findIndex((line) => !blank(line));
+
+// The lines from `at` on that are written deeper than `indent`, each without its lead up to
+// `depth`, and where they end.
+function deeper(lines, at, indent, depth) {
+  const under = [];
+  let next = ahead(lines, at);
+  while (next !== -1 && lead(lines[at + next]) > indent) {
+    under.push(...lines.slice(at, at + next + 1).map((line) => line.slice(Math.min(lead(line), depth))));
+    at += next + 1;
+    next = ahead(lines, at);
+  }
+  return [under, at];
+}
+
+function item(inside, from) {
+  const [head, ...rest] = blocks(inside, from);
+  const alone = head && head.tag === "p" && !rest.some((one) => one.tag === "p");
+  return el("li", alone ? [...head.children, ...rest] : [head, ...rest].filter(Boolean));
+}
+
 // A list is its items at one depth; what is written deeper under an item belongs to it,
 // across empty lines too, and is read as a document of its own.
 function list(lines, at, from) {
   const [, indent, first] = ITEM.exec(lines[at]);
   const items = [];
   const mine = (line) => {
-    const item = line === undefined ? null : ITEM.exec(line);
-    return item && item[1].length === indent.length ? item : null;
+    const found = line === undefined ? null : ITEM.exec(line);
+    return found && found[1].length === indent.length ? found : null;
   };
   while (mine(lines[at])) {
     const [, , mark, words] = mine(lines[at]);
-    const inside = [words];
-    const depth = indent.length + mark.length + 1;
-    at += 1;
-    while (at < lines.length) {
-      const next = lines.slice(at).findIndex((line) => !blank(line));
-      if (next === -1 || lead(lines[at + next]) <= indent.length) {
-        if (next > 0 && mine(lines[at + next])) at += next;
-        break;
-      }
-      inside.push(...lines.slice(at, at + next + 1).map((line) => line.slice(Math.min(lead(line), depth))));
-      at += next + 1;
-    }
-    const [head, ...rest] = blocks(inside, from);
-    const alone = head && head.tag === "p" && !rest.some((one) => one.tag === "p");
-    items.push(el("li", alone ? [...head.children, ...rest] : [head, ...rest].filter(Boolean)));
+    const [under, end] = deeper(lines, at + 1, indent.length, indent.length + mark.length + 1);
+    items.push(item([words, ...under], from));
+    const next = ahead(lines, end);
+    at = next > 0 && mine(lines[end + next]) ? end + next : end; // its next item, past empty lines
   }
   return [el(/\d/.test(first) ? "ol" : "ul", items), at];
 }
 
-const begins = (lines, at) => [FENCE, HEADING, RULE, QUOTE, ITEM].some((shape) => shape.test(lines[at]))
-  || (lines[at].includes("|") && DIVIDER.test(lines[at + 1] ?? ""));
+function fenced(lines, at) {
+  const close = lines.findIndex((other, where) => where > at && FENCE.test(other));
+  const end = close === -1 ? lines.length : close;
+  return [el("pre", [el("code", [lines.slice(at + 1, end).join("\n")])]), end + 1];
+}
+
+function headed(lines, at, from) {
+  const [, marks, words] = HEADING.exec(lines[at]);
+  return [el(`h${marks.length}`, inline(words, from)), at + 1];
+}
+
+function quoted(lines, at, from) {
+  const end = lines.findIndex((other, where) => where > at && !QUOTE.test(other));
+  const said = lines.slice(at, end === -1 ? lines.length : end);
+  return [el("blockquote", blocks(said.map((one) => one.replace(QUOTE, "")), from)), at + said.length];
+}
+
+function paragraph(lines, at, from) {
+  let end = at + 1;
+  while (end < lines.length && !blank(lines[end]) && reader(lines, end) === paragraph) end += 1;
+  const words = lines.slice(at, end).map((one) => one.trim()).join(" ");
+  return [el("p", inline(words, from)), end];
+}
+
+const SHAPES = [[FENCE, fenced], [HEADING, headed], [RULE, (lines, at) => [el("hr"), at + 1]],
+  [QUOTE, quoted], [ITEM, list]];
+
+// What reads the block that starts at this line, giving what it makes and where it ends.
+function reader(lines, at) {
+  const shape = SHAPES.find(([looks]) => looks.test(lines[at]));
+  if (shape) return shape[1];
+  return lines[at].includes("|") && DIVIDER.test(lines[at + 1] ?? "") ? table : paragraph;
+}
 
 function blocks(lines, from) {
   const out = [];
   let at = 0;
   while (at < lines.length) {
-    const line = lines[at];
-    const heading = HEADING.exec(line);
-    if (blank(line)) {
-      at += 1;
-    } else if (FENCE.test(line)) {
-      const close = lines.findIndex((other, where) => where > at && FENCE.test(other));
-      const end = close === -1 ? lines.length : close;
-      out.push(el("pre", [el("code", [lines.slice(at + 1, end).join("\n")])]));
-      at = end + 1;
-    } else if (heading) {
-      out.push(el(`h${heading[1].length}`, inline(heading[2], from)));
-      at += 1;
-    } else if (RULE.test(line)) {
-      out.push(el("hr"));
-      at += 1;
-    } else if (QUOTE.test(line)) {
-      const end = lines.findIndex((other, where) => where > at && !QUOTE.test(other));
-      const quoted = lines.slice(at, end === -1 ? lines.length : end);
-      out.push(el("blockquote", blocks(quoted.map((one) => one.replace(QUOTE, "")), from)));
-      at += quoted.length;
-    } else if (ITEM.test(line)) {
-      const [made, end] = list(lines, at, from);
-      out.push(made);
-      at = end;
-    } else if (line.includes("|") && DIVIDER.test(lines[at + 1] ?? "")) {
-      const [made, end] = table(lines, at, from);
-      out.push(made);
-      at = end;
-    } else {
-      let end = at + 1;
-      while (end < lines.length && !blank(lines[end]) && !begins(lines, end)) end += 1;
-      const words = lines.slice(at, end).map((one) => one.trim()).join(" ");
-      out.push(el("p", inline(words, from)));
-      at = end;
-    }
+    const [made, end] = blank(lines[at]) ? [null, at + 1] : reader(lines, at)(lines, at, from);
+    if (made) out.push(made);
+    at = end;
   }
   return out;
 }

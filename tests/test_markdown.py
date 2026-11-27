@@ -111,7 +111,15 @@ def test_a_link_to_the_web_opens_apart() -> None:
 
 @pytest.mark.parametrize(
     "href",
-    ["javascript:alert(1)", "JavaScript:alert(1)", "data:text/html,x", "../src/main.rs", "/etc"],
+    [
+        "javascript:alert(1)",
+        "JavaScript:alert(1)",
+        "data:text/html,x",
+        "../src/main.rs",
+        "/etc",
+        "javascript:a.md",
+        "/etc/a.md",
+    ],
 )
 def test_a_link_the_page_cannot_follow_is_left_as_words(href: str) -> None:
     assert shown(f"[here]({href})") == "<p>here</p>"
@@ -133,3 +141,21 @@ def test_names_and_sums_are_not_emphasis() -> None:
 
 def test_an_empty_document_draws_nothing() -> None:
     assert shown("") == "" and shown("\n\n  \n") == ""
+
+
+def test_what_the_document_ends_in_is_drawn_whole() -> None:
+    assert shown("Run:\n```\na\nb") == "<p>Run:</p><pre><code>a\nb</code></pre>"
+    assert shown("> a\n> b") == "<blockquote><p>a b</p></blockquote>"
+    assert shown("| A |\n| - |\n| b |") == (
+        "<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>b</td></tr></tbody></table>"
+    )
+
+
+def test_code_under_a_list_item_keeps_its_own_indent() -> None:
+    assert shown("- Run:\n\n  ```\n    deep\n  ```\n") == (
+        "<ul><li>Run:<pre><code>  deep</code></pre></li></ul>"
+    )
+
+
+def test_a_bar_or_a_line_of_dashes_alone_makes_no_table() -> None:
+    assert shown("a | b\n\nTitle\n---\n") == "<p>a | b</p><p>Title</p><hr></hr>"
