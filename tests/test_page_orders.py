@@ -126,7 +126,7 @@ def test_a_ticket_is_paused_from_the_page_and_sent_on_again(project: Project, si
 
     assert status == 200 and "#1 paused" in answer["said"]
     assert "#1 stopped at specify  Greet  paused by the user" in project.dk("status")
-    assert 'do: "pause"' in site("/page.js")
+    assert 'do: "pause"' in site("/ticket.js")
 
     order(project, do="retry", ticket=1)
     project.dk("run")

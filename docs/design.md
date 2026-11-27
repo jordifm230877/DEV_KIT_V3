@@ -82,7 +82,7 @@ question for the user. It never needs to know what happens next.
 
 - Pieces do not import each other; only `director` and `cli` know them all. `child` is
   groundwork any piece may use.
-- No piece is longer than 300 lines.
+- No piece is longer than 300 lines, and neither is a file of the page in `pages/`.
 - No runtime dependencies beyond Python, Git, Herdr and the agent programs.
 - Protection is added only for problems that have actually happened.
 - A lost or failed job is thrown away and redone, never resumed mid-way.

@@ -158,7 +158,7 @@ def test_a_ticket_is_rewritten_from_the_page(project: Project, site: Site) -> No
     after = site("/api/ticket/1")
     assert (before, status, answer) == (True, 200, {"said": "#1 edited"})
     assert (after["title"], after["spec"]) == ("Bow", "Bow low.")
-    assert 'do: "edit"' in site("/page.js")
+    assert 'do: "edit"' in site("/ticket.js")
 
 
 def test_the_page_says_which_tickets_cannot_be_rewritten(project: Project, site: Site) -> None:

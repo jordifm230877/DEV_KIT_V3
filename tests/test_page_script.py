@@ -4,7 +4,6 @@ a stand-in for the browser that only keeps what it is asked to draw."""
 
 from __future__ import annotations
 
-import html
 import json
 import shutil
 import subprocess
@@ -12,12 +11,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from test_markdown import _drawn
 
 PAGES = Path(__file__).parent.parent / "src" / "dk" / "pages"
 BROWSER = r"""
 const fs = require("fs"), vm = require("vm");
 const asked = JSON.parse(fs.readFileSync(0, "utf8"));
-const out = { orders: [], confirms: [], alerts: [] };
+const out = { orders: [], keys: [], confirms: [], alerts: [] };
 const text = (t) => ({ text: String(t), nodeType: 3 });
 const node = (tag) => ({ tag, attrs: {}, children: [], heard: {}, nodeType: 1, value: "",
   setAttribute(name, value) { this.attrs[name] = value; },
@@ -26,21 +26,29 @@ const node = (tag) => ({ tag, attrs: {}, children: [], heard: {}, nodeType: 1, v
   addEventListener(name, f) { (this.heard[name] ||= []).push(f); },
   set textContent(t) { this.children = [text(t)]; },
   set className(name) { this.attrs.class = name; } });
-const ids = {}, kept = new Map(asked.key ? [["key", asked.key]] : []);
+const ids = {}, kept = new Map(asked.key ? [["key", asked.key]] : []), windows = {};
+const storage = (f) => (...all) => {
+  if (asked.private) throw new Error("private");
+  return f(...all);
+};
 const location = { hash: asked.hash || "", pathname: "/" };
 const browser = { location, console, markdown: undefined,
   document: { getElementById: (id) => (ids[id] ||= node(id)), createElement: node,
     createTextNode: text },
   history: { replaceState() { location.hash = ""; } },
-  localStorage: { getItem: (k) => kept.get(k) ?? null, setItem: (k, v) => kept.set(k, v) },
-  setInterval() {}, addEventListener() {}, scrollTo() {},
+  localStorage: { getItem: storage((k) => kept.get(k) ?? null),
+    setItem: storage((k, v) => kept.set(k, v)) },
+  setInterval() {}, scrollTo() {},
+  addEventListener(name, f) { (windows[name] ||= []).push(f); },
   confirm: (words) => (out.confirms.push(words), asked.sure !== false),
   alert: (words) => out.alerts.push(words),
   fetch: async (url, sent) => {
+    if (asked.down) throw new Error("down");
     if (sent) {
       out.orders.push(JSON.parse(sent.body));
+      out.keys.push(sent.headers["X-Key"]);
       const ok = !asked.refused;
-      return { ok, status: ok ? 200 : 400,
+      return { ok, status: ok ? 200 : asked.status || 400,
         json: async () => (ok ? { said: "as you say" } : { error: asked.refused }) };
     }
     const data = asked.answers[url];
@@ -57,16 +65,20 @@ const kept_as = (one) => (one.nodeType === 3 ? one.text
     children: one.children.map(kept_as) });
 (async () => {
   vm.createContext(browser);
-  for (const file of ["markdown.js", "page.js"]) {
+  const index = fs.readFileSync(`${process.argv[1]}/index.html`, "utf8");
+  for (const [, file] of index.matchAll(/<script src="([^"]+)"/g)) {
     vm.runInContext(fs.readFileSync(`${process.argv[1]}/${file}`, "utf8"), browser);
   }
   await settle();
   for (const [what, value] of asked.does || []) {
     const within = all(ids.app);
-    if (what === "write") {
-      const box = within.find((one) => one.tag === "textarea");
+    if (what === "write" || what === "title") {
+      const box = within.find((one) => one.tag === (what === "write" ? "textarea" : "input"));
       box.value = value;
       box.heard.input.forEach((f) => f());
+    } else if (what === "go") {
+      location.hash = value;
+      windows.hashchange.forEach((f) => f());
     } else {
       const pressed = within.find((one) => one.tag === "button" && words(one) === value);
       if (!pressed) throw new Error(`no button says: ${value}`);
@@ -75,7 +87,7 @@ const kept_as = (one) => (one.nodeType === 3 ? one.text
     await settle();
   }
   console.log(JSON.stringify({ ...out, app: ids.app.children.map(kept_as),
-    where: words(ids.where) }));
+    where: words(ids.where), fresh: `${ids.fresh.attrs.class}: ${words(ids.fresh)}` }));
 })();
 """
 pytestmark = pytest.mark.skipif(
@@ -113,13 +125,6 @@ EPIC = {
         TICKET,
     ],
 }
-
-
-def _drawn(node: Any) -> str:
-    if isinstance(node, str):
-        return html.escape(node, quote=False)
-    attrs = "".join(f' {name}="{value}"' for name, value in sorted(node["attrs"].items()))
-    return f"<{node['tag']}{attrs}>{''.join(map(_drawn, node['children']))}</{node['tag']}>"
 
 
 def page(hash_: str, answers: dict[str, object], **more: object) -> dict[str, Any]:
@@ -183,6 +188,7 @@ def test_a_stopped_ticket_shows_why_and_its_behaviour_tests() -> None:
     assert "<h2>Behaviour tests waiting for your approval</h2>" in shown
     assert '<div class="path">features/greet.feature</div><pre class="gherkin">' in shown
     assert '<div class="head scenario">  Scenario: Hello</div>' in shown
+    assert '<div class="head">Feature: Greeting</div>' in shown
     assert '<div>    <span class="step">Given</span> a guest</div>' in shown
 
 
@@ -341,3 +347,118 @@ def test_trusting_an_epic_is_asked_first_and_sent() -> None:
     assert shown["orders"] == [{"do": "trust", "epic": "Manners", "given": True}]
     assert shown["confirms"][0].startswith("Trust Manners?") and shown["alerts"] == []
     assert page("", board, key="k", does=[["press", "Trust"]], sure=False)["orders"] == []
+
+
+def test_behaviour_tests_are_drawn_by_what_each_line_is() -> None:
+    feature = "@slow\n# why\nFeature: A\n  Scenario Outline: B\n    When <x>\n    | x |\n  free\n"
+    shown = ticket(tests=[{"name": "a.feature", "text": feature}])["app"]
+
+    assert '<div class="note">@slow</div><div class="note"># why</div>' in shown
+    assert '<div class="head scenario">  Scenario Outline: B</div>' in shown
+    assert (
+        '<span class="step">When</span> &lt;x&gt;</div><div class="cells">    | x |</div>' in shown
+    )
+    assert "<div>  free</div></pre>" in shown
+
+
+def test_only_a_ticket_nobody_worked_on_offers_to_be_rewritten() -> None:
+    fresh = {"api/ticket/7": {**TICKET, "editable": True}}
+
+    assert "Edit" in buttons(ticket(editable=True)["app"])
+    assert "<div>Say hello.</div></div><h2>Behaviour tests</h2>" in ticket()["app"]
+    assert "Edit" not in buttons(page("#/ticket/7", fresh)["app"])
+
+
+def test_a_ticket_is_rewritten_in_place_and_sent() -> None:
+    fresh = {"api/ticket/7": {**TICKET, "editable": True}}
+    does = [["press", "Edit"]]
+    writes = [["title", " Greet all "], ["write", "Say hello to all.\n"], ["press", "Save"]]
+
+    form = page("#/ticket/7", fresh, key="k", does=does)["app"]
+    saved = page("#/ticket/7", fresh, key="k", does=does + writes)
+
+    assert '<input type="text" value="Greet"></input>' in form
+    assert 'value="Wanted:\nSay hello."></textarea>' in form
+    assert buttons(form)[:2] == ["Save", "Cancel"] and "Edit" not in buttons(form)
+    assert saved["orders"] == [
+        {"do": "edit", "ticket": 7, "title": "Greet all", "spec": "Say hello to all."}
+    ]
+    assert "Edit" in buttons(saved["app"]) and '<div class="told">as you say</div>' in saved["app"]
+
+
+def test_a_rewriting_that_was_refused_or_left_is_not_lost_or_sent() -> None:
+    fresh = {"api/ticket/7": {**TICKET, "editable": True}}
+    writes = [["press", "Edit"], ["write", "Other."]]
+
+    refused = page(
+        "#/ticket/7", fresh, key="k", does=[*writes, ["press", "Save"]], refused="taken"
+    )["app"]
+    left = page("#/ticket/7", fresh, key="k", does=[*writes, ["press", "Cancel"]])
+
+    assert 'value="Other."></textarea>' in refused and '<div class="told bad">taken' in refused
+    assert left["orders"] == [] and "Other." not in left["app"]
+    assert '<div class="label">Wanted:</div>' in left["app"]
+
+
+def test_the_documents_are_listed_by_their_folder() -> None:
+    files = ["docs/design.md", "docs/howto/greet.md", "docs/howto/deep/wave.md"]
+    shown = page("#/docs", {"api/docs": {"files": files}})
+    none = page("#/docs", {"api/docs": {"files": []}})
+
+    assert shown["where"] == "3 documents" and none["where"] == "0 documents"
+    assert (
+        '<h2>docs</h2><div class="card">'
+        '<a class="row plain" href="#/doc/docs/design.md">design</a></div>'
+        '<h2>howto</h2><div class="card">'
+        '<a class="row plain" href="#/doc/docs/howto/greet.md">greet</a></div>'
+        "<h2>howto/deep</h2>"
+    ) in shown["app"]
+    assert none["app"] == '<div class="empty card">This project has no documents under docs/.</div>'
+
+
+def test_the_audit_reports_are_listed_by_their_day() -> None:
+    one = {"path": "docs/audits/2026-11-27-tests-audit.md", "name": "tests audit"}
+    days = [{"day": "2026-11-27", "reports": [one, one]}, {"day": "2025-01-02", "reports": [one]}]
+    shown = page("#/audits", {"api/audits": {"days": days}})
+    none = page("#/audits", {"api/audits": {"days": []}})
+
+    assert shown["where"] == "3 audit reports"
+    first, second = shown["app"].split("<h2>")[1:]
+    assert "2026" in first.split("</h2>")[0] and "27" in first.split("</h2>")[0]
+    assert "2025" in second.split("</h2>")[0]
+    assert first.count('href="#/doc/docs/audits/2026-11-27-tests-audit.md">tests audit</a>') == 2
+    assert none["app"] == '<div class="empty card">No audit has left a report yet.</div>'
+
+
+def test_a_document_is_drawn_from_its_markdown() -> None:
+    answers = {"api/doc/docs/howto/a.md": {"path": "docs/howto/a.md", "text": "# A\n\n[B](b.md)"}}
+    shown = page("#/doc/docs/howto/a.md", answers)
+
+    assert shown["where"] == "docs/howto/a.md" and shown["fresh"].startswith(": up to date at ")
+    assert shown["app"] == (
+        '<article class="doc card"><h1>A</h1><p><a href="#/doc/docs/howto/b.md">B</a></p></article>'
+    )
+
+
+def test_what_dk_web_cannot_give_is_said() -> None:
+    assert page("#/ticket/9", {})["app"] == '<div class="empty card">no such</div>'
+    assert page("#/ticket/7", {}, down=True)["fresh"] == "lost: dk web is not answering"
+
+
+def test_a_key_that_is_refused_is_forgotten() -> None:
+    does = [["press", "Pause this ticket"]]
+    shown = page(
+        "#/ticket/7", {"api/ticket/7": TICKET}, key="k", does=does, refused="no", status=403
+    )["app"]
+
+    assert buttons(shown) == [] and "the one that ends in your key" in shown
+
+
+def test_the_key_can_be_given_to_a_page_already_open_or_one_that_keeps_nothing() -> None:
+    board = {"api/board": {"epics": [EPIC], "agents": []}}
+
+    does = [["go", "#secret"], ["press", "Trust"]]
+    later = page("#/docs", {**board, "api/docs": {"files": []}}, does=does)
+    private = page("#secret", board, private=True)
+
+    assert later["keys"] == ["secret"] and "Trust" in buttons(private["app"])

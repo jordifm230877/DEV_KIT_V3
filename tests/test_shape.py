@@ -28,9 +28,8 @@ def _pieces() -> list[Path]:
 
 
 def test_every_piece_can_be_read_in_one_sitting() -> None:
-    long = {
-        path.name: n for path in _pieces() if (n := len(path.read_text().splitlines())) > MAX_LINES
-    }
+    files = [*_pieces(), *sorted(SOURCE.glob("pages/*"))]  # the page's files count too
+    long = {path.name: n for path in files if (n := len(path.read_text().splitlines())) > MAX_LINES}
 
     assert not long, f"split these pieces (limit {MAX_LINES} lines): {long}"
 
