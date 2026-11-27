@@ -14,13 +14,12 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from queue import Empty, Queue
 
-from dk import briefs, checks, principal
+from dk import briefs, principal
 from dk.config import Agent, Config, ConfigError
 from dk.jobs import PRINCIPAL, Jobs, label
 from dk.process import (
     CANCELLED,
     PROCESS,
-    Failed,
     Outcome,
     Passed,
     Position,
@@ -34,9 +33,9 @@ from dk.process import (
     of,
     pause,
     retry,
-    start,
 )
 from dk.tickets import Ticket, Tickets
+from dk.unaided import Unaided
 from dk.workspace import Workspace
 
 _LOOK_EVERY = 0.05
@@ -44,6 +43,10 @@ _LOOK_EVERY = 0.05
 
 def _position(ticket: Ticket) -> Position:
     return Position(ticket.step, ticket.attempts, ticket.note, ticket.stopped)
+
+
+def _at(name: str) -> Step:
+    return next(step for step in of(name) if step.name == name)
 
 
 @dataclass(frozen=True)
@@ -113,7 +116,7 @@ class Director:
     def _reserve(self, ticket: Ticket) -> tuple[bool, Agent | None]:
         """Whether the ticket's step can start now, and the agent taken for it if it needs
         one. Taken here, in the order of the tickets, so that the earliest ticket goes first."""
-        step = next(step for step in of(ticket.step) if step.name == ticket.step)
+        step = _at(ticket.step)
         skipped = step.behaviour and not ticket.behaviour  # no agent is taken for it
         if step.kind not in ("work", "review") or step.role not in self._free or skipped:
             return True, None
@@ -126,23 +129,29 @@ class Director:
         position = _position(ticket)
         helped = False  # the Principal answers a stop once; after that it is the user's
         while not position.final and not self.stop.is_set():
-            steps = of(position.step)
-            step = next(step for step in steps if step.name == position.step)
+            step = _at(position.step)
             outcome, agent = self._perform(step, ticket, position, agent), None
             now = self.tickets.get(ticket.id)
             if self.stop.is_set() or now.step == CANCELLED:
                 return  # work cut short or no longer wanted is thrown away, not judged
-            position = advance(steps, position, outcome, self.config.max_attempts)
-            if now.stopped and not position.final:  # paused meanwhile: the job's result is kept
-                position = pause(position)
-            self.tickets.move(ticket.id, *vars(position).values())
-            if not isinstance(outcome, Passed):
-                self.tickets.record(ticket.id, f"{step.name}: {outcome.reason}")
-            self.say(f"#{ticket.id} {step.name} {type(outcome).__name__.lower()}")
+            position = advance(of(step.name), position, outcome, self.config.max_attempts)
+            position = self._settle(step, ticket.id, position, outcome, now.stopped)
             if isinstance(outcome, Waiting) or now.stopped:
                 return
             if position.stopped:
                 position, helped = self._halt(step, ticket, position, helped), True
+
+    def _settle(
+        self, step: Step, number: int, position: Position, outcome: Outcome, paused: bool
+    ) -> Position:
+        """Write down where a step left the ticket. Paused meanwhile, the job's result is kept."""
+        if paused and not position.final:
+            position = pause(position)
+        self.tickets.move(number, *vars(position).values())
+        if not isinstance(outcome, Passed):
+            self.tickets.record(number, f"{step.name}: {outcome.reason}")
+        self.say(f"#{number} {step.name} {type(outcome).__name__.lower()}")
+        return position
 
     def _halt(self, step: Step, ticket: Ticket, position: Position, helped: bool) -> Position:
         """Where a ticket that stopped is left: sent on by the Principal, or with the user."""
@@ -182,13 +191,18 @@ class Director:
         self, step: Step, ticket: Ticket, position: Position, agent: Agent | None
     ) -> Outcome:
         logs = self.logs / f"ticket-{ticket.id}" / f"attempt-{position.attempts + 1}"
-        if step.kind == "checks":
-            return self._check(ticket, logs)
-        if step.kind == "suite":
-            return self._suite(ticket, logs)
-        if step.kind == "merge":
-            with self._merging:
-                return self._merge(ticket, logs)
+        work = Unaided(
+            self.config, self.tickets, self.workspace, self.stop, self.closed, self._merging
+        )
+        own = {"checks": work.check, "suite": work.suite, "merge": work.merge}
+        if step.kind in own:  # the program's own work, for which no agent is taken
+            return own[step.kind](ticket, logs)
+        return self._assign(step, ticket, position, agent)
+
+    def _assign(
+        self, step: Step, ticket: Ticket, position: Position, agent: Agent | None
+    ) -> Outcome:
+        """Have the step done by an agent of its role, or by the user."""
         if step.behaviour and not self.tickets.get(ticket.id).behaviour:
             return Skipped()
         if step.role not in self._free:
@@ -219,73 +233,6 @@ class Director:
         said = f"behaviour tests approved by a verifier alone: the user trusts {ticket.epic}"
         self.tickets.record(ticket.id, said)
         return Passed()
-
-    def _check(self, ticket: Ticket, logs: Path) -> Outcome:
-        mine = sorted(self.tickets.get(ticket.id).protected)
-        settings, changed = self.config, self.workspace.changed(ticket.id)
-        every, said = checks.chosen(
-            settings.checks, settings.behaviour, settings.owns, changed, mine
-        )
-        if said:
-            self.tickets.record(ticket.id, said)
-        failure = self._checked(ticket, every, logs)
-        return Failed(failure) if failure else Passed()
-
-    def _suite(self, ticket: Ticket, logs: Path) -> Outcome:
-        """Run the whole test suite on the project as it is now; the epic closes if it
-        passes, and what fails becomes a ticket of the epic that this run then waits for.
-
-        The copy of a run that failed is kept until the next one, for whoever fixes it: a
-        real suite named only a log in its copy, which had been thrown away."""
-        self.workspace.discard(ticket.id)
-        failure = None
-        try:
-            failure = self._checked(ticket, self.config.suite, logs)
-        finally:
-            if not failure:
-                self.workspace.discard(ticket.id)
-        if self.stop.is_set() or self.tickets.get(ticket.id).step == CANCELLED:
-            return Waiting("cut short or given up")  # its result is not judged
-        if not failure:
-            self.closed(ticket.epic)
-            return Passed()
-        spec = (
-            f"Wanted:\nThe project's whole test suite passes. Run when closing {ticket.epic}, "
-            f"it failed.\n\nAcceptance criteria:\n- What fails below passes.\n\n{failure}\n\n"
-            f"The whole output is under {logs}.\nWhat the suite wrote in its copy of the "
-            f"project is still in {self.workspace.prepare(ticket.id)} until it is run again."
-        )
-        first = start(PROCESS).step
-        fix = self.tickets.add(
-            "Make the whole test suite pass", spec, first, ticket.epic, [], False
-        )
-        self.tickets.record(fix, "no behaviour tests: written by the program for a failing suite")
-        self.tickets.follow(ticket.id, fix)
-        return Waiting(f"the whole test suite failed: #{fix} written")
-
-    def _checked(self, ticket: Ticket, every: dict[str, tuple[str, ...]], logs: Path) -> str | None:
-        """Run these checks in the ticket's copy. Returns None, or what failed."""
-        copy = self.workspace.prepare(ticket.id)
-        seconds = self.config.check_minutes * 60
-
-        def starting(name: str) -> None:  # the board shows it as it shows a working agent
-            self.tickets.assign(ticket.id, f"check {name}")
-
-        try:
-            return checks.run(every, copy, logs, seconds, self.stop, starting)
-        finally:
-            self.tickets.assign(ticket.id, "")
-
-    def _merge(self, ticket: Ticket, logs: Path) -> Outcome:
-        """Bring in what was merged meanwhile, check the two together, then merge."""
-        came, clashes = self.workspace.update(ticket.id)
-        if clashes:
-            return Failed(briefs.clash(clashes))
-        together = self._check(ticket, logs / "together") if checks.concern(came) else Passed()
-        if not isinstance(together, Passed):
-            return together
-        trouble = self.workspace.merge(ticket.id, ticket.title)
-        return Stopped(trouble) if trouble else Passed()
 
     def shown(self) -> dict[str, Path]:
         """For each agent that is given jobs and has a tab, the file that fills with what it

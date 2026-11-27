@@ -11,6 +11,7 @@ COMPOSERS = {
     "director",
     "jobs",
     "orders",
+    "unaided",
     "epics",
     "writing",
     "preflight",

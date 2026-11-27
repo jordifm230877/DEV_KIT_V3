@@ -248,3 +248,13 @@ def approval(ticket: int) -> str:
         f"the behaviour tests are ready for you: read them with `dk show {ticket}`, then "
         f'`dk approve {ticket}` or `dk reject {ticket} --note "what to change"`'
     )
+
+
+def suite_failed(epic: str, failure: str, logs: object, copy: object) -> str:
+    """The ticket the program writes when the whole test suite fails as an epic is closed."""
+    return (
+        f"Wanted:\nThe project's whole test suite passes. Run when closing {epic}, "
+        f"it failed.\n\nAcceptance criteria:\n- What fails below passes.\n\n{failure}\n\n"
+        f"The whole output is under {logs}.\nWhat the suite wrote in its copy of the "
+        f"project is still in {copy} until it is run again."
+    )

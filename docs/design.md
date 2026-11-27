@@ -47,6 +47,7 @@ time.
 | `tickets` | Stores tickets, where each one is and what happened | Decide anything |
 | `process` | The cycle as a list of steps and the rule for moving along it | Touch files or programs |
 | `director` | Carries out the step each ticket waits for; the only piece that decides | Talk to models or Git directly |
+| `unaided` | The steps the program carries out itself, with no agent: a ticket's checks, the whole test suite when an epic is closed, the merge; a composer | Decide what comes next |
 | `jobs` | The jobs agents are given on a ticket: what each is told and what its answer means; a composer | Decide where a ticket goes next |
 | `orders` | What the user, or the Principal for them, asks of a ticket with a command or from the page: send on, give up, pause, decide; a composer | Start anything |
 | `writing` | What is asked to be written in the ticket list: a ticket, a proposal, a ticket rewritten, a proposal moved; a composer | Start anything |
